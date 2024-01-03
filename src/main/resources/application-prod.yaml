@@ -1,0 +1,11 @@
+#先不連接資料庫#
+spring:
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+server:
+  port: 8081
+
+pentaho:
+  target: http://52.33.116.195:8081/pentaho
+  username: admin
+  password: password

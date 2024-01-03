@@ -1,0 +1,42 @@
+{
+  "trans": {
+    "add": {
+      "url": "/kettle/addTrans",
+      "para": {}
+    },
+    "image": {
+      "url": "/kettle/transImage",
+      "para": {}
+    },
+    "status": {
+      "url": "/kettle/transStatus",
+      "para": {}
+    },
+    "prepareExec": {
+      "url": "/kettle/prepareExec",
+      "para": {}
+    },
+   "startExec":{
+     "url":"/kettle/startExec",
+     "para": {}
+   },
+   "start":{
+      "url":"/kettle/startTrans",
+      "para":{
+        "trans": "",
+        "xml": ""
+      }
+    },
+    "run":"/kettle/runTrans",
+    "execute":"/kettle/executeTrans",
+    "pause":"/kettle/pauseTrans",
+    "stop":"/kettle/stopTrans",
+    "remove":"/kettle/removeTrans",
+    "cleanup":"/kettle/cleanupTrans",
+    "sniffStep":"/kettle/sniffStep",
+    "register":"/kettle/registerTrans"
+  },
+  "job": {
+
+  }
+}
