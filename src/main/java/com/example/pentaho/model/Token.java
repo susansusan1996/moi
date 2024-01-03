@@ -13,8 +13,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.ResourceUtils;
 
 import javax.crypto.spec.SecretKeySpec;
+import java.io.InputStream;
 import java.security.Key;
+import java.security.KeyFactory;
 import java.security.PublicKey;
+import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
@@ -103,14 +106,13 @@ public class Token {
     public static boolean fromA(String accessTokenStr) {
         try {
             log.info("accessPrivateKey:{}", accessPrivateKey);
-//            Key key = new SecretKeySpec(Base64.getEncoder().encode(accessPrivateKey.getBytes()), SignatureAlgorithm.HS256.getJcaName());
-//            Jws<Claims> claimsJws = Jwts.parserBuilder()
-//                    .setSigningKey(key)
-//                    .build()
-//                    .parseClaimsJws(accessTokenStr);
-//            Claims body = claimsJws.getBody();
             //公鑰驗證jwt token
-            PublicKey publicKey = RsaUtils.getPublicKey(ResourceUtils.getFile("classpath:rsa.pub").getPath());
+            InputStream inputStream = RsaUtils.class.getClassLoader().getResourceAsStream("rsa.pub");
+            byte[] keyBytes = inputStream.readAllBytes();
+            byte[] decodedKeyBytes = Base64.getDecoder().decode(keyBytes);
+            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(decodedKeyBytes);
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            PublicKey publicKey = keyFactory.generatePublic(keySpec);
             Jws<Claims> claimsJws = Jwts.parser().setSigningKey(publicKey).parseClaimsJws(accessTokenStr);
             Claims body = claimsJws.getBody();
             log.info("body:{}", body.toString());
