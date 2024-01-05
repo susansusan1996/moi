@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="60 seconds">
+    <property name="Charset" value="UTF-8" />
+    <property name="FileName" value="aplog" />
+    <property name="LogsLocation" value="/home/ec2-user/aplog/" />
+    <property name="Format1" value="[%d{yyyy-MM-dd HH:mm:ss}][%p][%t][Line:%L][%c.%M]%m%n" />
+    <!-- appender -->
+    <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${Format1}</pattern>
+            <charset>${Charset}</charset>
+        </encoder>
+    </appender>
+    <appender name="fileout" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!--log的存放路徑-->
+            <fileNamePattern>${LogsLocation}/${FileName}.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <!--存放30天的log-->
+            <maxHistory>30</maxHistory>
+            <maxFileSize>100MB</maxFileSize>
+        </rollingPolicy>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>${Format1}</pattern>
+            <charset>${Charset}</charset>
+        </encoder>
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <MaxFileSize>100MB</MaxFileSize>
+        </triggeringPolicy>
+    </appender>
+    <!-- logger -->
+    <root level="info">
+        <appender-ref ref="fileout" />
+        <appender-ref ref="stdout" />
+    </root>
+    <logger name="com.example" level="debug">
+        <appender-ref ref="fileout" />
+    </logger>
+</configuration>
