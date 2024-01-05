@@ -5,3 +5,12 @@ pentaho:
   target: http://localhost:8080/pentaho
   username: cluster
   password: cluster
+
+logging:
+  level:
+    ROOT: INFO
+    com.example.pentaho: INFO
+  pattern:
+    file: '[%d{yyyy-MM-dd HH:mm:ss}][%p][%t][Line:%L][%c.%M]%m%n'
+  file:
+    name: /home/ec2-user/aplog/ap.log

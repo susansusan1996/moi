@@ -2,3 +2,13 @@
 spring:
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+
+
+logging:
+  level:
+    ROOT: INFO
+    com.example.pentaho: INFO
+  pattern:
+    file: '[%d{yyyy-MM-dd HH:mm:ss}][%p][%t][Line:%L][%c.%M]%m%n'
+  file:
+    name: /home/ec2-user/aplog/ap.log

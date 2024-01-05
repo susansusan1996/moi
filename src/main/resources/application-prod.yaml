@@ -9,3 +9,12 @@ pentaho:
   target: http://52.33.116.195:8081/pentaho
   username: admin
   password: password
+
+logging:
+  level:
+    ROOT: INFO
+    com.example.pentaho: INFO
+  pattern:
+    file: '[%d{yyyy-MM-dd HH:mm:ss}][%p][%t][Line:%L][%c.%M]%m%n'
+  file:
+    name: /home/ec2-user/aplog/ap.log
