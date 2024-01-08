@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -278,6 +279,20 @@ public class JobService {
             Path path = Paths.get(directories.getPath());
             Path file = path.resolve("API_TEST.zip");
             Files.write(file, con.getInputStream().readAllBytes());
+        }
+    }
+
+
+    public void downloadFileFromPentahoServer(String fileUrl, String savePath) throws IOException {
+        URL url = new URL(fileUrl);
+        URLConnection connection = url.openConnection();
+        try (InputStream inputStream = connection.getInputStream();
+             FileOutputStream outputStream = new FileOutputStream(savePath)) {
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
         }
     }
 }
