@@ -1,7 +1,6 @@
 package com.example.pentaho.utils;
 
-import com.example.pentaho.filter.UserFilter;
-import com.example.pentaho.model.Token;
+import com.example.pentaho.component.Token;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -35,12 +34,12 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
         /**確認有無Authorization:Bearer 的 header**/
         if (authHeader == null || !authHeader.startsWith("Bearer")) {
 
-
+            /**用不到cookie，可以拔除，目前註解**/
             Cookie[] cookies = request.getCookies();
             /**完全沒有或沒有refresh_token (cookie)**/
             if (cookies == null) {
-                /**前端補充導回login的程式**/
-                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "not allowed");
+                /**返回400,前端打/refresh**/
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "not allowed");
             }
 
             Cookie cookie = null;
@@ -51,33 +50,32 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
             }
 
             if (cookie == null) {
-                /**前端補充導回login的程式**/
-                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "not allowed");
+                /**返回400,前端打/refresh**/
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "not allowed");
             }
-            /**有name為refresh_token的cookie,需要指定客戶端接受什麼訊息後，會讓他自動向 /refresh 發起請求，以更新acessToken**/
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "not allowed");
         }
 
-        /**
-         * 確認有無Authorization:Bearer accessToken
-         * 驗證使用者身分
-         * 先直接給予JwtToken
-         */
-        if (authHeader.substring(6, authHeader.length()) != null && "".equals(authHeader.substring(6, authHeader.length()))) {
-            /**這裡怪怪的**/
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "not allowed");
-        }
-        log.info("accessToken:{}", authHeader.substring(6, authHeader.length()));
+            /**
+             * 確認有無Authorization:Bearer RASJWTToken
+             * 驗證使用者身分
+             * 先直接給予JwtToken
+             */
+            if (authHeader.substring(6, authHeader.length()) != null && "".equals(authHeader.substring(6, authHeader.length()))) {
+                /**前端補403導回登入頁?**/
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not allowed");
+            }
 
-        /**
-         * 驗證accessToken
-         * 完成後return true 會再導向Spring-SecurityFilterChain
-         */
-        return Token.fromA(authHeader.substring(7, authHeader.length()));
-//        return true;
-    }
-
-    public void postHandle(HttpServletRequest request, HttpServletResponse response, UserFilter userFilter) {
-
+            log.info("RASJWTToken:{}", authHeader.substring(6, authHeader.length()));
+            /**
+             * 驗證RASJWTToken
+             * 完成後return true 會再導向Spring-SecurityFilterChain
+             */
+            if(Token.fromRSAJWTToken(authHeader.substring(7, authHeader.length()))){
+                return true;
+            }
+        /**其他錯誤；前端補403導回登入頁?**/
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not allowed");
     }
 }
+
+

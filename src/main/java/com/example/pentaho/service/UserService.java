@@ -1,8 +1,8 @@
 package com.example.pentaho.service;
 
-import com.example.pentaho.model.Login;
-import com.example.pentaho.model.Token;
-import com.example.pentaho.model.User;
+import com.example.pentaho.component.Login;
+import com.example.pentaho.component.Token;
+import com.example.pentaho.component.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +40,13 @@ public class UserService {
         this.refreshPrivateKey = refreshPrivateKey;
     }
 
+    /**
+     * 驗證使用者身分
+     * @param user
+     * @return
+     */
     public Login findUserByUserName(User user) {
+        /**待確認使否需要驗證**/
 //        Optional<User> userByUserName = userRepository.findUserByUserName(user.getUserName());
 //        if(!userByUserName.isPresent()){
 //            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"not allowed");
@@ -49,24 +55,46 @@ public class UserService {
 //        if(!Objects.equals(userByUserName.get().getPassword(),user.getPassword())){
 //            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"not allowed");
 //        }
-        user.setUserId(Long.valueOf("1"));
-
-        return Login.of(user.getUserId(), accessPrivateKey, refreshPrivateKey);
+        if("user".equals(user.getUserName())){
+            /**模擬DB找到userId**/
+            user.setUserId(Long.valueOf("1"));
+        }
+        return Login.ofRSAJWTToken(user);
 
     }
 
-    public User findUserByUserId(long userid) {
-        return new User(userid);
-//        return userRepository.findById(userid).get();
+    public User findUserByUserId(User user) {
+//      return userRepository.findById(userid).get();
+        if (user.getUserId() == 1) {
+            return user;
+        }
+        return null;
     }
 
-    public long vaildUser(String refreshTokenStr) {
-        long userId = Token.from(refreshTokenStr);
-        return userId;
+
+    /***
+     * 驗證user信息
+     * @param refreshTokenStr
+     * @return
+     */
+    public User vertifyUserInfo(String refreshTokenStr) {
+        User user = Token.extractUserFromRSAJWTToken((refreshTokenStr));
+        /**解密失敗 或 解密後為空**/
+        if(user == null){
+            return null;
+        }
+        /**第二層驗證，再確認是否去掉**/
+         return findUserByUserId(user);
     }
+
 
     public Login refreshAll(long userId) {
-        return Login.of(userId, accessPrivateKey, refreshPrivateKey);
+        return Login.ofHS256(userId);
+    }
+
+    public Login refreshAllRSA(long userId) {
+        User user = new User(userId);
+        return Login.ofRSAJWTToken(user);
     }
 }
 
