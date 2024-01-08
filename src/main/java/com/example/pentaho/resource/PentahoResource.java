@@ -93,7 +93,10 @@ public class PentahoResource {
     @PostMapping("/downloadFile")
     public  ResponseEntity<String> downloadFile(){
         try {
-            jobService.downloadFile();
+            // TODO: 2024/1/8  fileUrl、savePath要再修正，如果不是會變動的，可以寫在.yml裡(??
+            String fileUrl = "http://52.33.116.195/data.js";
+            String savePath = "/home/ec2-user/downloadFile/data.js";
+            jobService.downloadFileFromPentahoServer(fileUrl,savePath);
             return new ResponseEntity<>("sucess",HttpStatus.OK);
         }catch (Exception e){
             log.info("e:{}",e.toString());

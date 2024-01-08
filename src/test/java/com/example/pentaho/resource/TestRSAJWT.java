@@ -21,7 +21,7 @@ public class TestRSAJWT {
         rsaCreateTest();
 
     }
-//    @Test //創建用rsa密鑰生成的token
+    @Test //創建用rsa密鑰生成的token
     public void rsaCreateTest() throws Exception {
         Map userinfo = new HashMap() {{
 //            put("account", "jack");
