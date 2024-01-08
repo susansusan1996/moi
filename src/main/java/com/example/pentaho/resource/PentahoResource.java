@@ -1,7 +1,7 @@
 package com.example.pentaho.resource;
 
 
-import com.example.pentaho.model.JobParams;
+import com.example.pentaho.component.JobParams;
 import com.example.pentaho.service.JobService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -65,7 +65,7 @@ public class PentahoResource {
      * @param jobParams
      * @return
      */
-    @PostMapping("/excute")
+    @PostMapping("/excuteJob")
     public ResponseEntity<Integer> excuteJob(@RequestBody JobParams jobParams) throws IOException {
         log.info("jobName:{}", jobParams.getJobName());
         Integer responseCode = jobService.excuteJob(jobParams);
@@ -73,6 +73,32 @@ public class PentahoResource {
             return new ResponseEntity<>(responseCode, HttpStatus.OK);
         }
         return new ResponseEntity<>(responseCode, HttpStatus.FORBIDDEN);
+    }
+
+    /**
+     *
+     * @param jobParams
+     * @return
+     */
+    @PostMapping("/excuteTrans")
+    public ResponseEntity<Integer> excuteTrans(@RequestBody JobParams jobParams) throws IOException {
+        log.info("jobName:{}",jobParams.getJobName());
+        Integer responseCode = jobService.excuteTrans(jobParams);
+        if(responseCode== 200){
+            return new ResponseEntity<>(responseCode,HttpStatus.OK);
+        }
+        return new ResponseEntity<>(responseCode,HttpStatus.FORBIDDEN);
+    }
+
+    @PostMapping("/downloadFile")
+    public  ResponseEntity<String> downloadFile(){
+        try {
+            jobService.downloadFile();
+            return new ResponseEntity<>("sucess",HttpStatus.OK);
+        }catch (Exception e){
+            log.info("e:{}",e.toString());
+            return new ResponseEntity<>("fail",HttpStatus.NOT_FOUND);
+        }
     }
 
 }

@@ -1,9 +1,9 @@
 package com.example.pentaho.cofig;
 
-import com.example.pentaho.filter.UserFilter;
 import com.example.pentaho.utils.AuthorizationHandlerInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
@@ -15,6 +15,7 @@ import org.springframework.web.filter.CorsFilter;
 import java.util.ArrayList;
 import java.util.List;
 
+
 /***
  * 規範可以請求路徑
  * 解決CORS問題
@@ -25,12 +26,11 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        return http.addFilterBefore(new UserFilter(new AuthorizationHandlerInterceptor()), CorsFilter.class)
-                .authorizeRequests()
-                .requestMatchers("/api/**").permitAll()
-                .and().cors(Customizer.withDefaults())
-                .csrf().disable()
-                .build();
+        return
+                http.authorizeRequests()
+                        .requestMatchers("/api/**").permitAll()
+                        .and().cors(Customizer.withDefaults())
+                        .csrf().disable().build();
     }
 
 
@@ -61,6 +61,8 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", corsConfiguration);
         return source;
     }
+
+
 
 
 }

@@ -40,13 +40,6 @@ public class JWTUtils {
         generateKeyPair();
     }
 
-//    public String getJwtToken(String userId) throws Exception {
-//
-//        KeyPair keyPair = generateKeyPair();
-//        PublicKey publicKey = keyPair.getPublic();
-//        /***step2:使用密鑰+userId 生成JwtToken**/
-//        return createJwtToken(userId,keyPair.getPrivate());
-//    }
 
     /***
      * 取得 RSA非對稱演算法生成的公鑰 & 密鑰

@@ -1,8 +1,8 @@
 package com.example.pentaho.resource;
 
 
-import com.example.pentaho.model.Login;
-import com.example.pentaho.model.User;
+import com.example.pentaho.component.Login;
+import com.example.pentaho.component.User;
 import com.example.pentaho.service.UserService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,15 +24,22 @@ public class UserResource {
     private UserService userService;
 
 
+    /**
+     * login
+     * @param user
+     * @param response
+     * @return
+     */
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody User user, HttpServletResponse response) {
         log.info("user:{}", user);
         Login login = userService.findUserByUserName(user);
+        log.info("login:{}", login);
+        /**沒有用到cookie 先註解**/
         Cookie cookie = new Cookie("refresh_token", login.getRefreshToken().getToken());
         cookie.setMaxAge(100800000);
         /**dev用**/
-//        cookie.setDomain("localhost");
-        /**聖森域名**/
+        //cookie.setDomain("localhost");
         cookie.setDomain("34.211.215.66");
         cookie.setPath("/api");
         cookie.setHttpOnly(true);
@@ -41,7 +48,7 @@ public class UserResource {
     }
 
     /***
-     *
+     *refreshToken
      */
     @GetMapping("/refresh")
     public ResponseEntity<String> refreshAccessToken(HttpServletRequest request, HttpServletResponse response) {
@@ -58,23 +65,16 @@ public class UserResource {
         }
         log.info("refreshToken:{}", refreshToken);
 
-        /**應該不會進到這裡，因為沒有refreshToken就會被AuthorizationHandlerInterceptor擋住
-         * 這個方法應該只做renew
-         * **/
-        if (refreshToken.equals("")) {
-            //error
+
+        /**解密refreshToken確認user訊息**/
+        User user = userService.vertifyUserInfo(refreshToken);
+        if (user == null) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
 
-
-        /**refresh 確認user訊息**/
-        Long userId = (Long) userService.vaildUser(refreshToken);
-        User userByUserId = userService.findUserByUserId(userId);
-        if (userByUserId == null) {
-            return new ResponseEntity<>(HttpStatus.BAD_GATEWAY);//403
-        }
         /**開始refresh acessToken**/
         /**給新的一組refreshToken**/
-        Login login = userService.refreshAll(3);
+        Login login = userService.refreshAllRSA(user.getUserId());
         oldOne.setValue(login.getRefreshToken().getToken());
         response.addCookie(oldOne);
 

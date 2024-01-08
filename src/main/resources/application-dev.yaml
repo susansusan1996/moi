@@ -5,3 +5,6 @@ pentaho:
   target: http://localhost:8080/pentaho
   username: cluster
   password: cluster
+
+directory:
+  path: C:\test2

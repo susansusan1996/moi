@@ -5,11 +5,11 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import javax.sql.DataSource;
 
-//@Configuration
 
 /**
  * 也可以寫在yaml
  **/
+//@Configuration
 public class DataSourceConfig {
 
     /**

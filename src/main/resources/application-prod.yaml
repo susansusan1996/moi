@@ -9,3 +9,6 @@ pentaho:
   target: http://52.33.116.195:8081/pentaho
   username: admin
   password: password
+
+directory:
+  path: /home/ec2-user/test/

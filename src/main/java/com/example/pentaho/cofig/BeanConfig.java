@@ -29,6 +29,5 @@ public class BeanConfig {
     @Bean
     public ObjectMapper objectMapper() {
         return new ObjectMapper();
-
     }
 }

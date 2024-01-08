@@ -1,6 +1,6 @@
 package com.example.pentaho.repository;
 
-import com.example.pentaho.model.User;
+import com.example.pentaho.component.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
