@@ -12,3 +12,6 @@ pentaho:
 
 directory:
   path: /home/ec2-user/test/
+
+key:
+  key-name: jwt.pub

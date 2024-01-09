@@ -1,5 +1,6 @@
 package com.example.pentaho.service;
 
+import com.example.pentaho.component.KeyComponent;
 import com.example.pentaho.component.Login;
 import com.example.pentaho.component.Token;
 import com.example.pentaho.component.User;
@@ -14,6 +15,9 @@ import org.springframework.stereotype.Service;
 public class UserService {
 
     private final static Logger log = LoggerFactory.getLogger(UserService.class);
+
+    private final KeyComponent keyComponent;
+
 
     @Autowired
     private Token token;
@@ -34,7 +38,8 @@ public class UserService {
 //    }
 
 
-    public UserService(Token token, @Value("${application.security.access-private-key}") String accessPrivateKey, @Value("${application.security.refresh-private-key}") String refreshPrivateKey) {
+    public UserService(KeyComponent keyComponent, Token token, @Value("${application.security.access-private-key}") String accessPrivateKey, @Value("${application.security.refresh-private-key}") String refreshPrivateKey) {
+        this.keyComponent = keyComponent;
         this.token = token;
         this.accessPrivateKey = accessPrivateKey;
         this.refreshPrivateKey = refreshPrivateKey;
@@ -78,7 +83,7 @@ public class UserService {
      * @return
      */
     public User vertifyUserInfo(String refreshTokenStr) {
-        User user = Token.extractUserFromRSAJWTToken((refreshTokenStr));
+        User user = Token.extractUserFromRSAJWTToken((refreshTokenStr),keyComponent.getKeyname());
         /**解密失敗 或 解密後為空**/
         if(user == null){
             return null;

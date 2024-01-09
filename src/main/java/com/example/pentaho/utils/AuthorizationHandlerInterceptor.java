@@ -1,5 +1,6 @@
 package com.example.pentaho.utils;
 
+import com.example.pentaho.component.KeyComponent;
 import com.example.pentaho.component.Token;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,6 +17,11 @@ import org.springframework.web.servlet.HandlerInterceptor;
 public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
 
     private final static Logger log = LoggerFactory.getLogger(AuthorizationHandlerInterceptor.class);
+    private final KeyComponent keyComponent;
+
+    public AuthorizationHandlerInterceptor(KeyComponent keyComponent) {
+        this.keyComponent = keyComponent;
+    }
 
 
     /***
@@ -70,7 +76,7 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
              * 驗證RASJWTToken
              * 完成後return true 會再導向Spring-SecurityFilterChain
              */
-            if(Token.fromRSAJWTToken(authHeader.substring(7, authHeader.length()))){
+            if(Token.fromRSAJWTToken(authHeader.substring(7, authHeader.length()),keyComponent.getKeyname())){
                 return true;
             }
         /**其他錯誤；前端補403導回登入頁?**/

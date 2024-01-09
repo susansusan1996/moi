@@ -177,11 +177,12 @@ public class Token {
     /**
      * 解密RSAJWTToken中的userInfo
      * */
-    public static boolean fromRSAJWTToken(String RSAJWTToken) {
+    public static boolean fromRSAJWTToken(String RSAJWTToken, String keyName) {
         try {
             log.info("RSAJWTToken:{}", RSAJWTToken);
             //公鑰驗證jwt token
-            InputStream inputStream = RsaUtils.class.getClassLoader().getResourceAsStream("rsa.pub");
+            log.info("key file name:{}",keyName);
+            InputStream inputStream = RsaUtils.class.getClassLoader().getResourceAsStream(keyName);
             byte[] keyBytes = inputStream.readAllBytes();
             byte[] decodedKeyBytes = Base64.getDecoder().decode(keyBytes);
             X509EncodedKeySpec keySpec = new X509EncodedKeySpec(decodedKeyBytes);
@@ -202,11 +203,11 @@ public class Token {
      * @param RSAJWTToken
      * @return
      */
-    public static User extractUserFromRSAJWTToken(String RSAJWTToken) {
+    public static User extractUserFromRSAJWTToken(String RSAJWTToken, String keyName) {
         try {
             log.info("RSAJWTToken:{}", RSAJWTToken);
             //公鑰驗證jwt token
-            InputStream inputStream = RsaUtils.class.getClassLoader().getResourceAsStream("rsa.pub");
+            InputStream inputStream = RsaUtils.class.getClassLoader().getResourceAsStream(keyName);
             byte[] keyBytes = inputStream.readAllBytes();
             byte[] decodedKeyBytes = Base64.getDecoder().decode(keyBytes);
             X509EncodedKeySpec keySpec = new X509EncodedKeySpec(decodedKeyBytes);

@@ -8,3 +8,6 @@ pentaho:
 
 directory:
   path: C:\test2
+
+key:
+  keyname: rsa.pub
