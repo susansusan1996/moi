@@ -27,16 +27,12 @@ public class Token {
 
     private static ObjectMapper objectMapper =new ObjectMapper();
 
-    @Autowired
-    private static KeyComponent keyComponent;
-
 
     private String token;
 
     public Token() {
 
     }
-
 
 
     public Token(String token) {

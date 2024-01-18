@@ -13,12 +13,6 @@ public class UserService  {
 
     private final static Logger log = LoggerFactory.getLogger(UserService.class);
 
-    private final KeyComponent keyComponent;
-
-    public UserService(KeyComponent keyComponent) {
-        this.keyComponent = keyComponent;
-    }
-
 
     /**
      * 驗證使用者身分
