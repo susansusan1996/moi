@@ -235,6 +235,35 @@ public class JobService {
     }
 
 
+    /**
+     測試啟動帶有parameter的transformation
+     */
+    public Integer excuteTransWithParams(JobParams jobParams) throws IOException {
+        String fileAbsolutePath = "/home/addr/prod/API_TEST_WITH_PARAMS.ktr";
+        //rep= 是必要參數，即使後面值為空，也要寫在url上!
+        //ADDR=AAA、JOIN_STEP=BBB，都是自定義要傳入transformation的參數
+        String url = pentahoComponent.getTarget()+"/kettle/executeTrans/?rep=&" +
+                "trans="+ fileAbsolutePath + sperator + "level=Debug"+ sperator + "ADDR=AAA"+ sperator + "JOIN_STEP=BBB";
+        log.info("request url:{}",url);
+        URL obj = new URL(url);
+        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+        /**很重要**/
+        basicAuthentication(con);
+        con.setRequestMethod("POST");
+        int responseCode = con.getResponseCode();
+        BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+        String inputLine;
+        StringBuilder response = new StringBuilder();
+        while ((inputLine = in.readLine()) != null) {
+            response.append(inputLine);
+        }
+        in.close();
+        log.info("Response Code:{}",responseCode);
+        log.info("Response Content:{}",response.toString());
+        return responseCode;
+    }
+
+
 
     /***
      *  添加 Basic Authentication header
