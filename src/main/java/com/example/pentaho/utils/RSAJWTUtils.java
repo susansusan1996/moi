@@ -1,5 +1,6 @@
 package com.example.pentaho.utils;
 
+import com.example.pentaho.component.KeyComponent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
@@ -10,24 +11,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Base64;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.UUID;
+import java.util.*;
 
 @Component
 public class RSAJWTUtils {
-    private final static Logger log = LoggerFactory.getLogger(JWTUtils.class);
-
+    private final static Logger log = LoggerFactory.getLogger(RSAJWTUtils.class);
 
 
     private static final String JWT_PAYLOAD_USER_KEY = "user";
+
 
 
     /**
@@ -66,4 +60,5 @@ public class RSAJWTUtils {
         String userInfoJson = body.get(JWT_PAYLOAD_USER_KEY).toString();
         return objectMapper.readValue(userInfoJson, userType);
     }
+
 }

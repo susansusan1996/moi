@@ -4,6 +4,7 @@ package com.example.pentaho.resource;
 import com.example.pentaho.component.JobParams;
 import com.example.pentaho.component.User;
 import com.example.pentaho.service.JobService;
+import com.example.pentaho.utils.UserContextUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
@@ -16,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 
 
-@RequestMapping("/api/batchForm")
+@RequestMapping("/api/kettle")
 @RestController
 public class PentahoResource {
 
@@ -56,8 +57,9 @@ public class PentahoResource {
      */
     @GetMapping("/test")
     public ResponseEntity<String> test() throws IOException {
-        UserContextUtils.getUserHolder();
-        return new ResponseEntity<>("成功", HttpStatus.OK);
+        User user = UserContextUtils.getUserHolder();
+        log.info("user:{}",user);
+        return new ResponseEntity<>(user.toString(), HttpStatus.OK);
     }
 
     /**
