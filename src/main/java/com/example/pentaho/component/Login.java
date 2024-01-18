@@ -36,18 +36,9 @@ public class Login {
         return refreshToken;
     }
 
-    /***
-     * 成功登入後會有acessToken refreshToken
-     * @param userId
-     * @return
-     */
-    public static Login ofHS256(Long userId) {
-        return new Login(Token.acessTokenofHS256(userId), Token.refreshTokenofHS256(userId));
-    }
-
 
     /***
-     * 成功登入後會有RASJWTToken
+     * 成功登入後會有RASJWTToken(acessToken 標頭；refreshToken cookie)
      * @param user
      * @return
      */

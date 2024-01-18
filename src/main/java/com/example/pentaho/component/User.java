@@ -2,21 +2,19 @@ package com.example.pentaho.component;
 
 import org.springframework.stereotype.Component;
 
-//@Entity
-//@Table(name = "user")
 @Component
 public class User  {
 
-    //    @Id
-//    @GeneratedValue(strategy = GenerationType.IDENTITY)
-//    @Column(name = "user_id")
+    /**使用者ID*/
     private Long userId;
 
-
-    //    @Column(name = "user_name")
+    /**使用者名稱*/
     private String userName;
 
-    //    @Column(name = "password")
+    /**使用者單位名稱*/
+    private String unitName;
+
+    /**使用者密碼*/
     private String password;
 
     public Long getUserId() {
@@ -43,6 +41,14 @@ public class User  {
         this.password = password;
     }
 
+    public String getUnitName() {
+        return unitName;
+    }
+
+    public void setUnitName(String unitName) {
+        this.unitName = unitName;
+    }
+
     public User() {
     }
 
@@ -50,11 +56,17 @@ public class User  {
         this.userId = userId;
     }
 
+    public User(Long userId, String unitName) {
+        this.userId = userId;
+        this.unitName = unitName;
+    }
+
     @Override
     public String toString() {
         return "User{" +
-                "userName='" + userName + '\'' +
-                ", password='" + password + '\'' +
+                "userId=" + userId +
+                ", userName='" + userName + '\'' +
+                ", unitName='" + unitName + '\'' +
                 '}';
     }
 }
