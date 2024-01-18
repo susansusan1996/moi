@@ -2,8 +2,11 @@ package com.example.pentaho.resource;
 
 
 import com.example.pentaho.component.JobParams;
+import com.example.pentaho.component.User;
 import com.example.pentaho.service.JobService;
+import com.example.pentaho.utils.UserContextUtils;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,15 +57,16 @@ public class PentahoResource {
      */
     @GetMapping("/test")
     public ResponseEntity<String> test() throws IOException {
-        log.info("sucess");
-        return new ResponseEntity<>("成功", HttpStatus.OK);
+        User user = UserContextUtils.getUserHolder();
+        log.info("user:{}",user);
+        return new ResponseEntity<>(user.toString(), HttpStatus.OK);
     }
 
     /**
      * @param jobParams
      * @return
      */
-    @PostMapping("/excuteJob")
+    @PostMapping("/excuteETLJob")
     public ResponseEntity<Integer> excuteJob(@RequestBody JobParams jobParams) throws IOException {
         log.info("jobName:{}", jobParams.getJobName());
         Integer responseCode = jobService.excuteJob(jobParams);
@@ -73,11 +77,11 @@ public class PentahoResource {
     }
 
     /**
-     *
+     * 使用者傳送想比對的批次檔案到指定位置
      * @param jobParams
      * @return
      */
-    @PostMapping("/excuteTrans")
+    @PostMapping("/excuteETLTrans")
     public ResponseEntity<Integer> excuteTrans(@RequestBody JobParams jobParams) throws IOException {
         log.info("jobName:{}",jobParams.getJobName());
         Integer responseCode = jobService.excuteTrans(jobParams);
@@ -100,5 +104,4 @@ public class PentahoResource {
             return new ResponseEntity<>("fail",HttpStatus.NOT_FOUND);
         }
     }
-
 }
