@@ -13,5 +13,6 @@ pentaho:
 directory:
   path: /home/ec2-user/test/
 
+#如果是自己要在 aws api server上測試，要改成rsa.pub(用自己的公鑰)
 key:
   key-name: jwt.pub

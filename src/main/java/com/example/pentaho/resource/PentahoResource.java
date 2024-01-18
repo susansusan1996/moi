@@ -87,6 +87,20 @@ public class PentahoResource {
         return new ResponseEntity<>(responseCode,HttpStatus.FORBIDDEN);
     }
 
+
+    /**
+        測試啟動帶有parameter的transformation
+     */
+    @PostMapping("/excuteTransWithParams")
+    public ResponseEntity<Integer> excuteTransWithParams(@RequestBody JobParams jobParams) throws IOException {
+        log.info("jobName:{}",jobParams.getJobName());
+        Integer responseCode = jobService.excuteTransWithParams(jobParams);
+        if(responseCode== 200){
+            return new ResponseEntity<>(responseCode,HttpStatus.OK);
+        }
+        return new ResponseEntity<>(responseCode,HttpStatus.FORBIDDEN);
+    }
+
     @PostMapping("/downloadFile")
     public  ResponseEntity<String> downloadFile(){
         try {
