@@ -3,6 +3,7 @@ package com.example.pentaho.resource;
 
 import com.example.pentaho.component.JobParams;
 import com.example.pentaho.component.User;
+import com.example.pentaho.service.FileOutputService;
 import com.example.pentaho.service.JobService;
 import com.example.pentaho.utils.UserContextUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,6 +27,8 @@ public class PentahoResource {
     @Autowired
     private JobService jobService;
 
+    @Autowired
+    private FileOutputService fileOutputService;
 
     @PostMapping("/start-job")
     public ResponseEntity<String> startJob(@RequestBody JobParams jobParams, HttpServletRequest request) throws IOException {
@@ -111,7 +114,7 @@ public class PentahoResource {
             // TODO: 2024/1/8  fileUrl、savePath要再修正，如果不是會變動的，可以寫在.yml裡(??
             String fileUrl = "http://52.33.116.195/data.js";
             String savePath = "/home/ec2-user/downloadFile/data.js";
-            jobService.downloadFileFromPentahoServer(fileUrl,savePath);
+            fileOutputService.downloadFileFromPentahoServer(new JobParams("xx"),savePath);
             return new ResponseEntity<>("sucess",HttpStatus.OK);
         }catch (Exception e){
             log.info("e:{}",e.toString());

@@ -3,6 +3,7 @@ package com.example.pentaho.resource;
 
 import com.example.pentaho.component.Directory;
 import com.example.pentaho.component.JobParams;
+import com.example.pentaho.service.FileOutputService;
 import com.example.pentaho.service.JobService;
 import com.example.pentaho.utils.FileUtils;
 import org.slf4j.Logger;
@@ -14,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.Map;
 
 
 @RequestMapping("/api/batchForm")
@@ -27,6 +27,9 @@ public class BatchResource {
     private JobService jobService;
 
     @Autowired
+    private FileOutputService fileOutputService;
+
+    @Autowired
     private Directory directories;
 
 
@@ -35,7 +38,7 @@ public class BatchResource {
      */
     @PostMapping("/excuteETLJob")
     public ResponseEntity<Integer> excuteTransWithParams(@RequestBody JobParams jobParams) throws IOException {
-        log.info("jobName:{}", jobParams.getJobName());
+        log.info("ETL作業開始，參數為{}: ", jobParams.toString());
         Integer responseCode = jobService.excuteTransWithParams(jobParams);
         if (responseCode == 200) {
             return new ResponseEntity<>(responseCode, HttpStatus.OK);
@@ -49,15 +52,9 @@ public class BatchResource {
      */
     @PostMapping(path = "/finished")
     public void etlFinishedAndSendFile(@RequestBody JobParams jobParams) throws IOException {
-        log.info("jobParams:{}",jobParams.getJobName());
-        jobService.etlFinishedAndSendFile(jobParams.getJobName());
+        log.info("ETL回CALL API，參數為{}: ", jobParams.toString());
+        fileOutputService.etlFinishedAndSendFile(jobParams);
     }
-
-
-//    @PostMapping("/finished")
-//    public void isFinished(@RequestBody String jobParams){
-//        log.info("jobParams:{}",jobParams);
-//    }
 
 
     /**
@@ -66,7 +63,7 @@ public class BatchResource {
     @PostMapping("/getFile")
     public void getFile(
             @RequestPart(name = "etlOutPutFile") MultipartFile multiFile) throws IOException {
-        FileUtils.saveFile(directories.getMockEtlSaveFileDirPrefix(), "999", multiFile, "haha.zip");
+        FileUtils.saveFile(directories.getMockEtlSaveFileDirPrefix(), multiFile);
     }
 
 

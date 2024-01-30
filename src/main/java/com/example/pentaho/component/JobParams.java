@@ -1,17 +1,40 @@
 package com.example.pentaho.component;
 
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.stereotype.Component;
 
 import java.io.Serializable;
 
 @Component
 public class JobParams implements Serializable {
+    private static final long serialVersionUID = 1L;
 
+    @JsonProperty("JobParamsJson")
+    private String JobParamsJson;
+
+    @JsonProperty("jobName")
     private String jobName;
 
-    private String taskId;
+    @JsonProperty("filename")
+    private String filename;
 
+    @JsonProperty("adrVersion")
+    private String adrVersion;
+
+    @JsonProperty("batchFormId")
+    private String batchFormId;
+
+    @JsonProperty("batchFormOriginalFileId")
+    private String batchFormOriginalFileId;
+
+    public JobParams(String jobName, String filename, String adrVersion, String batchFormId, String batchFormOriginalFileId) {
+        this.jobName = jobName;
+        this.filename = filename;
+        this.adrVersion = adrVersion;
+        this.batchFormId = batchFormId;
+        this.batchFormOriginalFileId = batchFormOriginalFileId;
+    }
 
     public JobParams() {
         this.jobName = jobName;
@@ -29,19 +52,56 @@ public class JobParams implements Serializable {
         this.jobName = jobName;
     }
 
-    public String getTaskId() {
-        return taskId;
+
+    public String getFilename() {
+        return filename;
     }
 
-    public void setTaskId(String taskId) {
-        this.taskId = taskId;
+    public void setFilename(String filename) {
+        this.filename = filename;
+    }
+
+    public String getAdrVersion() {
+        return adrVersion;
+    }
+
+    public void setAdrVersion(String adrVersion) {
+        this.adrVersion = adrVersion;
+    }
+
+    public String getBatchFormId() {
+        return batchFormId;
+    }
+
+    public void setBatchFormId(String batchFormId) {
+        this.batchFormId = batchFormId;
+    }
+
+    public String getBatchFormOriginalFileId() {
+        return batchFormOriginalFileId;
+    }
+
+    public void setBatchFormOriginalFileId(String batchFormOriginalFileId) {
+        this.batchFormOriginalFileId = batchFormOriginalFileId;
+    }
+
+    public String getJobParamsJson() {
+        return JobParamsJson;
+    }
+
+    public void setJobParamsJson(String jobParamsJson) {
+        JobParamsJson = jobParamsJson;
     }
 
     @Override
     public String toString() {
         return "JobParams{" +
-                "jobName='" + jobName + '\'' +
-                ", taskId='" + taskId + '\'' +
+                "JobParamsJson='" + JobParamsJson + '\'' +
+                ", jobName='" + jobName + '\'' +
+                ", filename='" + filename + '\'' +
+                ", adrVersion='" + adrVersion + '\'' +
+                ", batchFormId='" + batchFormId + '\'' +
+                ", batchFormOriginalFileId='" + batchFormOriginalFileId + '\'' +
                 '}';
     }
 }

@@ -10,9 +10,9 @@ directory:
   path: C:\test2
   target: C:\
   #  etl作業產出的檔案位置前綴
-  etl-output-file-dir-prefix: /home/ec2-user/test222/
+  etl-output-file-dir-prefix: D:\home\ec2-user\test222\
   # 模擬聖森存檔案
-  mock-etl-save-file-dir-prefix: /home/ec2-user/saveFile/
+  mock-etl-save-file-dir-prefix: D:\home\ec2-user\saveFile\
   # etl .ktr檔的存放位置
   ktr-file-path: /home/addr/prod/
 

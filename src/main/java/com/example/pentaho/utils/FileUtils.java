@@ -1,5 +1,6 @@
 package com.example.pentaho.utils;
 
+import com.example.pentaho.exception.MoiException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileCopyUtils;
@@ -22,11 +23,10 @@ public class FileUtils {
 
     /**
      * @param pathPrefix
-     * @param taskId
      * @param multiFile
      * @throws IOException
      */
-    public static void saveFile(String pathPrefix, String taskId, MultipartFile multiFile, String fileName) throws IOException {
+    public static void saveFile(String pathPrefix, MultipartFile multiFile) throws IOException {
         log.info("檔案路徑為:{}", pathPrefix);
         File directory = new File(pathPrefix);
         if (!directory.exists()) {
@@ -35,22 +35,17 @@ public class FileUtils {
         }
         Path directoryPath = Paths.get(pathPrefix);
         if (isValidDirectory(directoryPath)) {
-            InputStream inputStream;
+            InputStream inputStream = null;
             if (multiFile != null) {
                 inputStream = multiFile.getInputStream();
-
-            } else {
-                inputStream = new ByteArrayInputStream(new byte[0]);    //903空檔
             }
-            // copy
             byte[] inputByteArr = FileCopyUtils.copyToByteArray(inputStream);
-            String filePath = pathPrefix + cleanString(fileName); // 指定文件路徑
-
+            String filePath = pathPrefix + cleanString(multiFile.getResource().getFilename()); // 指定文件路徑
             try {
                 saveByteArrayToFile(inputByteArr, filePath);
                 log.info("檔案儲存成功,{}", filePath);
             } catch (IOException e) {
-                log.error("檔案儲存失敗,{}", e.getMessage());
+                throw new MoiException("檔案儲存失敗 {}: " + e.getMessage());
             }
             inputStream.close();
         }
