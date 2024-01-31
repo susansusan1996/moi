@@ -14,7 +14,7 @@ directory:
   # 模擬聖森存檔案
   mock-etl-save-file-dir-prefix: D:\home\ec2-user\saveFile\
   # etl .ktr檔的存放位置
-  ktr-file-path: /home/addr/prod/
+  ktr-file-path: D:\home\addr\prod\
 
 key:
   key-name: rsa.pub
