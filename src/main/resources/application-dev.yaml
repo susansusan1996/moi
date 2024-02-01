@@ -22,3 +22,12 @@ key:
 apserver:
 #  模擬聖森存檔案
   target-url: http://localhost:8888/api/batchForm/getFile
+
+spring:
+  data:
+    redis:
+      database: 0
+      host: 34.211.215.66
+      port: 8005
+      # Redis密碼，默認為空
+      password:
