@@ -63,4 +63,22 @@ public class RedisService {
         });
         log.info("keySet:{}", keySet);
     }
+
+
+    /**
+     * set單一個值
+     */
+    public void setData(SingleQueryDTO singleQueryDTO) {
+        stringRedisTemplate.opsForValue().set(singleQueryDTO.getRedisKey(), singleQueryDTO.getRedisValue());
+        log.info("set單一個值，key: {}, value: {}", singleQueryDTO.getRedisKey(), singleQueryDTO.getRedisValue());
+    }
+
+
+    /**
+     * 一個key塞多筆值(RPUSH)
+     */
+    public void pushData(SingleQueryDTO singleQueryDTO) {
+        stringRedisTemplate.opsForList().rightPushAll(singleQueryDTO.getRedisKey(), singleQueryDTO.getRedisValueList());
+        log.info("push value to a key，key: {}, value: {}", singleQueryDTO.getRedisKey(), singleQueryDTO.getRedisValueList());
+    }
 }

@@ -5,10 +5,7 @@ import com.example.pentaho.service.RedisService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/redis")
@@ -23,7 +20,7 @@ public class RedisResouce {
     /**
      * 獲取單筆(set、get)
      */
-    @PostMapping("/query-data")
+    @GetMapping("/query-data")
     public void queryData(@RequestBody SingleQueryDTO singleQueryDTO) {
         redisService.findByKey(singleQueryDTO);
     }
@@ -32,7 +29,7 @@ public class RedisResouce {
     /**
      * 獲取一個key的多筆資料(RPUSH、LRANGE )
      */
-    @PostMapping("/query-data-list")
+    @GetMapping("/query-data-list")
     public void findAddr(@RequestBody SingleQueryDTO singleQueryDTO) {
         redisService.findListByKey(singleQueryDTO);
     }
@@ -41,9 +38,28 @@ public class RedisResouce {
     /**
      * 模糊比對，找出相符的 KEY (scan)
      */
-    @PostMapping("/scan-data-list")
+    @GetMapping("/scan-data-list")
     public void scanAddr(@RequestBody SingleQueryDTO singleQueryDTO) {
         redisService.findListByScan(singleQueryDTO);
+    }
+
+
+
+    /**
+     * set單筆值(set)
+     */
+    @PostMapping("/set-data")
+    public void setData(@RequestBody SingleQueryDTO singleQueryDTO) {
+        redisService.setData(singleQueryDTO);
+    }
+
+
+    /**
+     * 一個key塞多筆值(RPUSH)
+     */
+    @PostMapping("/rpush-data")
+    public void pushData(@RequestBody SingleQueryDTO singleQueryDTO) {
+        redisService.pushData(singleQueryDTO);
     }
 
 }
