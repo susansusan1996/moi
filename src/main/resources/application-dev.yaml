@@ -8,9 +8,20 @@ pentaho:
 
 directory:
   path: C:\test2
+  target: C:\
+  #  etl作業產出的檔案位置前綴
+  etl-output-file-dir-prefix: D:\home\ec2-user\test222\
+  # 模擬聖森存檔案
+  mock-etl-save-file-dir-prefix: D:\home\ec2-user\saveFile\
+  # etl .ktr檔的存放位置
+  ktr-file-path: D:\home\addr\prod\
 
 key:
-  keyname: rsa.pub
+  key-name: rsa.pub
+
+apserver:
+#  模擬聖森存檔案
+  target-url: http://localhost:8888/api/batchForm/getFile
 
 spring:
   data:

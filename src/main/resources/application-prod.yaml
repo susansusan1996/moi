@@ -19,7 +19,18 @@ pentaho:
 
 directory:
   path: /home/ec2-user/test/
+  target: http://52.33.116.195
+  #  etl作業產出的檔案位置前綴
+  etl-output-file-dir-prefix: /home/ec2-user/outputFile/
+  # 模擬聖森存檔案
+  mock-etl-save-file-dir-prefix: /home/ec2-user/saveFile/
+  # etl .ktr檔的存放位置
+  ktr-file-path: /home/addr/prod/
 
 #如果是自己要在 aws api server上測試，要改成rsa.pub(用自己的公鑰)
 key:
   key-name: jwt.pub
+
+apserver:
+  #  模擬聖森存檔案，正式介接要把這裡改成聖森的api url
+  target-url: http://34.211.215.66:8081/api/batchForm/getFile

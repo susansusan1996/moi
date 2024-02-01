@@ -80,7 +80,7 @@ public class Token {
             X509EncodedKeySpec keySpec = new X509EncodedKeySpec(decodedKeyBytes);
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             PublicKey publicKey = keyFactory.generatePublic(keySpec);
-            Jws<Claims> claimsJws = Jwts.parser().setSigningKey(publicKey).parseClaimsJws(RSAJWTToken);
+            Jws<Claims> claimsJws = Jwts.parser().setSigningKey(publicKey).parseClaimsJws(RSAJWTToken.trim());
             Claims body = claimsJws.getBody();
             log.info("body:{}", body.toString());
          return true;
