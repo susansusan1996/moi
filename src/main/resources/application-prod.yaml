@@ -2,6 +2,13 @@
 spring:
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+  data:
+    redis:
+      database: 0
+      host: 34.211.215.66
+      port: 8005
+      password:
+
 server:
   port: 8081
 

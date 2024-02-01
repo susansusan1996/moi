@@ -11,3 +11,12 @@ directory:
 
 key:
   keyname: rsa.pub
+
+spring:
+  data:
+    redis:
+      database: 0
+      host: 34.211.215.66
+      port: 8005
+      # Redis密碼，默認為空
+      password:
