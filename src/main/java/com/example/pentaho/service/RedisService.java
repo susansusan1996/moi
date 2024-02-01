@@ -26,7 +26,7 @@ public class RedisService {
 
 
     /**
-     * 找單一個值
+     * 找單一個值 (redis: get)
      */
     public String findByKey(SingleQueryDTO singleQueryDTO) {
         String redisValue = stringRedisTemplate.opsForValue().get(singleQueryDTO.getRedisKey());
@@ -36,7 +36,7 @@ public class RedisService {
 
 
     /**
-     * 找為LIST的值
+     * 找為LIST的值 (redis: LRANGE)
      */
     public List<String> findListByKey(SingleQueryDTO singleQueryDTO) {
         ListOperations<String, String> listOps = stringRedisTemplate.opsForList();
@@ -46,7 +46,7 @@ public class RedisService {
     }
 
     /**
-     * 模糊比對，找出相符的 KEY
+     * 模糊比對，找出相符的 KEY (redis: scan)
      */
     public Set<String> findListByScan(SingleQueryDTO singleQueryDTO) {
         Set<String> keySet = stringRedisTemplate.execute((RedisCallback<Set<String>>) connection -> {
@@ -69,7 +69,7 @@ public class RedisService {
 
 
     /**
-     * set單一個值
+     * set單一個值 (redis: set)
      */
     public void setData(SingleQueryDTO singleQueryDTO) {
         stringRedisTemplate.opsForValue().set(singleQueryDTO.getRedisKey(), singleQueryDTO.getRedisValue());
@@ -78,7 +78,7 @@ public class RedisService {
 
 
     /**
-     * 一個key塞多筆值(RPUSH)
+     * 一個key塞多筆值(redis: RPUSH)
      */
     public void pushData(SingleQueryDTO singleQueryDTO) {
         stringRedisTemplate.opsForList().rightPushAll(singleQueryDTO.getRedisKey(), singleQueryDTO.getRedisValueList());
