@@ -5,7 +5,11 @@ import com.example.pentaho.service.RedisService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/redis")
@@ -21,8 +25,8 @@ public class RedisResouce {
      * 獲取單筆(set、get)
      */
     @GetMapping("/query-data")
-    public void queryData(@RequestBody SingleQueryDTO singleQueryDTO) {
-        redisService.findByKey(singleQueryDTO);
+    public ResponseEntity<String> queryData(@RequestBody SingleQueryDTO singleQueryDTO) {
+        return ResponseEntity.ok(redisService.findByKey(singleQueryDTO));
     }
 
 
@@ -30,8 +34,8 @@ public class RedisResouce {
      * 獲取一個key的多筆資料(RPUSH、LRANGE )
      */
     @GetMapping("/query-data-list")
-    public void findAddr(@RequestBody SingleQueryDTO singleQueryDTO) {
-        redisService.findListByKey(singleQueryDTO);
+    public ResponseEntity<List<String>> findAddr(@RequestBody SingleQueryDTO singleQueryDTO) {
+        return ResponseEntity.ok(redisService.findListByKey(singleQueryDTO));
     }
 
 
@@ -39,10 +43,9 @@ public class RedisResouce {
      * 模糊比對，找出相符的 KEY (scan)
      */
     @GetMapping("/scan-data-list")
-    public void scanAddr(@RequestBody SingleQueryDTO singleQueryDTO) {
-        redisService.findListByScan(singleQueryDTO);
+    public ResponseEntity<Set<String>> scanAddr(@RequestBody SingleQueryDTO singleQueryDTO) {
+        return ResponseEntity.ok(redisService.findListByScan(singleQueryDTO));
     }
-
 
 
     /**

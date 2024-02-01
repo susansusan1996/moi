@@ -28,25 +28,27 @@ public class RedisService {
     /**
      * 找單一個值
      */
-    public void findByKey(SingleQueryDTO singleQueryDTO) {
+    public String findByKey(SingleQueryDTO singleQueryDTO) {
         String redisValue = stringRedisTemplate.opsForValue().get(singleQueryDTO.getRedisKey());
         log.info("redisValue: {}", redisValue);
+        return redisValue;
     }
 
 
     /**
      * 找為LIST的值
      */
-    public void findListByKey(SingleQueryDTO singleQueryDTO) {
+    public List<String> findListByKey(SingleQueryDTO singleQueryDTO) {
         ListOperations<String, String> listOps = stringRedisTemplate.opsForList();
         List<String> elements = listOps.range(singleQueryDTO.getRedisKey(), 0, -1);
         log.info("elements:{}", elements);
+        return elements;
     }
 
     /**
      * 模糊比對，找出相符的 KEY
      */
-    public void findListByScan(SingleQueryDTO singleQueryDTO) {
+    public Set<String> findListByScan(SingleQueryDTO singleQueryDTO) {
         Set<String> keySet = stringRedisTemplate.execute((RedisCallback<Set<String>>) connection -> {
             Set<String> keySetTemp = new ConcurrentSkipListSet<>();
             try (Cursor<byte[]> cursor = connection.scan(ScanOptions.scanOptions()
@@ -62,6 +64,7 @@ public class RedisService {
             return keySetTemp;
         });
         log.info("keySet:{}", keySet);
+        return keySet;
     }
 
 
