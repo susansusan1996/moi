@@ -84,4 +84,15 @@ public class RedisService {
         stringRedisTemplate.opsForList().rightPushAll(singleQueryDTO.getRedisKey(), singleQueryDTO.getRedisValueList());
         log.info("push value to a key，key: {}, value: {}", singleQueryDTO.getRedisKey(), singleQueryDTO.getRedisValueList());
     }
+
+
+    /**
+     * 找為SET的值 (redis: SMEMBERS)
+     */
+    public Set<String> findSetByKey(SingleQueryDTO singleQueryDTO) {
+        SetOperations<String, String> setOps = stringRedisTemplate.opsForSet();
+        Set<String> elements = setOps.members(singleQueryDTO.getRedisKey());
+        log.info("elements:{}", elements);
+        return elements;
+    }
 }

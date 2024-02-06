@@ -40,6 +40,15 @@ public class RedisResouce {
 
 
     /**
+     * 獲取一個key的SET(SADD、SMEMBERS)
+     */
+    @GetMapping("/query-data-set")
+    public ResponseEntity<Set<String>> findSetByKey(@RequestBody SingleQueryDTO singleQueryDTO) {
+        return ResponseEntity.ok(redisService.findSetByKey(singleQueryDTO));
+    }
+
+
+    /**
      * 模糊比對，找出相符的 KEY (scan)
      */
     @GetMapping("/scan-data-list")
