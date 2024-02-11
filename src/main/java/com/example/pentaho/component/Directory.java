@@ -7,9 +7,11 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "directory")
 public class Directory {
 
-    private String path;
-
     private String target;
+
+    private String receiveFileDir;
+
+    private String sendFileDir;
 
     private String etlOutputFileDirPrefix; //etl作業產出的檔案位置前綴
 
@@ -17,21 +19,28 @@ public class Directory {
 
     private String ktrFilePath; // etl .ktr檔的存放位置
 
-
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
-    }
-
     public String getTarget() {
         return target;
     }
 
     public void setTarget(String target) {
         this.target = target;
+    }
+
+    public String getReceiveFileDir() {
+        return receiveFileDir;
+    }
+
+    public void setReceiveFileDir(String receiveFileDir) {
+        this.receiveFileDir = receiveFileDir;
+    }
+
+    public String getSendFileDir() {
+        return sendFileDir;
+    }
+
+    public void setSendFileDir(String sendFileDir) {
+        this.sendFileDir = sendFileDir;
     }
 
     public String getEtlOutputFileDirPrefix() {
@@ -61,8 +70,9 @@ public class Directory {
     @Override
     public String toString() {
         return "Directory{" +
-                "path='" + path + '\'' +
-                ", target='" + target + '\'' +
+                "target='" + target + '\'' +
+                ", receiveFileDir='" + receiveFileDir + '\'' +
+                ", sendFileDir='" + sendFileDir + '\'' +
                 ", etlOutputFileDirPrefix='" + etlOutputFileDirPrefix + '\'' +
                 ", mockEtlSaveFileDirPrefix='" + mockEtlSaveFileDirPrefix + '\'' +
                 ", ktrFilePath='" + ktrFilePath + '\'' +

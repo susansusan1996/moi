@@ -28,12 +28,62 @@ public class JobParams implements Serializable {
     @JsonProperty("batchFormOriginalFileId")
     private String batchFormOriginalFileId;
 
-    public JobParams(String jobName, String filename, String adrVersion, String batchFormId, String batchFormOriginalFileId) {
+    @JsonProperty("userId")
+    private String userId;
+    @JsonProperty("unitName")
+    private String unitName;
+
+
+    @JsonProperty("dataSrc")
+    private String dataSrc;
+
+
+    @JsonProperty("dataYr")
+    private String dataYr;
+
+    public JobParams(String jobParamsJson, String jobName, String filename, String adrVersion, String batchFormId, String batchFormOriginalFileId, String userId, String unitName, String dataSrc, String dataYr) {
+        JobParamsJson = jobParamsJson;
         this.jobName = jobName;
         this.filename = filename;
         this.adrVersion = adrVersion;
         this.batchFormId = batchFormId;
         this.batchFormOriginalFileId = batchFormOriginalFileId;
+        this.userId = userId;
+        this.unitName = unitName;
+        this.dataSrc = dataSrc;
+        this.dataYr = dataYr;
+    }
+
+    public String getDataSrc() {
+        return dataSrc;
+    }
+
+    public void setDataSrc(String dataSrc) {
+        this.dataSrc = dataSrc;
+    }
+
+    public String getDataYr() {
+        return dataYr;
+    }
+
+    public void setDataYr(String dataYr) {
+        this.dataYr = dataYr;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public String getUnitName() {
+        return unitName;
+    }
+
+    public void setUnitName(String unitName) {
+        this.unitName = unitName;
     }
 
     public JobParams() {
@@ -104,4 +154,5 @@ public class JobParams implements Serializable {
                 ", batchFormOriginalFileId='" + batchFormOriginalFileId + '\'' +
                 '}';
     }
+
 }

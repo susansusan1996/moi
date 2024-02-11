@@ -3,6 +3,9 @@ package com.example.pentaho.service;
 import com.example.pentaho.component.ApServerComponent;
 import com.example.pentaho.component.Directory;
 import com.example.pentaho.component.JobParams;
+import com.example.pentaho.utils.SFTPUtils;
+import com.example.pentaho.utils.UserContextUtils;
+import com.jcraft.jsch.SftpException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -19,6 +23,8 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 @Service
 public class FileOutputService {
@@ -29,9 +35,14 @@ public class FileOutputService {
     @Autowired
     private ApServerComponent apServerComponent;
 
+    @Autowired
+    private SFTPUtils sftpUtils;
+
     private final static Logger log = LoggerFactory.getLogger(JobService.class);
 
     public void etlFinishedAndSendFile(JobParams jobParams) throws IOException {
+//        String sourceFilePath =directories.getTarget()+directories.getReceivePath()+
+
         String sourceFilePath = directories.getTarget() + directories.getEtlOutputFileDirPrefix() + jobParams.getFilename() + ".zip";
         //先落地
         downloadFileFromPentahoServer(jobParams, sourceFilePath);
@@ -93,4 +104,21 @@ public class FileOutputService {
             log.error("File upload failed. Response Code: {} ", statusCode.value());
         }
     }
+
+
+    public void sftpDownloadFileAndSend(JobParams jobParams) throws SftpException, IOException {
+        log.info("jobParams:{}",jobParams);
+        log.info("jobParams:{}",jobParams.getDataSrc());
+        String targetDir = directories.getSendFileDir() + jobParams.getUnitName() + "/" + jobParams.getDataYr();
+        sftpUtils.connect();
+        boolean hasFile = sftpUtils.listFiles(targetDir, jobParams.getDataSrc());
+        if(!hasFile){
+         throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"找不到檔案");
+        }
+        sftpUtils.downloadFile(targetDir, jobParams.getDataSrc());
+        sftpUtils.disconnect();
+        String sourceFilePath = "C://temp/"+jobParams.getDataSrc();
+        postFileToServer(sourceFilePath,"http://");
+    }
+
 }

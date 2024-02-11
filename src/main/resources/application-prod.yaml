@@ -9,17 +9,23 @@ spring:
       port: 8005
       password:
 
+
+
 server:
-  port: 8081
+  port: 8080
 
 pentaho:
-  target: http://52.33.116.195:8081/pentaho
+  web-target: http://52.33.116.195:8081/pentaho
   username: admin
   password: password
 
 directory:
-  path: /home/ec2-user/test/
+  #pentaho server IP
   target: http://52.33.116.195
+  #原始csv存放目錄
+  receive-file-dir: /home/addr/batch_data/receive/
+  #批次zip檔存放目錄
+  send-file-dir: /home/addr/batch_data/send/
   #  etl作業產出的檔案位置前綴
   etl-output-file-dir-prefix: /home/ec2-user/outputFile/
   # 模擬聖森存檔案
@@ -29,8 +35,18 @@ directory:
 
 #如果是自己要在 aws api server上測試，要改成rsa.pub(用自己的公鑰)
 key:
-  key-name: jwt.pub
+#  key-name: jwt.pub
+  key-name: rsa.pub
 
 apserver:
   #  模擬聖森存檔案，正式介接要把這裡改成聖森的api url
   target-url: http://34.211.215.66:8081/api/batchForm/getFile
+
+sftputils:
+ host: 52.33.116.195
+ port: 22
+ username: ec2-user
+ private-key: classpath:moi-addr-privatekey.pem
+
+
+

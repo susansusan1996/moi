@@ -32,6 +32,7 @@ public class UserService  {
         if("user".equals(user.getUserName())){
             /**模擬DB找到userId**/
             user.setUserId(Long.valueOf("1"));
+            user.setUnitName("A05");
         }
         return Login.ofRSAJWTToken(user);
 
