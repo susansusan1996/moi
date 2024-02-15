@@ -1,7 +1,7 @@
 package com.example.pentaho.resource;
 
 import com.example.pentaho.component.SingleQueryDTO;
-import com.example.pentaho.service.RedisService;
+import com.example.pentaho.service.SingleQueryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +18,7 @@ public class RedisResouce {
     private static Logger log = LoggerFactory.getLogger(RedisResouce.class);
 
     @Autowired
-    private RedisService redisService;
+    private SingleQueryService redisService;
 
 
     /**

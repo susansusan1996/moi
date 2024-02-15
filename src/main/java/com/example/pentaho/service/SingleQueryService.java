@@ -12,9 +12,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 @Service
-public class RedisService {
+public class SingleQueryService {
 
-    private static Logger log = LoggerFactory.getLogger(RedisService.class);
+    private static Logger log = LoggerFactory.getLogger(SingleQueryService.class);
 
     Integer SCAN_SIZE = 1000;
 
