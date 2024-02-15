@@ -23,8 +23,11 @@ public class FileUploadService {
 
     private final Logger log = LoggerFactory.getLogger(FileUploadService.class);
 
+
+
     @Autowired
     private SFTPUtils sftpUtils;
+
 
 
     public boolean sftpUpload(MultipartFile file,String targetDir,String fileName){

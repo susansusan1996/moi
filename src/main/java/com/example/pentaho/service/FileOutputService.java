@@ -109,7 +109,7 @@ public class FileOutputService {
     public void sftpDownloadFileAndSend(JobParams jobParams) throws SftpException, IOException {
         log.info("jobParams:{}",jobParams);
         log.info("jobParams:{}",jobParams.getDataSrc());
-        String targetDir = directories.getSendFileDir() + jobParams.getUnitName() + "/" + jobParams.getDataYr();
+        String targetDir = directories.getSendFileDir() + jobParams.getUnitName() + "/" + jobParams.getDataYr()+"/";
         sftpUtils.connect();
         boolean hasFile = sftpUtils.listFiles(targetDir, jobParams.getDataSrc());
         if(!hasFile){

@@ -101,6 +101,8 @@ public class SFTPUtils {
      * @return
      */
     public boolean downloadFile(String remotePath, String remoteFileName) {
+        log.info("remotePath:{}",remotePath);
+        log.info("remoteFileName:{}",remoteFileName);
         FileOutputStream fieloutput = null;
         try {
             File file = new File("C://temp/" + remoteFileName);

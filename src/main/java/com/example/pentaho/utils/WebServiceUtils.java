@@ -84,7 +84,7 @@ public class WebServiceUtils {
         try {
             log.info("執行作業:{}", webService);
             log.info("json:{}",json);
-            StringBuilder url = new StringBuilder(pentahoComponent.getWebTarget() + webService + separator);
+            StringBuilder url = new StringBuilder(pentahoComponent.getWebTarget() + webService);
             TreeNode treeNode = objectMapper.readTree(json);
             Iterator<String> keys = treeNode.fieldNames();
             while (keys.hasNext()) {

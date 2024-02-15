@@ -88,7 +88,7 @@ public class BatchResource {
         jobService.sftpUploadAndExecuteTrans(file,jobParams);
     }
 
-    @PostMapping(path = "/finishedthenSftp")
+    @PostMapping(path = "/finishedThenSftp")
     public void sftpDownloadAndSend(@RequestBody JobParams jobParams) throws IOException, SftpException {
        fileOutputService.sftpDownloadFileAndSend(jobParams);
     }

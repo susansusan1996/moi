@@ -1,13 +1,26 @@
 #先不連接資料庫#
 spring:
-  autoconfigure:
-    exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+#  autoconfigure:
+#    exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
   data:
     redis:
       database: 0
       host: 34.211.215.66
       port: 8005
       password:
+  datasource:
+    jdbc-url: jdbc:vertica://52.40.252.111:5433/vdb
+    username: dbadmin
+    password: 1qaz@WSX
+    driver-class-name: com.vertica.jdbc.Driver
+  jpa:
+    hibernate:
+      dialect: org.hibernate.dialect.VerticaDialect
+#    hibernate:
+#     primary-dialect: org.hibernate.dialect.VerticaDialect
+      generate-ddl: true # 如果需要 Hibernate 自动生成数据库表，请设置为 true
+
+
 
 
 
