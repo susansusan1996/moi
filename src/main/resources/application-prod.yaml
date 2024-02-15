@@ -13,12 +13,16 @@ spring:
     username: dbadmin
     password: 1qaz@WSX
     driver-class-name: com.vertica.jdbc.Driver
-  jpa:
-    hibernate:
-      dialect: org.hibernate.dialect.VerticaDialect
-#    hibernate:
-#     primary-dialect: org.hibernate.dialect.VerticaDialect
-      generate-ddl: true # 如果需要 Hibernate 自动生成数据库表，请设置为 true
+    hikari:
+      driver-class-name: io.opentracing.contrib.jdbc.TracingDriver
+      jdbc-url: jdbc:vertica://52.40.252.111:5433/vdb
+      poolName: Hikari
+      auto-commit: false
+      data-source-properties:
+        cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
+
 
 
 

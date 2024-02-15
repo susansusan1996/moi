@@ -1,18 +1,19 @@
 package com.example.pentaho.resource;
 
 import com.example.pentaho.component.Directory;
-import com.example.pentaho.entity.IbdTbAddrStatisticsOverallDev;
+import com.example.pentaho.component.IbdTbAddrStatisticsOverallDev;
 import com.example.pentaho.repository.IbdTbAddrStatisticsOverallDevRepository;
 import com.example.pentaho.service.FileUploadService;
-import com.example.pentaho.utils.SFTPUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Optional;
+import java.util.List;
 
 @RestController
 //@RequestMapping("/api/bigdata")
@@ -30,22 +31,21 @@ public class BigDataResource {
 
 
 
-    public ResponseEntity<Integer> sftpUploadBigDataFile(@RequestPart("uploadFile")MultipartFile file, @RequestPart("batchFormId") String batchFormId){
-        if(file == null){
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"檔案為空");
+    public ResponseEntity<Integer> sftpUploadBigDataFile(@RequestPart("uploadFile") MultipartFile file, @RequestPart("batchFormId") String batchFormId) {
+        if (file == null) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "檔案為空");
         }
-        String fileName = batchFormId+".csv";
+        String fileName = batchFormId + ".csv";
         boolean sftpUpload = fileUploadService.sftpUpload(file, directories.getSendFileDir(), fileName);
-        if(sftpUpload){
-        return new ResponseEntity<Integer>(200,HttpStatus.OK);
+        if (sftpUpload) {
+            return new ResponseEntity<Integer>(200, HttpStatus.OK);
         }
-        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"檔案為空");
+        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "檔案為空");
     }
 
     @GetMapping("/testDB")
-    public  void  testDB(){
-//        IbdTbAddrStatisticsOverallDev ibdTbAddrStatisticsOverallDev = ibdTbAddrStatisticsOverallDevRepository.findIbdTbAddrStatisticsOverallDevById(1).get();
-//        System.out.println(ibdTbAddrStatisticsOverallDev.toString());
+    public ResponseEntity<List<IbdTbAddrStatisticsOverallDev>> testDB() {
+        return ResponseEntity.ok(ibdTbAddrStatisticsOverallDevRepository.findAll());
     }
 
 //    public ResponseEntity<Integer> sftpDownloadBigDataFile(String batchFormId){
