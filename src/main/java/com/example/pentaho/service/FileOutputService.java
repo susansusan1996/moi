@@ -4,7 +4,6 @@ import com.example.pentaho.component.ApServerComponent;
 import com.example.pentaho.component.Directory;
 import com.example.pentaho.component.JobParams;
 import com.example.pentaho.utils.SFTPUtils;
-import com.example.pentaho.utils.UserContextUtils;
 import com.jcraft.jsch.SftpException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,8 +22,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 @Service
 public class FileOutputService {
@@ -43,12 +40,12 @@ public class FileOutputService {
     public void etlFinishedAndSendFile(JobParams jobParams) throws IOException {
 //        String sourceFilePath =directories.getTarget()+directories.getReceivePath()+
 
-        String sourceFilePath = directories.getTarget() + directories.getEtlOutputFileDirPrefix() + jobParams.getFilename() + ".zip";
+        String sourceFilePath = directories.getTarget() + directories.getEtlOutputFileDirPrefix() + jobParams.getFILE() + ".zip";
         //先落地
         downloadFileFromPentahoServer(jobParams, sourceFilePath);
         postFileToServer(
                 directories.getMockEtlSaveFileDirPrefix() +
-                        jobParams.getFilename() + ".zip",
+                        jobParams.getFILE() + ".zip",
                 apServerComponent.getTargetUrl()
         );
     }
@@ -59,7 +56,7 @@ public class FileOutputService {
         try {
             url = new URL(sourceFilePath);
             URLConnection connection = url.openConnection();
-            String fileName = jobParams.getFilename() + ".zip";
+            String fileName = jobParams.getFILE() + ".zip";
             String saveFilePath = directories.getMockEtlSaveFileDirPrefix() + fileName;
             log.info("儲存zip檔案的路徑: {}", saveFilePath);
             try (InputStream inputStream = connection.getInputStream();
@@ -108,17 +105,16 @@ public class FileOutputService {
 
     public void sftpDownloadFileAndSend(JobParams jobParams) throws SftpException, IOException {
         log.info("jobParams:{}",jobParams);
-        log.info("jobParams:{}",jobParams.getDataSrc());
-        String targetDir = directories.getSendFileDir() + jobParams.getUnitName() + "/" + jobParams.getDataYr()+"/";
+        String targetDir = directories.getSendFileDir() + jobParams.getDATA_SRC() + "/" + jobParams.getDATA_DATE()+"/";
         sftpUtils.connect();
-        boolean hasFile = sftpUtils.listFiles(targetDir, jobParams.getDataSrc());
+        boolean hasFile = sftpUtils.listFiles(targetDir,jobParams.getFILE());
         if(!hasFile){
          throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"找不到檔案");
         }
-        sftpUtils.downloadFile(targetDir, jobParams.getDataSrc());
+        sftpUtils.downloadFile(directories.getLocalTempDir(),targetDir,jobParams.getFILE());
         sftpUtils.disconnect();
-        String sourceFilePath = "C://temp/"+jobParams.getDataSrc();
-        postFileToServer(sourceFilePath,"http://");
+        String sourceFilePath = directories.getLocalTempDir()+jobParams.getFILE();
+        postFileToServer(sourceFilePath,"");
     }
 
 }

@@ -7,7 +7,6 @@ import com.example.pentaho.service.FileOutputService;
 import com.example.pentaho.service.JobService;
 import com.example.pentaho.utils.UserContextUtils;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +31,7 @@ public class PentahoResource {
 
     @PostMapping("/start-job")
     public ResponseEntity<String> startJob(@RequestBody JobParams jobParams, HttpServletRequest request) throws IOException {
-        log.info("jobName:{}", jobParams.getJobName());
+        log.info("jobName:{}", jobParams.getJobs());
         Integer responseCode = jobService.startJob(jobParams, "start-job");
         if (responseCode == 200) {
             return new ResponseEntity<>("sucess", HttpStatus.OK);
@@ -47,7 +46,7 @@ public class PentahoResource {
      */
     @PostMapping("/sniff-step")
     public ResponseEntity<Integer> sniffStep(@RequestBody JobParams jobParams) throws IOException {
-        log.info("jobName:{}", jobParams.getJobName());
+        log.info("jobName:{}", jobParams.getJobs());
         jobService.sniffStep(jobParams);
         return new ResponseEntity<>(200, HttpStatus.OK);
     }
@@ -71,7 +70,7 @@ public class PentahoResource {
      */
     @PostMapping("/excuteETLJob")
     public ResponseEntity<Integer> excuteJob(@RequestBody JobParams jobParams) throws IOException {
-        log.info("jobName:{}", jobParams.getJobName());
+        log.info("jobName:{}", jobParams.getJobs());
         Integer responseCode = jobService.excuteJob(jobParams);
         if (responseCode == 200) {
             return new ResponseEntity<>(responseCode, HttpStatus.OK);
@@ -86,7 +85,7 @@ public class PentahoResource {
      */
     @PostMapping("/excuteETLTrans")
     public ResponseEntity<Integer> excuteTrans(@RequestBody JobParams jobParams) throws IOException {
-        log.info("jobName:{}",jobParams.getJobName());
+        log.info("jobName:{}",jobParams.getJobs());
         Integer responseCode = jobService.excuteTrans(jobParams);
         if(responseCode== 200){
             return new ResponseEntity<>(responseCode,HttpStatus.OK);
@@ -100,7 +99,7 @@ public class PentahoResource {
      */
     @PostMapping("/excuteTransWithParams")
     public ResponseEntity<Integer> excuteTransWithParams(@RequestBody JobParams jobParams) throws IOException {
-        log.info("jobName:{}",jobParams.getJobName());
+        log.info("jobName:{}",jobParams.getJobs());
         Integer responseCode = jobService.excuteTransWithParams(jobParams);
         if(responseCode== 200){
             return new ResponseEntity<>(responseCode,HttpStatus.OK);

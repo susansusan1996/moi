@@ -100,12 +100,12 @@ public class SFTPUtils {
      * @param remoteFileName：下載文件名
      * @return
      */
-    public boolean downloadFile(String remotePath, String remoteFileName) {
+    public boolean downloadFile(String localPath,String remotePath, String remoteFileName) {
         log.info("remotePath:{}",remotePath);
         log.info("remoteFileName:{}",remoteFileName);
         FileOutputStream fieloutput = null;
         try {
-            File file = new File("C://temp/" + remoteFileName);
+            File file = new File(localPath + remoteFileName);
             fieloutput = new FileOutputStream(file);
             sftp.get(remotePath + remoteFileName, fieloutput);
             if (log.isInfoEnabled()) {
@@ -136,12 +136,12 @@ public class SFTPUtils {
      * @return
      */
     public boolean uploadFile(String targertDir,MultipartFile file, String newFileName) {
-        connect();
+//        connect();
         FileInputStream in = null;
         try {
             createDir(targertDir);
             sftp.put(file.getInputStream(), newFileName);
-            disconnect();
+//            disconnect();
             return true;
         } catch (SftpException | IOException e) {
             log.error("sftp error:{} ", e);
@@ -154,7 +154,7 @@ public class SFTPUtils {
                 }
             }
         }
-        disconnect();
+//        disconnect();
         return false;
     }
 
@@ -257,9 +257,10 @@ public class SFTPUtils {
      */
     public boolean listFiles(String directory,String fileName) throws SftpException {
         log.info("directory:{}",directory);
+        log.info("fileName:{}",fileName);
         Vector<LsEntry> entries = sftp.ls(directory);
         for (LsEntry ls: entries){
-            log.info("fileName:",ls.getFilename());
+            log.info("fileName:{}",ls.getFilename());
             if(fileName.equals(ls.getFilename())){
                 return true;
             }

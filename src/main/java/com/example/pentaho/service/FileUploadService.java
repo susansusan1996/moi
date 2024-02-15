@@ -30,17 +30,23 @@ public class FileUploadService {
 
 
 
-    public boolean sftpUpload(MultipartFile file,String targetDir,String fileName){
-        log.info("targetDir:{}",targetDir);
+    public boolean sftpUpload(MultipartFile file,String[] targetDirs,String fileName){
+        log.info("receiveDir:{}",targetDirs[0]);
+        log.info("sendDir:{}",targetDirs[1]);
         log.info("fileName:{}",fileName);
         Boolean finishUpload = false;
         try {
-            sftpUtils.uploadFile(targetDir, file, fileName);
-            return sftpUtils.listFiles(targetDir, fileName);
+            sftpUtils.connect();
+            sftpUtils.uploadFile(targetDirs[0], file, fileName);
+            finishUpload =sftpUtils.listFiles(targetDirs[0], fileName);
+            if(finishUpload){
+                sftpUtils.createDir(targetDirs[1]);
+            }
         }catch (Exception e){
             log.info("e:{}",e);
-            return finishUpload;
         }
+        sftpUtils.disconnect();
+        return finishUpload;
     }
 
 }

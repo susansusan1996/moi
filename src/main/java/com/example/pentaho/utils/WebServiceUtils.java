@@ -1,7 +1,9 @@
 package com.example.pentaho.utils;
 
+import com.example.pentaho.component.JobParams;
 import com.example.pentaho.component.PentahoComponent;
 import com.example.pentaho.component.User;
+import com.example.pentaho.exception.MoiException;
 import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -11,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -40,13 +43,16 @@ public class WebServiceUtils {
 
 
 
-    public int getConnection(String webService, String json){
+    public int getConnection(String webService,JobParams jobParams){
         try {
-            String fullUrl = getUrl(webService, json);
-            if("".equals(fullUrl)){
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"INTERNAL_SERVER_ERROR");
-            }
-
+//            String fullUrl = getUrl(webService, json);
+//            if("".equals(fullUrl)){
+//                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"INTERNAL_SERVER_ERROR");
+//            }
+            log.info("再確認一次要轉成url的job參數:{}",jobParams);
+            StringBuilder temp = new StringBuilder(pentahoComponent.getWebTarget() + webService);
+            String fullUrl = getFullUrl(temp,jobParams);
+            log.info("fullUrl:{}",fullUrl);
             URL url = new URL(fullUrl);
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             basicAuthentication(con);
@@ -74,36 +80,26 @@ public class WebServiceUtils {
     }
 
 
-    private void appendUserParams(StringBuilder url){
-        User user = UserContextUtils.getUserHolder();
-        url.append("USER_ID"+equal+user.getUserId()+ampersand+
-                "UNITNAME"+equal+user.getUnitName());
-    }
-
-    public String getUrl(String webService, String json) {
-        try {
-            log.info("執行作業:{}", webService);
-            log.info("json:{}",json);
-            StringBuilder url = new StringBuilder(pentahoComponent.getWebTarget() + webService);
-            TreeNode treeNode = objectMapper.readTree(json);
-            Iterator<String> keys = treeNode.fieldNames();
-            while (keys.hasNext()) {
-                String key = keys.next();
-                log.info("key:{}",key);
-                url.append(String.valueOf(key).replaceAll("\"",""));
-                url.append(equal);
-                url.append(String.valueOf(treeNode.get(key)).replaceAll("\"",""));
-                url.append(ampersand);
+    private String getFullUrl(StringBuilder url,JobParams jobParams){
+        Method[] methods = JobParams.class.getMethods();
+        for (Method method : methods) {
+            if (method.getName().startsWith("get") && !method.getName().equals("getClass")) {
+                try {
+                    Object value = method.invoke(jobParams);
+                    if (value != null && !value.toString().isEmpty()) {
+                        url.append(method.getName().substring(3)).append(equal).append(value).append(ampersand);
+                    }
+                } catch (Exception e) {
+                    throw new MoiException("url解析錯誤 " + method.getName() + ": " + e.getMessage(), e);
+                }
             }
-            appendUserParams(url);
-            url.append(ampersand);
-            url.append("level=Debug");
-            log.info("url:{}", url);
-            return url.toString();
-        }catch (Exception e){
-            log.info("e:{}",e);
-            return "";
         }
+        // 移除最後一個 sperator
+        String newUrl = url.toString();
+        if (newUrl.endsWith(ampersand)) {
+            newUrl = newUrl.substring(0, newUrl.length() - ampersand.length());
+        }
+        return newUrl;
     }
 
 }

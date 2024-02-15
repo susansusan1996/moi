@@ -75,7 +75,7 @@ public class JobService {
 //          ex:"name=Job 2&xml=Y";
             StringBuilder postData = new StringBuilder();
             postData.append("name=");
-            postData.append(jobParams.getJobName());
+            postData.append(jobParams.getJobs());
             postData.append(sperator);
             postData.append("xml=Y");
             byte[] postDataBytes = postData.toString().getBytes(StandardCharsets.UTF_8);
@@ -134,7 +134,7 @@ public class JobService {
 //          String postData = "name=Job 2&xml=Y";
             StringBuilder postData = new StringBuilder();
             postData.append("trans=");
-            postData.append(jobParams.getJobName());
+            postData.append(jobParams.getJobs());
             postData.append(sperator);
             postData.append("step=");
             postData.append("JSON output");
@@ -258,7 +258,7 @@ public class JobService {
      * 測試啟動帶有parameter的transformation
      */
     public Integer excuteTransWithParams(JobParams jobParams) throws IOException {
-        String fileAbsolutePath = directories.getKtrFilePath() + jobParams.getJobName() + ".ktr";
+        String fileAbsolutePath = directories.getKtrFilePath() + jobParams.getJobs() + ".ktr";
         StringBuilder url = new StringBuilder(
                 pentahoComponent.getWebTarget() + "/kettle/executeTrans/?rep=&" +
                         "trans=" + fileAbsolutePath + sperator
@@ -370,28 +370,39 @@ public class JobService {
         return batchId+".csv";
     }
 
-    public String targetDir(String dateStamp){
+    public String[] targetDirs(String dateStamp){
         /**
          * /home/addr/batch_data/receive/unitName/yyyyMMdd
+         * /home/addr/batch_data/send/unitName/yyyyMMdd
          */
-        String targetDir =directories.getReceiveFileDir()+ UserContextUtils.getUserHolder().getUnitName() + "/" + dateStamp + "/";
-        log.info("targetDir:{}",targetDir);
-        return targetDir;
+        String receiveDir =directories.getReceiveFileDir()+ UserContextUtils.getUserHolder().getUnitName() + "/" + dateStamp + "/";
+        String sendDir=directories.getSendFileDir()+ UserContextUtils.getUserHolder().getUnitName() + "/" + dateStamp + "/";
+
+        log.info("receiveDir:{}",receiveDir);
+        log.info("sendDir:{}",sendDir);
+        String[] targetDirs = new String[]{receiveDir,sendDir};
+        return targetDirs;
     }
 
     public int sftpUploadAndExecuteTrans(MultipartFile file,JobParams jobParams){
-        String fileName = getFileName(file.getOriginalFilename(), jobParams.getBatchFormId());
+        String fileName = getFileName(file.getOriginalFilename(), jobParams.getBATCH_ID());
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
         String dateStamp = dateFormat.format(new Date());
-        String targetDir = targetDir(dateStamp);
-        boolean sftpUpload = fileUploadService.sftpUpload(file,targetDir,fileName);
+        String[] targetDirs = targetDirs(dateStamp);
+        boolean sftpUpload = fileUploadService.sftpUpload(file,targetDirs,fileName);
         /**pentaho params*/
-        jobParams.setDataYr(dateStamp);
-        jobParams.setDataSrc(fileName);
-        if(sftpUpload){
+        String userId = String.valueOf(UserContextUtils.getUserHolder().getUserId());
+        String unitName = UserContextUtils.getUserHolder().getUnitName();
+        jobParams.setJobs("Main.kjb");
+        jobParams.setDATA_DATE(dateStamp);
+        jobParams.setDATA_SRC(unitName);
+        jobParams.setFILE(fileName);
+        jobParams.setUSER_ID(userId);
+        if(!sftpUpload){
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"上傳失敗");
         }
-       return webServiceUtils.getConnection(PentahoWebService.executeTrans,gson.toJson(jobParams));
+//       return webServiceUtils.getConnection(PentahoWebService.executeTrans,gson.toJson(jobParams));
+       return webServiceUtils.getConnection(PentahoWebService.executeTrans,jobParams);
     }
 
 }

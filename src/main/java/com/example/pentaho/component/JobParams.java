@@ -13,127 +13,122 @@ public class JobParams implements Serializable {
     @JsonProperty("JobParamsJson")
     private String JobParamsJson;
 
+    /**
+    * 呼叫的jobName
+    * */
     @JsonProperty("jobName")
-    private String jobName;
+    private String jobs;
 
+
+    /**
+     * 檔案傳進來後，重新編輯過的檔名
+     * */
     @JsonProperty("filename")
-    private String filename;
+    private String FILE;
 
-    @JsonProperty("adrVersion")
-    private String adrVersion;
-
+    /**
+     * 執行批次的ID
+     */
     @JsonProperty("batchFormId")
-    private String batchFormId;
+    private String BATCH_ID;
 
+
+    /**
+     * csv檔案的ID
+     */
     @JsonProperty("batchFormOriginalFileId")
-    private String batchFormOriginalFileId;
+    private String BATCHFORM_ORIGINAL_FILE_ID;
 
+    /**
+     * 使用者ID
+     */
     @JsonProperty("userId")
-    private String userId;
-    @JsonProperty("unitName")
-    private String unitName;
+    private String USER_ID;
 
 
+    /**
+     * 使用者單位
+     */
     @JsonProperty("dataSrc")
-    private String dataSrc;
+    private String DATA_SRC;
 
+    /**
+     * 日期
+     * yyyymmdd
+     */
+    @JsonProperty("dataDate")
+    private String DATA_DATE;
 
-    @JsonProperty("dataYr")
-    private String dataYr;
-
-    public JobParams(String jobParamsJson, String jobName, String filename, String adrVersion, String batchFormId, String batchFormOriginalFileId, String userId, String unitName, String dataSrc, String dataYr) {
+    public JobParams(String jobParamsJson, String jobs, String FILE, String BATCH_ID, String BATCHFORM_ORIGINAL_FILE_ID, String USER_ID, String DATA_SRC, String DATA_DATE) {
         JobParamsJson = jobParamsJson;
-        this.jobName = jobName;
-        this.filename = filename;
-        this.adrVersion = adrVersion;
-        this.batchFormId = batchFormId;
-        this.batchFormOriginalFileId = batchFormOriginalFileId;
-        this.userId = userId;
-        this.unitName = unitName;
-        this.dataSrc = dataSrc;
-        this.dataYr = dataYr;
+        this.jobs = jobs;
+        this.FILE = FILE;
+        this.BATCH_ID = BATCH_ID;
+        this.BATCHFORM_ORIGINAL_FILE_ID = BATCHFORM_ORIGINAL_FILE_ID;
+        this.USER_ID = USER_ID;
+        this.DATA_SRC = DATA_SRC;
+        this.DATA_DATE = DATA_DATE;
     }
 
-    public String getDataSrc() {
-        return dataSrc;
+    public String getDATA_SRC() {
+        return DATA_SRC;
     }
 
-    public void setDataSrc(String dataSrc) {
-        this.dataSrc = dataSrc;
+    public void setDATA_SRC(String DATA_SRC) {
+        this.DATA_SRC = DATA_SRC;
     }
 
-    public String getDataYr() {
-        return dataYr;
+    public String getDATA_DATE() {
+        return DATA_DATE;
     }
 
-    public void setDataYr(String dataYr) {
-        this.dataYr = dataYr;
+    public void setDATA_DATE(String DATA_DATE) {
+        this.DATA_DATE = DATA_DATE;
     }
 
-    public String getUserId() {
-        return userId;
+    public String getUSER_ID() {
+        return USER_ID;
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
+    public void setUSER_ID(String USER_ID) {
+        this.USER_ID = USER_ID;
     }
 
-    public String getUnitName() {
-        return unitName;
-    }
-
-    public void setUnitName(String unitName) {
-        this.unitName = unitName;
-    }
 
     public JobParams() {
-        this.jobName = jobName;
+        this.jobs = jobs;
     }
 
-    public String getJobName() {
-        return jobName;
+    public String getJobs() {
+        return jobs;
     }
 
-    public void setJobName(String jobName) {
-        this.jobName = jobName;
+    public void setJobs(String jobs) {
+        this.jobs = jobs;
     }
 
-    public JobParams(String jobName) {
-        this.jobName = jobName;
+    public JobParams(String jobs) {
+        this.jobs = jobs;
     }
 
 
-    public String getFilename() {
-        return filename;
+    public String getFILE() {
+        return FILE;
     }
 
-    public void setFilename(String filename) {
-        this.filename = filename;
+    public void setFILE(String FILE) {
+        this.FILE = FILE;
     }
 
-    public String getAdrVersion() {
-        return adrVersion;
+    public String getBATCH_ID() {
+        return BATCH_ID;
     }
 
-    public void setAdrVersion(String adrVersion) {
-        this.adrVersion = adrVersion;
+    public void setBATCH_ID(String BATCH_ID) {
+        this.BATCH_ID = BATCH_ID;
     }
 
-    public String getBatchFormId() {
-        return batchFormId;
-    }
 
-    public void setBatchFormId(String batchFormId) {
-        this.batchFormId = batchFormId;
-    }
-
-    public String getBatchFormOriginalFileId() {
-        return batchFormOriginalFileId;
-    }
-
-    public void setBatchFormOriginalFileId(String batchFormOriginalFileId) {
-        this.batchFormOriginalFileId = batchFormOriginalFileId;
-    }
 
     public String getJobParamsJson() {
         return JobParamsJson;
@@ -143,16 +138,25 @@ public class JobParams implements Serializable {
         JobParamsJson = jobParamsJson;
     }
 
+    public String getBATCHFORM_ORIGINAL_FILE_ID() {
+        return BATCHFORM_ORIGINAL_FILE_ID;
+    }
+
+    public void setBATCHFORM_ORIGINAL_FILE_ID(String BATCHFORM_ORIGINAL_FILE_ID) {
+        this.BATCHFORM_ORIGINAL_FILE_ID = BATCHFORM_ORIGINAL_FILE_ID;
+    }
+
     @Override
     public String toString() {
         return "JobParams{" +
                 "JobParamsJson='" + JobParamsJson + '\'' +
-                ", jobName='" + jobName + '\'' +
-                ", filename='" + filename + '\'' +
-                ", adrVersion='" + adrVersion + '\'' +
-                ", batchFormId='" + batchFormId + '\'' +
-                ", batchFormOriginalFileId='" + batchFormOriginalFileId + '\'' +
+                ", jobs='" + jobs + '\'' +
+                ", FILE='" + FILE + '\'' +
+                ", BATCH_ID='" + BATCH_ID + '\'' +
+                ", BATCHFORM_ORIGINAL_FILE_ID='" + BATCHFORM_ORIGINAL_FILE_ID + '\'' +
+                ", USER_ID='" + USER_ID + '\'' +
+                ", DATA_SRC='" + DATA_SRC + '\'' +
+                ", DATA_DATE='" + DATA_DATE + '\'' +
                 '}';
     }
-
 }

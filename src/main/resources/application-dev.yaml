@@ -31,3 +31,9 @@ spring:
       port: 8005
       # Redis密碼，默認為空
       password:
+
+sftputils:
+  host: 52.33.116.195
+  port: 22
+  username: ec2-user
+  private-key: D:\moi_key\moi-addr-privatekey.pem

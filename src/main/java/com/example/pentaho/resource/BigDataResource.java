@@ -35,7 +35,13 @@ public class BigDataResource {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"檔案為空");
         }
         String fileName = batchFormId+".csv";
-        boolean sftpUpload = fileUploadService.sftpUpload(file, directories.getSendFileDir(), fileName);
+        /**
+         * /home/addr/big_data/receive/
+         * /home/addr/big_data/send/
+         *
+         * **/
+        String[] targetDirs = {directories.getBigDataReceiveFileDir(), directories.getBigDataSendFileDir()};
+        boolean sftpUpload = fileUploadService.sftpUpload(file, targetDirs, fileName);
         if(sftpUpload){
         return new ResponseEntity<Integer>(200,HttpStatus.OK);
         }

@@ -1,7 +1,7 @@
 #先不連接資料庫#
 spring:
-#  autoconfigure:
-#    exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
   data:
     redis:
       database: 0
@@ -14,14 +14,10 @@ spring:
     password: 1qaz@WSX
     driver-class-name: com.vertica.jdbc.Driver
   jpa:
-    hibernate:
-      dialect: org.hibernate.dialect.VerticaDialect
-#    hibernate:
-#     primary-dialect: org.hibernate.dialect.VerticaDialect
-      generate-ddl: true # 如果需要 Hibernate 自动生成数据库表，请设置为 true
 
-
-
+   hibernate:
+     primary-dialect: org.hibernate.dialect.VerticaDialect
+     generate-ddl: true # 如果需要 Hibernate 自动生成数据库表，请设置为 true
 
 
 server:
@@ -39,6 +35,9 @@ directory:
   receive-file-dir: /home/addr/batch_data/receive/
   #批次zip檔存放目錄
   send-file-dir: /home/addr/batch_data/send/
+  big-data-receive-file-dir: /home/addr/big_data/receive/
+  big-data-send-file-dir: /home/addr/big_data/send/
+  local-temp-dir: /home/ec2-user/temp/
   #  etl作業產出的檔案位置前綴
   etl-output-file-dir-prefix: /home/ec2-user/outputFile/
   # 模擬聖森存檔案
@@ -59,7 +58,7 @@ sftputils:
  host: 52.33.116.195
  port: 22
  username: ec2-user
- private-key: classpath:moi-addr-privatekey.pem
+ private-key: /home/ec2-user/test/moi-addr-privatekey.pem
 
 
 

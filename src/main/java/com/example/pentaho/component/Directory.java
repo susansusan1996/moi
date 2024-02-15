@@ -13,6 +13,13 @@ public class Directory {
 
     private String sendFileDir;
 
+    private String localTempDir;
+
+    private String bigDataReceiveFileDir;
+
+    private String bigDataSendFileDir;
+
+
     private String etlOutputFileDirPrefix; //etl作業產出的檔案位置前綴
 
     private String mockEtlSaveFileDirPrefix; //模擬聖森存檔案
@@ -67,12 +74,39 @@ public class Directory {
         this.ktrFilePath = ktrFilePath;
     }
 
+    public String getBigDataReceiveFileDir() {
+        return bigDataReceiveFileDir;
+    }
+
+    public void setBigDataReceiveFileDir(String bigDataReceiveFileDir) {
+        this.bigDataReceiveFileDir = bigDataReceiveFileDir;
+    }
+
+    public String getBigDataSendFileDir() {
+        return bigDataSendFileDir;
+    }
+
+    public void setBigDataSendFileDir(String bigDataSendFileDir) {
+        this.bigDataSendFileDir = bigDataSendFileDir;
+    }
+
+    public String getLocalTempDir() {
+        return localTempDir;
+    }
+
+    public void setLocalTempDir(String localTempDir) {
+        this.localTempDir = localTempDir;
+    }
+
     @Override
     public String toString() {
         return "Directory{" +
                 "target='" + target + '\'' +
                 ", receiveFileDir='" + receiveFileDir + '\'' +
                 ", sendFileDir='" + sendFileDir + '\'' +
+                ", localTempDir='" + localTempDir + '\'' +
+                ", bigDataReceiveFileDir='" + bigDataReceiveFileDir + '\'' +
+                ", bigDataSendFileDir='" + bigDataSendFileDir + '\'' +
                 ", etlOutputFileDirPrefix='" + etlOutputFileDirPrefix + '\'' +
                 ", mockEtlSaveFileDirPrefix='" + mockEtlSaveFileDirPrefix + '\'' +
                 ", ktrFilePath='" + ktrFilePath + '\'' +
