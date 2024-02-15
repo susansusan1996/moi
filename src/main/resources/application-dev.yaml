@@ -31,6 +31,20 @@ spring:
       port: 8005
       # Redis密碼，默認為空
       password:
+  datasource:
+    jdbc-url: jdbc:vertica://52.40.252.111:5433/vdb
+    username: dbadmin
+    password: 1qaz@WSX
+    driver-class-name: com.vertica.jdbc.Driver
+    hikari:
+      driver-class-name: io.opentracing.contrib.jdbc.TracingDriver
+      jdbc-url: jdbc:vertica://52.40.252.111:5433/vdb
+      poolName: Hikari
+      auto-commit: false
+      data-source-properties:
+        cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048\
 
 sftputils:
   host: 52.33.116.195
