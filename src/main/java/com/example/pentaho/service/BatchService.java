@@ -96,7 +96,7 @@ public class BatchService {
         connection.setRequestProperty("Authorization", "Basic " + encodedAuth);
     }
 
-    public void webService(JobParams jobParams){
-        webServiceUtils.getUrl(PentahoWebService.executeTrans, gson.toJson(jobParams));
-    }
+//    public void webService(JobParams jobParams){
+//        webServiceUtils.getUrl(PentahoWebService.executeTrans, gson.toJson(jobParams));
+//    }
 }

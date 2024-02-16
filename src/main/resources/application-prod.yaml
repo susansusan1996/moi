@@ -21,11 +21,6 @@ spring:
         prepStmtCacheSize: 250
         prepStmtCacheSqlLimit: 2048
 
-   hibernate:
-     primary-dialect: org.hibernate.dialect.VerticaDialect
-     generate-ddl: true # 如果需要 Hibernate 自动生成数据库表，请设置为 true
-
-
 
 server:
   port: 8080
@@ -65,7 +60,7 @@ sftputils:
  host: 52.33.116.195
  port: 22
  username: ec2-user
- private-key: /home/ec2-user/test/moi-addr-privatekey.pem
+ private-key: /home/ec2-user/key/moi-addr-privatekey.pem
 
 
 
