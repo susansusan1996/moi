@@ -53,8 +53,12 @@ key:
   key-name: rsa.pub
 
 apserver:
-  #  模擬聖森存檔案，正式介接要把這裡改成聖森的api url
-  target-url: http://34.211.215.66:8081/api/batchForm/getFile
+  #  批次查詢: 聖森接收批次結束檔案的api url
+  target-url: http://211.75.133.17:7007/addr/api/auth/batchForm/systemUpdate
+  #  ?id=c27d8bff-f0c3-47b4-a20d-658821d5981b&
+  #  originalFileId=c27d8bff-f0c3-47b4-a20d-658821d5981b&
+  #  processedCounts=1&
+  #  status=DONE
 
 sftputils:
  host: 52.33.116.195
