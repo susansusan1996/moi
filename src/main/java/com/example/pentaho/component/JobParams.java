@@ -59,6 +59,20 @@ public class JobParams implements Serializable {
     @JsonProperty("dataDate")
     private String DATA_DATE;
 
+    /**
+     *
+     * processedCounts
+     */
+    @JsonProperty("processedCounts")
+    private Integer processedCounts;
+
+
+    /**
+     *
+     * status
+     */
+    private String status;
+
     public JobParams(String jobParamsJson, String jobs, String FILE, String BATCH_ID, String BATCHFORM_ORIGINAL_FILE_ID, String USER_ID, String DATA_SRC, String DATA_DATE) {
         JobParamsJson = jobParamsJson;
         this.jobs = jobs;
@@ -146,6 +160,22 @@ public class JobParams implements Serializable {
         this.BATCHFORM_ORIGINAL_FILE_ID = BATCHFORM_ORIGINAL_FILE_ID;
     }
 
+    public Integer getProcessedCounts() {
+        return processedCounts;
+    }
+
+    public void setProcessedCounts(Integer processedCounts) {
+        this.processedCounts = processedCounts;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
     @Override
     public String toString() {
         return "JobParams{" +
@@ -157,6 +187,8 @@ public class JobParams implements Serializable {
                 ", USER_ID='" + USER_ID + '\'' +
                 ", DATA_SRC='" + DATA_SRC + '\'' +
                 ", DATA_DATE='" + DATA_DATE + '\'' +
+                ", processedCounts=" + processedCounts +
+                ", status='" + status + '\'' +
                 '}';
     }
 }

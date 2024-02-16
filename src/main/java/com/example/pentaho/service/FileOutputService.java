@@ -4,6 +4,7 @@ import com.example.pentaho.component.ApServerComponent;
 import com.example.pentaho.component.Directory;
 import com.example.pentaho.component.IbdTbAddrStatisticsOverallDev;
 import com.example.pentaho.component.JobParams;
+import com.example.pentaho.exception.MoiException;
 import com.example.pentaho.repository.IbdTbAddrStatisticsOverallDevRepository;
 import com.example.pentaho.utils.SFTPUtils;
 import com.jcraft.jsch.SftpException;
@@ -21,6 +22,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
@@ -43,6 +45,8 @@ public class FileOutputService {
     private IbdTbAddrStatisticsOverallDevRepository ibdTbAddrStatisticsOverallDevRepository;
 
     private final static Logger log = LoggerFactory.getLogger(JobService.class);
+    private final String sperator = "&";
+
 
     public void etlFinishedAndSendFile(JobParams jobParams) throws IOException {
 //        String sourceFilePath =directories.getTarget()+directories.getReceivePath()+
@@ -53,7 +57,8 @@ public class FileOutputService {
         postFileToServer(
                 directories.getMockEtlSaveFileDirPrefix() +
                         jobParams.getFILE() + ".zip",
-                apServerComponent.getTargetUrl()
+                apServerComponent.getTargetUrl(),
+                null
         );
     }
 
@@ -83,7 +88,9 @@ public class FileOutputService {
     }
 
 
-    public void postFileToServer(String sourceFilePath, String targetUrl) throws IOException {
+    public void postFileToServer(String sourceFilePath, String targetUrl, JobParams jobParams) throws IOException {
+        targetUrl = getFullUrl(new StringBuilder(targetUrl), jobParams);
+        log.info("targetUrl: {}",targetUrl);
         File file = new File(sourceFilePath);
         if (!file.exists()) {
             throw new IOException("File not found: " + sourceFilePath);
@@ -99,7 +106,7 @@ public class FileOutputService {
         });
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(parts, headers);
         RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<Void> responseEntity = restTemplate.exchange(targetUrl, HttpMethod.POST, requestEntity, Void.class, parts);
+        ResponseEntity<Void> responseEntity = restTemplate.exchange(targetUrl, HttpMethod.PUT, requestEntity, Void.class, parts);
 
         HttpStatusCode statusCode = responseEntity.getStatusCode();
         if (statusCode == HttpStatus.OK) {
@@ -121,7 +128,7 @@ public class FileOutputService {
         sftpUtils.downloadFile(directories.getLocalTempDir(),targetDir,jobParams.getFILE());
         sftpUtils.disconnect();
         String sourceFilePath = directories.getLocalTempDir()+jobParams.getFILE();
-        postFileToServer(sourceFilePath,"");
+        postFileToServer(sourceFilePath, apServerComponent.getTargetUrl(), jobParams);
     }
     
 
@@ -181,6 +188,28 @@ public class FileOutputService {
             log.error("File upload failed. Response Code: {} ", statusCode.value());
         }
         
+    }
+
+    private String getFullUrl(StringBuilder url, JobParams jobParams) {
+        url.append("?");
+        if (jobParams.getBATCH_ID() != null) {
+            url.append("id").append("=").append(jobParams.getBATCH_ID()).append(sperator);
+        }
+        if (jobParams.getBATCHFORM_ORIGINAL_FILE_ID() != null) {
+            url.append("originalFileId").append("=").append(jobParams.getBATCHFORM_ORIGINAL_FILE_ID()).append(sperator);
+        }
+        if (jobParams.getProcessedCounts() != null) {
+            url.append("processedCounts").append("=").append(jobParams.getProcessedCounts()).append(sperator);
+        }
+        if (jobParams.getStatus() != null) {
+            url.append("status").append("=").append(jobParams.getStatus()).append(sperator);
+        }
+        // 移除最後一個 sperator
+        String newUrl = url.toString();
+        if (newUrl.endsWith(sperator)) {
+            newUrl = newUrl.substring(0, newUrl.length() - sperator.length());
+        }
+        return newUrl;
     }
 
     
