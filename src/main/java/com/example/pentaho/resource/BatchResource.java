@@ -46,7 +46,7 @@ public class BatchResource {
     /**
      * 測試啟動帶有parameter的transformation
      */
-    @PostMapping("/excuteETLJob")
+//    @PostMapping("/excuteETLJob")
     public ResponseEntity<Integer> excuteTransWithParams(@RequestBody JobParams jobParams) throws IOException {
         log.info("ETL作業開始，參數為{}: ", jobParams.toString());
         Integer responseCode = jobService.excuteTransWithParams(jobParams);
@@ -60,7 +60,7 @@ public class BatchResource {
     /**
      * etl結束，並傳送檔案給聖森
      */
-    @PostMapping(path = "/finished")
+//    @PostMapping(path = "/finished")
     public void etlFinishedAndSendFile(@RequestBody JobParams jobParams) throws IOException {
         log.info("ETL回CALL API，參數為{}: ", jobParams.toString());
         fileOutputService.etlFinishedAndSendFile(jobParams);
@@ -79,7 +79,7 @@ public class BatchResource {
 
 
 
-    @PostMapping("/sftpUploadAndExecuteTrans")
+    @PostMapping("/excuteETLJob")
     public void sftpUploadAndExecuteTrans(@RequestPart("jobParams") String jobParamsJson,@RequestPart("uploadFile") MultipartFile file) throws IOException {
         if(file == null){
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"檔案為空");
@@ -89,7 +89,7 @@ public class BatchResource {
         jobService.sftpUploadAndExecuteTrans(file,jobParams);
     }
 
-    @PostMapping(path = "/finishedThenSftp")
+    @PostMapping(path = "/finished")
     public void sftpDownloadAndSend(@RequestBody JobParams jobParams) throws IOException, SftpException {
        fileOutputService.sftpDownloadFileAndSend(jobParams);
     }
