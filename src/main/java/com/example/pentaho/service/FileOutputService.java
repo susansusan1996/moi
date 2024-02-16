@@ -2,7 +2,9 @@ package com.example.pentaho.service;
 
 import com.example.pentaho.component.ApServerComponent;
 import com.example.pentaho.component.Directory;
+import com.example.pentaho.component.IbdTbAddrStatisticsOverallDev;
 import com.example.pentaho.component.JobParams;
+import com.example.pentaho.repository.IbdTbAddrStatisticsOverallDevRepository;
 import com.example.pentaho.utils.SFTPUtils;
 import com.jcraft.jsch.SftpException;
 import org.slf4j.Logger;
@@ -22,6 +24,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
+import java.util.List;
 
 @Service
 public class FileOutputService {
@@ -34,6 +37,10 @@ public class FileOutputService {
 
     @Autowired
     private SFTPUtils sftpUtils;
+
+
+    @Autowired
+    private IbdTbAddrStatisticsOverallDevRepository ibdTbAddrStatisticsOverallDevRepository;
 
     private final static Logger log = LoggerFactory.getLogger(JobService.class);
 
@@ -116,5 +123,67 @@ public class FileOutputService {
         String sourceFilePath = directories.getLocalTempDir()+jobParams.getFILE();
         postFileToServer(sourceFilePath,"");
     }
+    
 
+    public boolean sftpDownloadFile(String batchId){
+        log.info("batchId:{}",batchId);
+        String fileName = batchId+".csv";
+        boolean result =  false;
+        try {
+            sftpUtils.connect();
+            result = sftpUtils.downloadFile(directories.getLocalTempDir(),directories.getBigDataSendFileDir(),fileName);
+        }catch (Exception e){
+            log.info("e:{}",e.toString());
+        }
+        sftpUtils.disconnect();
+        return result;
+    }
+
+    public List<IbdTbAddrStatisticsOverallDev> findLog(String batchId){
+        return ibdTbAddrStatisticsOverallDevRepository.findAll();
+    }
+
+
+    /**
+     *大量查詢
+     * sftp抓檔
+     * 撈log
+     * post給聖森
+     * **/
+    public void postFileAndLog(String batchId) throws IOException{
+        boolean hasFile = sftpDownloadFile(batchId);
+        if(!hasFile) {
+            /***/
+        }
+        List<IbdTbAddrStatisticsOverallDev> logs = findLog(batchId);
+        File file = new File(directories.getLocalTempDir()+batchId+".csv");
+        if (!file.exists()) {
+            throw new IOException("File not found: " + directories.getLocalTempDir()+batchId+".csv");
+        }
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + "eyJhbGciOiJSUzI1NiJ9.eyJ1c2VyIjoie30iLCJqdGkiOiJNVE0yTmpRMk9HWXRPRGcyWWkwME9UTXhMV0UyWlRRdE9URmlNelE1WlRjek5ETTAiLCJleHAiOjE3Mzc2MDE4MzJ9.3ghp8wCHziA6Az9UpS8ssL1d_JB5apN-3pbIV28BWx3bOK-FjRGA9676-EDpqhXrth_Sqln_TFd4wT0RGJ4V1M0RtKXj3EMpFBBV0otdAsgZLm0JcK7LjUrXmWvyfsBcasnHQ83rMo4hE4GeBgXlrhPUlRxnPcVbk4UrVkaMtxyngDfkGpInPJokUWzrScgo7TDA-aKmodw2eZbxYPjGTw1fzXTYHpJC4VNyAYbeGOTd9uMh-cCAyyYMsw__JmkQOAYPpKLnHdyHSb6C8ezxAZJNrI5Rpg4cG0ousXh694IXmixI_R7Q1nVBMFl7GG946fgTO9twiqhuaB64beUILg");
+        MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
+        parts.add("etlOutPutFile", new org.springframework.core.io.ByteArrayResource(Files.readAllBytes(file.toPath())) {
+            @Override
+            public String getFilename() {
+                return file.getName();
+            }
+        });
+        parts.add("log",logs);
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(parts, headers);
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<Void> responseEntity = restTemplate.exchange(apServerComponent.getTargetUrl(), HttpMethod.POST, requestEntity, Void.class, parts);
+
+        HttpStatusCode statusCode = responseEntity.getStatusCode();
+        if (statusCode == HttpStatus.OK) {
+            log.info("File uploaded successfully.");
+        } else {
+            log.error("File upload failed. Response Code: {} ", statusCode.value());
+        }
+        
+    }
+
+    
+    
+    
 }
