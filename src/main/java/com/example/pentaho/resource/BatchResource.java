@@ -3,9 +3,14 @@ package com.example.pentaho.resource;
 
 import com.example.pentaho.component.Directory;
 import com.example.pentaho.component.JobParams;
+import com.example.pentaho.component.User;
+import com.example.pentaho.service.BatchService;
 import com.example.pentaho.service.FileOutputService;
+import com.example.pentaho.service.FileUploadService;
 import com.example.pentaho.service.JobService;
 import com.example.pentaho.utils.FileUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jcraft.jsch.SftpException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,8 +18,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.util.Objects;
 
 
 @RequestMapping("/api/batchForm")
@@ -29,8 +36,11 @@ public class BatchResource {
     @Autowired
     private FileOutputService fileOutputService;
 
+
     @Autowired
     private Directory directories;
+
+    private ObjectMapper objectMapper = new ObjectMapper();
 
 
     /**
@@ -66,5 +76,21 @@ public class BatchResource {
         FileUtils.saveFile(directories.getMockEtlSaveFileDirPrefix(), multiFile);
     }
 
+
+
+    @PostMapping("/sftpUploadAndExecuteTrans")
+    public void sftpUploadAndExecuteTrans(@RequestPart("jobParams") String jobParamsJson,@RequestPart("uploadFile") MultipartFile file) throws IOException {
+        if(file == null){
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"檔案為空");
+        }
+        JobParams jobParams = objectMapper.readValue(jobParamsJson, JobParams.class);
+        log.info("jobParams:{}",jobParams);
+        jobService.sftpUploadAndExecuteTrans(file,jobParams);
+    }
+
+    @PostMapping(path = "/finishedThenSftp")
+    public void sftpDownloadAndSend(@RequestBody JobParams jobParams) throws IOException, SftpException {
+       fileOutputService.sftpDownloadFileAndSend(jobParams);
+    }
 
 }

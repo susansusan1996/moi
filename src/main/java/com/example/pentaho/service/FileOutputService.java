@@ -3,6 +3,8 @@ package com.example.pentaho.service;
 import com.example.pentaho.component.ApServerComponent;
 import com.example.pentaho.component.Directory;
 import com.example.pentaho.component.JobParams;
+import com.example.pentaho.utils.SFTPUtils;
+import com.jcraft.jsch.SftpException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -29,15 +32,20 @@ public class FileOutputService {
     @Autowired
     private ApServerComponent apServerComponent;
 
+    @Autowired
+    private SFTPUtils sftpUtils;
+
     private final static Logger log = LoggerFactory.getLogger(JobService.class);
 
     public void etlFinishedAndSendFile(JobParams jobParams) throws IOException {
-        String sourceFilePath = directories.getTarget() + directories.getEtlOutputFileDirPrefix() + jobParams.getFilename() + ".zip";
+//        String sourceFilePath =directories.getTarget()+directories.getReceivePath()+
+
+        String sourceFilePath = directories.getTarget() + directories.getEtlOutputFileDirPrefix() + jobParams.getFILE() + ".zip";
         //先落地
         downloadFileFromPentahoServer(jobParams, sourceFilePath);
         postFileToServer(
                 directories.getMockEtlSaveFileDirPrefix() +
-                        jobParams.getFilename() + ".zip",
+                        jobParams.getFILE() + ".zip",
                 apServerComponent.getTargetUrl()
         );
     }
@@ -48,7 +56,7 @@ public class FileOutputService {
         try {
             url = new URL(sourceFilePath);
             URLConnection connection = url.openConnection();
-            String fileName = jobParams.getFilename() + ".zip";
+            String fileName = jobParams.getFILE() + ".zip";
             String saveFilePath = directories.getMockEtlSaveFileDirPrefix() + fileName;
             log.info("儲存zip檔案的路徑: {}", saveFilePath);
             try (InputStream inputStream = connection.getInputStream();
@@ -93,4 +101,20 @@ public class FileOutputService {
             log.error("File upload failed. Response Code: {} ", statusCode.value());
         }
     }
+
+
+    public void sftpDownloadFileAndSend(JobParams jobParams) throws SftpException, IOException {
+        log.info("jobParams:{}",jobParams);
+        String targetDir = directories.getSendFileDir() + jobParams.getDATA_SRC() + "/" + jobParams.getDATA_DATE()+"/";
+        sftpUtils.connect();
+        boolean hasFile = sftpUtils.listFiles(targetDir,jobParams.getFILE());
+        if(!hasFile){
+         throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"找不到檔案");
+        }
+        sftpUtils.downloadFile(directories.getLocalTempDir(),targetDir,jobParams.getFILE());
+        sftpUtils.disconnect();
+        String sourceFilePath = directories.getLocalTempDir()+jobParams.getFILE();
+        postFileToServer(sourceFilePath,"");
+    }
+
 }

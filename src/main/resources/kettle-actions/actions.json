@@ -1,42 +1,26 @@
 {
-  "trans": {
-    "add": {
-      "url": "/kettle/addTrans",
-      "para": {}
-    },
-    "image": {
-      "url": "/kettle/transImage",
-      "para": {}
-    },
-    "status": {
-      "url": "/kettle/transStatus",
-      "para": {}
-    },
-    "prepareExec": {
-      "url": "/kettle/prepareExec",
-      "para": {}
-    },
-   "startExec":{
-     "url":"/kettle/startExec",
-     "para": {}
-   },
-   "start":{
-      "url":"/kettle/startTrans",
-      "para":{
-        "trans": "",
-        "xml": ""
+  "executeTrans":{
+      "params": {
+        "rep":"PentahoRepository",
+        "trans": "Main.ktr",
+        "BATCH_ID":"批次ID",
+        "DATA_SRC": "單位名稱",
+        "DARA_DATE":"yyyymmdd",
+        "FILE":"檔案名稱",
+        "TOKEN":"finised Job Token",
+        "USER_ID":"使用者ID"
       }
     },
-    "run":"/kettle/runTrans",
-    "execute":"/kettle/executeTrans",
-    "pause":"/kettle/pauseTrans",
-    "stop":"/kettle/stopTrans",
-    "remove":"/kettle/removeTrans",
-    "cleanup":"/kettle/cleanupTrans",
-    "sniffStep":"/kettle/sniffStep",
-    "register":"/kettle/registerTrans"
-  },
-  "job": {
-
+  "executeJobs": {
+    "params": {
+      "rep":"PentahoRepository",
+      "jobs": "Main.kjb",
+      "BATCH_ID":"批次ID",
+      "DATA_SRC": "單位名稱",
+      "DARA_DATE":"yyyymmdd",
+      "FILE":"檔案名稱",
+      "TOKEN":"finised Job Token",
+      "USER_ID":"使用者ID"
+    }
   }
 }

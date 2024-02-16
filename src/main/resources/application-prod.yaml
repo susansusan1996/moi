@@ -1,25 +1,45 @@
 #先不連接資料庫#
 spring:
-  autoconfigure:
-    exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
   data:
     redis:
       database: 0
       host: 34.211.215.66
       port: 8005
       password:
+  datasource:
+    jdbc-url: jdbc:vertica://52.40.252.111:5433/vdb
+    username: dbadmin
+    password: 1qaz@WSX
+    driver-class-name: com.vertica.jdbc.Driver
+    hikari:
+      driver-class-name: io.opentracing.contrib.jdbc.TracingDriver
+      jdbc-url: jdbc:vertica://52.40.252.111:5433/vdb
+      poolName: Hikari
+      auto-commit: false
+      data-source-properties:
+        cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
+
 
 server:
-  port: 8081
+  port: 8080
 
 pentaho:
-  target: http://52.33.116.195:8081/pentaho
+  web-target: http://52.33.116.195:8081/pentaho
   username: admin
   password: password
 
 directory:
-  path: /home/ec2-user/test/
+  #pentaho server IP
   target: http://52.33.116.195
+  #原始csv存放目錄
+  receive-file-dir: /home/addr/batch_data/receive/
+  #批次zip檔存放目錄
+  send-file-dir: /home/addr/batch_data/send/
+  big-data-receive-file-dir: /home/addr/big_data/receive/
+  big-data-send-file-dir: /home/addr/big_data/send/
+  local-temp-dir: /home/ec2-user/temp/
   #  etl作業產出的檔案位置前綴
   etl-output-file-dir-prefix: /home/ec2-user/outputFile/
   # 模擬聖森存檔案
@@ -29,8 +49,18 @@ directory:
 
 #如果是自己要在 aws api server上測試，要改成rsa.pub(用自己的公鑰)
 key:
-  key-name: jwt.pub
+#  key-name: jwt.pub
+  key-name: rsa.pub
 
 apserver:
   #  模擬聖森存檔案，正式介接要把這裡改成聖森的api url
   target-url: http://34.211.215.66:8081/api/batchForm/getFile
+
+sftputils:
+ host: 52.33.116.195
+ port: 22
+ username: ec2-user
+ private-key: /home/ec2-user/key/moi-addr-privatekey.pem
+
+
+

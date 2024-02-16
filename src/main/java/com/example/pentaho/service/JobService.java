@@ -1,19 +1,20 @@
 package com.example.pentaho.service;
 
-import com.example.pentaho.component.ApServerComponent;
 import com.example.pentaho.component.Directory;
 import com.example.pentaho.component.JobParams;
 import com.example.pentaho.component.PentahoComponent;
+import com.example.pentaho.component.PentahoWebService;
 import com.example.pentaho.exception.MoiException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.example.pentaho.utils.UserContextUtils;
+import com.example.pentaho.utils.WebServiceUtils;
+import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.*;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.*;
 import java.lang.reflect.Method;
@@ -22,7 +23,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.Base64;
+import java.util.Date;
 
 
 @Service
@@ -37,7 +40,15 @@ public class JobService {
     @Autowired
     private Directory directories;
 
+    @Autowired
+    private WebServiceUtils webServiceUtils;
+
+    @Autowired
+    private FileUploadService fileUploadService;
+
     private final String sperator = "&";
+
+    private Gson gson = new Gson();
 
     private final static Logger log = LoggerFactory.getLogger(JobService.class);
 
@@ -48,7 +59,7 @@ public class JobService {
         try {
             /**targerUrl**/
 //         Ex: http://52.33.116.195:8081/pentaho/kettle/startTrans/;
-            URL url = new URL(pentahoComponent.getTarget() + "/kettle/startTrans/");
+            URL url = new URL(pentahoComponent.getWebTarget() + "/kettle/startTrans/");
 
             /**openConnection**/
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -64,7 +75,7 @@ public class JobService {
 //          ex:"name=Job 2&xml=Y";
             StringBuilder postData = new StringBuilder();
             postData.append("name=");
-            postData.append(jobParams.getJobName());
+            postData.append(jobParams.getJobs());
             postData.append(sperator);
             postData.append("xml=Y");
             byte[] postDataBytes = postData.toString().getBytes(StandardCharsets.UTF_8);
@@ -106,7 +117,7 @@ public class JobService {
         log.info("jobParams:{}", jobParams);
         try {
             /**targerUrl**/
-            URL url = new URL(pentahoComponent.getTarget() + "/kettle/sniffStep/");
+            URL url = new URL(pentahoComponent.getWebTarget() + "/kettle/sniffStep/");
 
 
             /**openConnection**/
@@ -123,7 +134,7 @@ public class JobService {
 //          String postData = "name=Job 2&xml=Y";
             StringBuilder postData = new StringBuilder();
             postData.append("trans=");
-            postData.append(jobParams.getJobName());
+            postData.append(jobParams.getJobs());
             postData.append(sperator);
             postData.append("step=");
             postData.append("JSON output");
@@ -201,16 +212,19 @@ public class JobService {
 
     public Integer excuteTrans(JobParams jobParams) throws IOException {
         /**實測:user&pass不需要，需要的是basicAuthentication**/
-//      ex:http://52.33.116.195:8081/pentaho/kettle/executeTrans/?trans=/home/ec2-user/API_TEST.ktr/API_TEST.ktr&level=Debug
+//      ex:http://52.33.116.195:8081/pentaho/kettle/executeTrans/?rep=PetahoRepository&trans=/home/addr/dev/PI_TEST.ktr&level=Debug
 
         /**
-         * 使用檔案在作業系統上的 '絕對路徑'
-         *如果有指定repositpry(rep=kettle-itbigbird),才可以使用'相對路徑'
+         * 使用檔案在Pentaho BI server 上的 '絕對路徑'
+         * 如果有指定repositpry(rep=kettle-itbigbird),才可以使用'相對路徑'
          **/
-        String fileAbsolutePath = "/home/addr/prod/API_TEST.ktr";
-        String testFileAbsolutePath = ":home:addr:API_TEST.ktr";
-        String url = pentahoComponent.getTarget() + "/kettle/executeTrans/?" +
-                "trans=" + fileAbsolutePath + sperator + "level=Debug";
+        String fileAbsolutePath = "/home/addr/dev/MAIN.ktr";
+        /**這裡寫一個可以把jobParams寫成url的方法**/
+        String url = pentahoComponent.getWebTarget() +
+                "/kettle/executeTrans/?" +
+                "rep=PentahoRepository"+sperator +
+                "trans=" + fileAbsolutePath + sperator +
+                "level=Debug";
 
         log.info("request url:{}", url);
         URL obj = new URL(url);
@@ -244,9 +258,9 @@ public class JobService {
      * 測試啟動帶有parameter的transformation
      */
     public Integer excuteTransWithParams(JobParams jobParams) throws IOException {
-        String fileAbsolutePath = directories.getKtrFilePath() + jobParams.getJobName() + ".ktr";
+        String fileAbsolutePath = directories.getKtrFilePath() + jobParams.getJobs() + ".ktr";
         StringBuilder url = new StringBuilder(
-                pentahoComponent.getTarget() + "/kettle/executeTrans/?rep=&" +
+                pentahoComponent.getWebTarget() + "/kettle/executeTrans/?rep=&" +
                         "trans=" + fileAbsolutePath + sperator
         );
         String newUrl = getFullUrl(url);
@@ -275,7 +289,7 @@ public class JobService {
          * /path/to/file, the encoded pathId would be :path:to:file.
          **/
         String pentahoBiPath = ":home:admin:API_TEST.ktr";
-        String url = pentahoComponent.getTarget() + "/api/repo/files/" +
+        String url = pentahoComponent.getWebTarget() + "/api/repo/files/" +
                 pentahoBiPath + "/download";
 //      ex: http://52.33.116.195:8081/pentaho/api/repo/files/:home:admin:API_TEST.ktr/download";
         log.info("request url:{}", url);
@@ -291,11 +305,11 @@ public class JobService {
         log.info("Response Code:{}", responseCode);
 
         if (responseCode == 200) {
-            File directory = new File(directories.getPath());
+            File directory = new File(directories.getReceiveFileDir());
             if (!directory.exists()) {
                 directory.mkdirs(); // 創建路徑
             }
-            Path path = Paths.get(directories.getPath());
+            Path path = Paths.get(directories.getReceiveFileDir());
             Path file = path.resolve("API_TEST.zip");
             Files.write(file, con.getInputStream().readAllBytes());
         }
@@ -342,5 +356,54 @@ public class JobService {
         log.info("Response Content:{}", response);
         return responseCode;
     }
+    /**
+     * 檔名規格:origrinalFileName_batchId_yyyyMMdd_HHmmss
+     * @param origrinalFileName
+     * @return
+     */
+    private String getFileName(String origrinalFileName,String batchId){
+//        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
+//        String timestamp = dateFormat.format(new Date());
+//        int last = origrinalFileName.lastIndexOf(".");
+//        String fileName = origrinalFileName.substring(0, last);
+//        return fileName+"_"+batchId+".csv";
+        return batchId+".csv";
+    }
+
+    public String[] targetDirs(String dateStamp){
+        /**
+         * /home/addr/batch_data/receive/unitName/yyyyMMdd
+         * /home/addr/batch_data/send/unitName/yyyyMMdd
+         */
+        String receiveDir =directories.getReceiveFileDir()+ UserContextUtils.getUserHolder().getUnitName() + "/" + dateStamp + "/";
+        String sendDir=directories.getSendFileDir()+ UserContextUtils.getUserHolder().getUnitName() + "/" + dateStamp + "/";
+
+        log.info("receiveDir:{}",receiveDir);
+        log.info("sendDir:{}",sendDir);
+        String[] targetDirs = new String[]{receiveDir,sendDir};
+        return targetDirs;
+    }
+
+    public int sftpUploadAndExecuteTrans(MultipartFile file,JobParams jobParams){
+        String fileName = getFileName(file.getOriginalFilename(), jobParams.getBATCH_ID());
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
+        String dateStamp = dateFormat.format(new Date());
+        String[] targetDirs = targetDirs(dateStamp);
+        boolean sftpUpload = fileUploadService.sftpUpload(file,targetDirs,fileName);
+        /**pentaho params*/
+        String userId = String.valueOf(UserContextUtils.getUserHolder().getUserId());
+        String unitName = UserContextUtils.getUserHolder().getUnitName();
+        jobParams.setJobs("Main.kjb");
+        jobParams.setDATA_DATE(dateStamp);
+        jobParams.setDATA_SRC(unitName);
+        jobParams.setFILE(fileName);
+        jobParams.setUSER_ID(userId);
+        if(!sftpUpload){
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"上傳失敗");
+        }
+//       return webServiceUtils.getConnection(PentahoWebService.executeTrans,gson.toJson(jobParams));
+       return webServiceUtils.getConnection(PentahoWebService.executeTrans,jobParams);
+    }
+
 }
 
