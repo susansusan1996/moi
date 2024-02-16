@@ -10,6 +10,8 @@ import com.example.pentaho.service.FileUploadService;
 import com.example.pentaho.service.JobService;
 import com.example.pentaho.utils.FileUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.gson.Gson;
 import com.jcraft.jsch.SftpException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Objects;
 
 
@@ -90,7 +93,35 @@ public class BatchResource {
 
     @PostMapping(path = "/finished")
     public void sftpDownloadAndSend(@RequestBody JobParams jobParams) throws IOException, SftpException {
-       fileOutputService.sftpDownloadFileAndSend(jobParams);
+        log.info("jobParamsJsonStr:{}",jobParams.getJobParamsJson());
+     
+        String inputString = jobParams.getJobParamsJson();
+
+       
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        
+        ObjectNode jsonObject = objectMapper.createObjectNode();
+
+      
+        String[] keyValuePairs = inputString.split(",");
+        for (String pair : keyValuePairs) {
+          
+            String[] keyValue = pair.split(":");
+           
+            String key = keyValue[0].trim().replaceAll("[{}]", "");
+            String value = keyValue[1].trim().replaceAll("[{}]", "");
+          
+            jsonObject.put(key, value);
+        }
+
+       
+        log.info("jsonObject:{}",jsonObject.toString());
+        Gson gson = new Gson();
+
+        JobParams jobParams1 = objectMapper.readValue(jsonObject.toString(), JobParams.class);
+        log.info("jobParams1:{}",jobParams1);
+        fileOutputService.sftpDownloadFileAndSend(jobParams1);
     }
 
 }

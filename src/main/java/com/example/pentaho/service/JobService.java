@@ -393,7 +393,7 @@ public class JobService {
         /**pentaho params*/
         String userId = String.valueOf(UserContextUtils.getUserHolder().getUserId());
         String unitName = UserContextUtils.getUserHolder().getUnitName();
-        jobParams.setJobs("Main.kjb");
+//        jobParams.setJobs("test_20240216.ktr");
         jobParams.setDATA_DATE(dateStamp);
         jobParams.setDATA_SRC(unitName);
         jobParams.setFILE(fileName);

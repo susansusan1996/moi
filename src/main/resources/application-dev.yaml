@@ -2,7 +2,7 @@ server:
   port: 8888
 
 pentaho:
-  web-target: http://localhost:8080/pentaho
+  web-target: http://localhost:8080/
   username: cluster
   password: cluster
 
