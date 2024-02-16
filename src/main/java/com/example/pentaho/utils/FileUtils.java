@@ -26,7 +26,7 @@ public class FileUtils {
      * @param multiFile
      * @throws IOException
      */
-    public static void saveFile(String pathPrefix, MultipartFile multiFile) throws IOException {
+    public static void saveFile(String pathPrefix, MultipartFile multiFile, String filename) throws IOException {
         log.info("檔案路徑為:{}", pathPrefix);
         File directory = new File(pathPrefix);
         if (!directory.exists()) {
@@ -40,7 +40,7 @@ public class FileUtils {
                 inputStream = multiFile.getInputStream();
             }
             byte[] inputByteArr = FileCopyUtils.copyToByteArray(inputStream);
-            String filePath = pathPrefix + cleanString(multiFile.getResource().getFilename()); // 指定文件路徑
+            String filePath = pathPrefix + cleanString(filename); // 指定文件路徑
             try {
                 saveByteArrayToFile(inputByteArr, filePath);
                 log.info("檔案儲存成功,{}", filePath);
@@ -134,7 +134,7 @@ public class FileUtils {
         }
 //        if (isChineseChar(ch))
 //            return ch;
-        return '%';
+        return ch;
     }
 
     // 判斷中文字

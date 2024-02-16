@@ -72,8 +72,9 @@ public class BatchResource {
      */
     @PostMapping("/getFile")
     public void getFile(
-            @RequestPart(name = "etlOutPutFile") MultipartFile multiFile) throws IOException {
-        FileUtils.saveFile(directories.getMockEtlSaveFileDirPrefix(), multiFile);
+            @RequestPart(name = "etlOutPutFile") MultipartFile multiFile, @RequestBody JobParams jobParams) throws IOException {
+        String filename = multiFile.getResource().getFilename();
+        FileUtils.saveFile(directories.getMockEtlSaveFileDirPrefix(), multiFile, filename);
     }
 
 

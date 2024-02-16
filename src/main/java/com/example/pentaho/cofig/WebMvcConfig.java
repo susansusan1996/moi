@@ -30,7 +30,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry
                 .addInterceptor(authorizationHandlerInterceptor)
-                .addPathPatterns("/api/kettle/**", "/api/batchForm/**", "/api/redis/**");
+                .addPathPatterns(
+                        "/api/kettle/**",
+                        "/api/batchForm/**",
+                        "/api/redis/**",
+                        "/api/singlequery/**");
         /**
          * 可以新增別的路徑的攔截
          * AdminAuthorizationHandlerInterceptor

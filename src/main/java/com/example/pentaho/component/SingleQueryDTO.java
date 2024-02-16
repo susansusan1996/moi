@@ -17,6 +17,8 @@ public class SingleQueryDTO {
 
     private List<String> redisValueList;
 
+    private String originalAddress;
+
 
     public String getRedisKey() {
         return redisKey;
@@ -43,12 +45,21 @@ public class SingleQueryDTO {
         this.redisValueList = redisValueList;
     }
 
+    public String getOriginalAddress() {
+        return originalAddress;
+    }
+
+    public void setOriginalAddress(String originalAddress) {
+        this.originalAddress = originalAddress;
+    }
+
     @Override
     public String toString() {
         return "SingleQueryDTO{" +
                 "redisKey='" + redisKey + '\'' +
                 ", redisValue='" + redisValue + '\'' +
                 ", redisValueList=" + redisValueList +
+                ", originalAddress='" + originalAddress + '\'' +
                 '}';
     }
 }
