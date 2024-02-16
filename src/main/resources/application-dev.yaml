@@ -27,8 +27,8 @@ key:
   key-name: rsa.pub
 
 apserver:
-#  模擬聖森存檔案
-  target-url: http://localhost:8888/api/batchForm/getFile
+  #  批次查詢: 聖森接收批次結束檔案的api url
+  target-url: http://211.75.133.17:7007/addr/api/auth/batchForm/systemUpdate
 
 spring:
   data:
