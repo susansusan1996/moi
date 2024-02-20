@@ -13,6 +13,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.gson.Gson;
 import com.jcraft.jsch.SftpException;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
+import io.swagger.models.auth.In;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,9 +31,9 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 
-
-@RequestMapping("/api/batchForm")
 @RestController
+@RequestMapping("/api/batchForm")
+//@Tag(name="測試")
 public class BatchResource {
 
     private static Logger log = LoggerFactory.getLogger(BatchResource.class);
@@ -80,45 +85,33 @@ public class BatchResource {
         FileUtils.saveFile(directories.getMockEtlSaveFileDirPrefix(), multiFile, filename);
     }
 
-
+/****/
 
     @PostMapping("/excuteETLJob")
-    public void sftpUploadAndExecuteTrans(@RequestPart("jobParams") String jobParamsJson,@RequestPart("uploadFile") MultipartFile file) throws IOException {
+    public ResponseEntity<String> sftpUploadAndExecuteTrans(@RequestPart("jobParams") String jobParamsJson, @RequestPart("uploadFile") MultipartFile file) throws IOException {
         if(file == null){
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"檔案為空");
         }
         JobParams jobParams = objectMapper.readValue(jobParamsJson, JobParams.class);
         log.info("jobParams:{}",jobParams);
-        jobService.sftpUploadAndExecuteTrans(file,jobParams);
+        return new ResponseEntity<>(jobService.sftpUploadAndExecuteTrans(file, jobParams),HttpStatus.OK);
     }
 
     @PostMapping(path = "/finished")
-    public void sftpDownloadAndSend(@RequestBody JobParams jobParams) throws IOException, SftpException {
-        log.info("jobParamsJsonStr:{}",jobParams.getJobParamsJson());
-     
-        String inputString = jobParams.getJobParamsJson();
-
-       
+    public void sftpDownloadAndSend(@RequestBody String requestBody) throws IOException, SftpException {
+        //解析requestBody中的參數
         ObjectMapper objectMapper = new ObjectMapper();
-
-        
         ObjectNode jsonObject = objectMapper.createObjectNode();
-
-      
-        String[] keyValuePairs = inputString.split(",");
-        for (String pair : keyValuePairs) {
-          
-            String[] keyValue = pair.split(":");
-           
-            String key = keyValue[0].trim().replaceAll("[{}]", "");
-            String value = keyValue[1].trim().replaceAll("[{}]", "");
-          
+        log.info("requestBody:{}",requestBody);
+        String[] params = requestBody.split("&");
+        for (String param : params) {
+            String[] keyValue = param.split("=");
+            String key = keyValue[0];
+            String value = keyValue.length > 1 ? keyValue[1] : "";
             jsonObject.put(key, value);
         }
 
-       
         log.info("jsonObject:{}",jsonObject.toString());
-        Gson gson = new Gson();
 
         JobParams jobParams1 = objectMapper.readValue(jsonObject.toString(), JobParams.class);
         log.info("jobParams1:{}",jobParams1);

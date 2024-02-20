@@ -9,13 +9,26 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "key")
 public class KeyComponent {
-    private String keyname;
+    private String pubkeyName;
 
-    public String getKeyname() {
-        return keyname;
+    private String apPubkeyName;
+
+
+
+
+    public String getPubkeyName() {
+        return pubkeyName;
     }
 
-    public void setKeyname(String keyname) {
-        this.keyname = keyname;
+    public void setPubkeyName(String pubkeyName) {
+        this.pubkeyName = pubkeyName;
+    }
+
+    public String getApPubkeyName() {
+        return apPubkeyName;
+    }
+
+    public void setApPubkeyName(String apPubkeyName) {
+        this.apPubkeyName = apPubkeyName;
     }
 }

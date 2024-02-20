@@ -26,7 +26,7 @@ server:
   port: 8080
 
 pentaho:
-  web-target: http://52.33.116.195:8081/pentaho
+  web-target: http://52.33.116.195:8080/pentaho
   username: admin
   password: password
 
@@ -39,7 +39,7 @@ directory:
   send-file-dir: /home/addr/batch_data/send/
   big-data-receive-file-dir: /home/addr/big_data/receive/
   big-data-send-file-dir: /home/addr/big_data/send/
-  local-temp-dir: /home/ec2-user/temp/
+  local-temp-dir: /home/ubuntu/temp/
   #  etl作業產出的檔案位置前綴
   etl-output-file-dir-prefix: /home/ec2-user/outputFile/
   # 模擬聖森存檔案
@@ -49,8 +49,9 @@ directory:
 
 #如果是自己要在 aws api server上測試，要改成rsa.pub(用自己的公鑰)
 key:
-#  key-name: jwt.pub
-  key-name: rsa.pub
+# pubkey-name: jwt.pub
+ pubkey-name: rsa.pub
+ ap-pubkey-name: rsa.pub
 
 apserver:
   #  批次查詢: 聖森接收批次結束檔案的api url
@@ -63,8 +64,9 @@ apserver:
 sftputils:
  host: 52.33.116.195
  port: 22
- username: ec2-user
- private-key: /home/ec2-user/key/moi-addr-privatekey.pem
+ username: ubuntu
+# private-key: D:\moi_key\moi-addr-privatekey.pem
+ private-key: /home/ubuntu/moi_key/moi-addr-privatekey.pem
 
 
 

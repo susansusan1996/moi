@@ -41,14 +41,9 @@ public class WebServiceUtils {
 
 
 
-
-
-    public int getConnection(String webService,JobParams jobParams){
+    public String getConnection(String webService,JobParams jobParams){
+        String status ="呼叫JOB錯誤_CALL_JOB_ERROR";
         try {
-//            String fullUrl = getUrl(webService, json);
-//            if("".equals(fullUrl)){
-//                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"INTERNAL_SERVER_ERROR");
-//            }
             log.info("再確認一次要轉成url的job參數:{}",jobParams);
             StringBuilder temp = new StringBuilder(pentahoComponent.getWebTarget() + webService);
             String fullUrl = getFullUrl(temp,jobParams);
@@ -57,11 +52,15 @@ public class WebServiceUtils {
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             basicAuthentication(con);
             con.setRequestMethod("POST");
-            return con.getResponseCode();
+            int responseCode = con.getResponseCode();
+            if(responseCode == 200){
+                status="呼叫JOB成功_CALL_JOB_SUCESS";
+            }
         }catch (Exception e){
             log.info("e:{}",e.toString());
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"INTERNAL_SERVER_ERROR");
         }
+        jobParams.setStatus(status);
+        return status;
     }
 
 

@@ -23,8 +23,11 @@ directory:
   # etl .ktr檔的存放位置
   ktr-file-path: D:\home\addr\prod\
 
+#如果是自己要在 aws api server上測試，要改成rsa.pub(用自己的公鑰)
 key:
-  key-name: rsa.pub
+  # pubkey-name: jwt.pub
+  pubkey-name: rsa.pub
+  ap-pubkey-name: rsa.pub
 
 apserver:
   #  批次查詢: 聖森接收批次結束檔案的api url
