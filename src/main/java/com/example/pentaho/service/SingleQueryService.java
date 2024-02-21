@@ -1,6 +1,8 @@
 package com.example.pentaho.service;
 
+import com.example.pentaho.component.IbdTbIhChangeDoorplateHis;
 import com.example.pentaho.component.SingleQueryDTO;
+import com.example.pentaho.repository.IbdTbIhChangeDoorplateHisRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +25,9 @@ public class SingleQueryService {
 
     @Autowired
     private RedisTemplate redisTemplate;
+
+    @Autowired
+    private IbdTbIhChangeDoorplateHisRepository ibdTbIhChangeDoorplateHisRepository;
 
 
     /**
@@ -94,5 +99,9 @@ public class SingleQueryService {
         Set<String> elements = setOps.members(singleQueryDTO.getRedisKey());
         log.info("elements:{}", elements);
         return elements;
+    }
+
+    public List<IbdTbIhChangeDoorplateHis> singleQueryTrack(IbdTbIhChangeDoorplateHis IbdTbIhChangeDoorplateHis){
+       return ibdTbIhChangeDoorplateHisRepository.findByhisCity(IbdTbIhChangeDoorplateHis.getHisCity());
     }
 }

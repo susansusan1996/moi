@@ -6,18 +6,11 @@ import com.example.pentaho.component.JobParams;
 import com.example.pentaho.component.User;
 import com.example.pentaho.service.BatchService;
 import com.example.pentaho.service.FileOutputService;
-import com.example.pentaho.service.FileUploadService;
 import com.example.pentaho.service.JobService;
 import com.example.pentaho.utils.FileUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.gson.Gson;
 import com.jcraft.jsch.SftpException;
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiImplicitParams;
-import io.swagger.models.auth.In;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,8 +21,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/batchForm")

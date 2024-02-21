@@ -13,6 +13,12 @@ public class UserService  {
 
     private final static Logger log = LoggerFactory.getLogger(UserService.class);
 
+    private KeyComponent keyComponent;
+
+
+    public UserService(KeyComponent keyComponent) {
+        this.keyComponent = keyComponent;
+    }
 
     /**
      * 驗證使用者身分
@@ -26,7 +32,7 @@ public class UserService  {
             user.setUserId(Long.valueOf("1"));
             user.setUnitName("A05");
         }
-        return Login.ofRSAJWTToken(user);
+        return Login.ofRSAJWTToken(user,keyComponent.getApPrikeyName());
 
     }
 

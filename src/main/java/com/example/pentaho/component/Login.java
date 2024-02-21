@@ -42,8 +42,8 @@ public class Login {
      * @param user
      * @return
      */
-    public static Login ofRSAJWTToken(User user) {
-        return new Login(Token.ofRSAJWT(user), Token.ofRSAJWT(user));
+    public static Login ofRSAJWTToken(User user,String keyName) {
+        return new Login(Token.ofRSAJWT(user,keyName), Token.ofRSAJWT(user,keyName));
     }
 
     @Override

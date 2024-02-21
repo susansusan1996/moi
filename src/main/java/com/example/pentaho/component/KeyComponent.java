@@ -13,6 +13,7 @@ public class KeyComponent {
 
     private String apPubkeyName;
 
+    private String apPrikeyName;
 
 
 
@@ -30,5 +31,13 @@ public class KeyComponent {
 
     public void setApPubkeyName(String apPubkeyName) {
         this.apPubkeyName = apPubkeyName;
+    }
+
+    public String getApPrikeyName() {
+        return apPrikeyName;
+    }
+
+    public void setApPrikeyName(String apPrikeyName) {
+        this.apPrikeyName = apPrikeyName;
     }
 }
