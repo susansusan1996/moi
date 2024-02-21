@@ -3,6 +3,7 @@ package com.example.pentaho.resource;
 import com.example.pentaho.component.Address;
 import com.example.pentaho.component.SingleQueryDTO;
 import com.example.pentaho.service.SingleQueryService;
+import com.example.pentaho.utils.AddressParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +28,9 @@ public class SingleQueryResouce {
      */
     @GetMapping("/query-address")
     public ResponseEntity<Address> queryData(@RequestBody SingleQueryDTO singleQueryDTO) {
-        return ResponseEntity.ok(new Address(singleQueryDTO.getOriginalAddress()));
+//        return ResponseEntity.ok(new Address(singleQueryDTO.getOriginalAddress()));
+        return ResponseEntity.ok(AddressParser.parseAddress(singleQueryDTO.getOriginalAddress()));
+
     }
 
 
