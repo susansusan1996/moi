@@ -384,7 +384,7 @@ public class JobService {
         return targetDirs;
     }
 
-    public int sftpUploadAndExecuteTrans(MultipartFile file,JobParams jobParams){
+    public String sftpUploadAndExecuteTrans(MultipartFile file,JobParams jobParams){
         String fileName = getFileName(file.getOriginalFilename(), jobParams.getBATCH_ID());
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
         String dateStamp = dateFormat.format(new Date());
@@ -393,16 +393,16 @@ public class JobService {
         /**pentaho params*/
         String userId = String.valueOf(UserContextUtils.getUserHolder().getUserId());
         String unitName = UserContextUtils.getUserHolder().getUnitName();
-        jobParams.setJobs("Main.kjb");
         jobParams.setDATA_DATE(dateStamp);
         jobParams.setDATA_SRC(unitName);
         jobParams.setFILE(fileName);
         jobParams.setUSER_ID(userId);
         if(!sftpUpload){
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"上傳失敗");
+            String status="檔案上傳失敗_Upload_ERROR";
+            jobParams.setStatus(status);
+            return status;
         }
-//       return webServiceUtils.getConnection(PentahoWebService.executeTrans,gson.toJson(jobParams));
-       return webServiceUtils.getConnection(PentahoWebService.executeTrans,jobParams);
+        return webServiceUtils.getConnection(PentahoWebService.executeTrans,jobParams);
     }
 
 }

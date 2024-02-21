@@ -1,8 +1,8 @@
 server:
-  port: 8888
+  port: 8080
 
 pentaho:
-  web-target: http://localhost:8080/pentaho
+  web-target: http://localhost:8080/
   username: cluster
   password: cluster
 
@@ -23,12 +23,16 @@ directory:
   # etl .ktr檔的存放位置
   ktr-file-path: D:\home\addr\prod\
 
+#如果是自己要在 aws api server上測試，要改成rsa.pub(用自己的公鑰)
 key:
-  key-name: rsa.pub
+  pubkey-name: D:\rsa_key\rsa.pub    #聖森公鑰
+  ap-prikey-name: D:\rsa_key\rsa.pri #AP私鑰
+  ap-pubkey-name: D:\rsa_key\rsa.pub #AP公鑰
 
 apserver:
   #  批次查詢: 聖森接收批次結束檔案的api url
   target-url: http://211.75.133.17:7007/addr/api/auth/batchForm/systemUpdate
+  token: D:\token\token.txt
 
 spring:
   data:

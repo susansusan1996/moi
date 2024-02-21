@@ -40,7 +40,6 @@ public class FileOutputService {
     @Autowired
     private SFTPUtils sftpUtils;
 
-
     @Autowired
     private IbdTbAddrStatisticsOverallDevRepository ibdTbAddrStatisticsOverallDevRepository;
 
@@ -96,9 +95,9 @@ public class FileOutputService {
             throw new IOException("File not found: " + sourceFilePath);
         }
         HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + "eyJhbGciOiJSUzI1NiJ9.eyJ1c2VyIjoie30iLCJqdGkiOiJNVE0yTmpRMk9HWXRPRGcyWWkwME9UTXhMV0UyWlRRdE9URmlNelE1WlRjek5ETTAiLCJleHAiOjE3Mzc2MDE4MzJ9.3ghp8wCHziA6Az9UpS8ssL1d_JB5apN-3pbIV28BWx3bOK-FjRGA9676-EDpqhXrth_Sqln_TFd4wT0RGJ4V1M0RtKXj3EMpFBBV0otdAsgZLm0JcK7LjUrXmWvyfsBcasnHQ83rMo4hE4GeBgXlrhPUlRxnPcVbk4UrVkaMtxyngDfkGpInPJokUWzrScgo7TDA-aKmodw2eZbxYPjGTw1fzXTYHpJC4VNyAYbeGOTd9uMh-cCAyyYMsw__JmkQOAYPpKLnHdyHSb6C8ezxAZJNrI5Rpg4cG0ousXh694IXmixI_R7Q1nVBMFl7GG946fgTO9twiqhuaB64beUILg");
+        headers.set("Authorization",apServerComponent.getToken());
         MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
-        parts.add("etlOutPutFile", new org.springframework.core.io.ByteArrayResource(Files.readAllBytes(file.toPath())) {
+        parts.add("file", new org.springframework.core.io.ByteArrayResource(Files.readAllBytes(file.toPath())) {
             @Override
             public String getFilename() {
                 return file.getName();
@@ -123,10 +122,14 @@ public class FileOutputService {
         sftpUtils.connect();
         boolean hasFile = sftpUtils.listFiles(targetDir,jobParams.getFILE());
         if(!hasFile){
-         throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"找不到檔案");
+            jobParams.setStatus("找不到檔案_處理錯誤_SYS_FAILED");
         }
-        sftpUtils.downloadFile(directories.getLocalTempDir(),targetDir,jobParams.getFILE());
+        boolean hasDownload = sftpUtils.downloadFile(directories.getLocalTempDir(), targetDir, jobParams.getFILE());
+        if(!hasDownload){
+            jobParams.setStatus("無法下載_處理錯誤_SYS_FAILED");
+        }
         sftpUtils.disconnect();
+        jobParams.setStatus("完成_DONE");
         String sourceFilePath = directories.getLocalTempDir()+jobParams.getFILE();
         postFileToServer(sourceFilePath, apServerComponent.getTargetUrl(), jobParams);
     }
@@ -168,7 +171,7 @@ public class FileOutputService {
             throw new IOException("File not found: " + directories.getLocalTempDir()+batchId+".csv");
         }
         HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + "eyJhbGciOiJSUzI1NiJ9.eyJ1c2VyIjoie30iLCJqdGkiOiJNVE0yTmpRMk9HWXRPRGcyWWkwME9UTXhMV0UyWlRRdE9URmlNelE1WlRjek5ETTAiLCJleHAiOjE3Mzc2MDE4MzJ9.3ghp8wCHziA6Az9UpS8ssL1d_JB5apN-3pbIV28BWx3bOK-FjRGA9676-EDpqhXrth_Sqln_TFd4wT0RGJ4V1M0RtKXj3EMpFBBV0otdAsgZLm0JcK7LjUrXmWvyfsBcasnHQ83rMo4hE4GeBgXlrhPUlRxnPcVbk4UrVkaMtxyngDfkGpInPJokUWzrScgo7TDA-aKmodw2eZbxYPjGTw1fzXTYHpJC4VNyAYbeGOTd9uMh-cCAyyYMsw__JmkQOAYPpKLnHdyHSb6C8ezxAZJNrI5Rpg4cG0ousXh694IXmixI_R7Q1nVBMFl7GG946fgTO9twiqhuaB64beUILg");
+        headers.set("Authorization",apServerComponent.getToken());
         MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
         parts.add("etlOutPutFile", new org.springframework.core.io.ByteArrayResource(Files.readAllBytes(file.toPath())) {
             @Override
@@ -176,7 +179,7 @@ public class FileOutputService {
                 return file.getName();
             }
         });
-        parts.add("log",logs);
+        parts.add("recordCounts",logs);
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(parts, headers);
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<Void> responseEntity = restTemplate.exchange(apServerComponent.getTargetUrl(), HttpMethod.POST, requestEntity, Void.class, parts);

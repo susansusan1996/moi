@@ -1,4 +1,3 @@
-#先不連接資料庫#
 spring:
   data:
     redis:
@@ -26,20 +25,23 @@ server:
   port: 8080
 
 pentaho:
-  web-target: http://52.33.116.195:8081/pentaho
+  web-target: http://52.33.116.195:8080/pentaho
   username: admin
   password: password
 
 directory:
   #pentaho server IP
   target: http://52.33.116.195
-  #原始csv存放目錄
+  #批次 原始csv存放目錄
   receive-file-dir: /home/addr/batch_data/receive/
-  #批次zip檔存放目錄
+  #批次 zip檔存放目錄
   send-file-dir: /home/addr/batch_data/send/
+  #大量 原始csv存放目錄
   big-data-receive-file-dir: /home/addr/big_data/receive/
+  #大量 zip檔存放目錄
   big-data-send-file-dir: /home/addr/big_data/send/
-  local-temp-dir: /home/ec2-user/temp/
+  #AP檔案落地暫存目錄
+  local-temp-dir: /home/ubuntu/temp/
   #  etl作業產出的檔案位置前綴
   etl-output-file-dir-prefix: /home/ec2-user/outputFile/
   # 模擬聖森存檔案
@@ -49,12 +51,14 @@ directory:
 
 #如果是自己要在 aws api server上測試，要改成rsa.pub(用自己的公鑰)
 key:
-#  key-name: jwt.pub
-  key-name: rsa.pub
+  pubkey-name: /home/ubuntu/app/key/rsa.pub #聖森公鑰
+  ap-prikey-name: /home/ubuntu/app/ap_key/rsa.pri #AP私鑰
+  ap-pubkey-name: /home/ubuntu/app/ap_key/rsa.pub #AP公鑰
 
 apserver:
   #  批次查詢: 聖森接收批次結束檔案的api url
   target-url: http://211.75.133.17:7007/addr/api/auth/batchForm/systemUpdate
+  token: /home/ubuntu/app/token/token.txt
   #  ?id=c27d8bff-f0c3-47b4-a20d-658821d5981b&
   #  originalFileId=c27d8bff-f0c3-47b4-a20d-658821d5981b&
   #  processedCounts=1&
@@ -63,8 +67,9 @@ apserver:
 sftputils:
  host: 52.33.116.195
  port: 22
- username: ec2-user
- private-key: /home/ec2-user/key/moi-addr-privatekey.pem
+ username: ubuntu
+# private-key: D:\moi_key\moi-addr-privatekey.pem
+ private-key: /home/ubuntu/moi_key/moi-addr-privatekey.pem
 
 
 

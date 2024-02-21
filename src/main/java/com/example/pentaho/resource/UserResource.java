@@ -31,10 +31,10 @@ public class UserResource {
      * @return
      */
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody User user, HttpServletResponse response) {
+    public ResponseEntity<String> login(@RequestBody User user) {
         log.info("user:{}", user);
         Login login = userService.findUserByUserName(user);
-        log.info("login:{}", login);
+//        log.info("login:{}", login);
         return new ResponseEntity<>(login.getAcessToken().getToken(), HttpStatus.OK);
     }
 

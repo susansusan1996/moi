@@ -3,7 +3,6 @@ package com.example.pentaho.utils;
 import com.example.pentaho.component.KeyComponent;
 import com.example.pentaho.component.Token;
 import com.example.pentaho.component.User;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -36,7 +35,7 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
      */
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        log.info("request:{}", request);
+
         String authHeader = request.getHeader("Authorization");
         log.info("request header = { Authorization:Bearer accessToken }:{}", authHeader);
         /**確認有無Authorization:Bearer 的 header**/
@@ -56,14 +55,19 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
             }
 
         String RSATokenJwt = authHeader.substring(6, authHeader.length());
-
         log.info("RASJWTToken:{}", RSATokenJwt);
-            /**
-             * 驗證RASJWTToken
-             * 完成後return true 會再導向Spring-SecurityFilterChain
-             */
-            if(Token.fromRSAJWTToken(RSATokenJwt, keyComponent.getKeyname())){
-                User user = Token.extractUserFromRSAJWTToken(RSATokenJwt,keyComponent.getKeyname());
+
+        /**
+         * 驗證RASJWTToken
+         * 完成後return true 會再導向Spring-SecurityFilterChain
+         */
+        String keyName = keyComponent.getPubkeyName();
+        log.info("requestURI:{}",request.getRequestURI());
+        if("/api/batchForm/finished".equals(request.getRequestURI())){
+          keyName =keyComponent.getApPubkeyName();
+        }
+            if(Token.fromRSAJWTToken(RSATokenJwt,keyName)){
+                User user = Token.extractUserFromRSAJWTToken(RSATokenJwt,keyName);
                 UserContextUtils.setUserHolder(user);
                 return true;
             }
