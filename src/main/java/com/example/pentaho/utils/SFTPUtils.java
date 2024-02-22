@@ -43,6 +43,7 @@ public class SFTPUtils {
     public void connect() {
         try {
             JSch jsch = new JSch();
+            log.info("privateKey:{}",privateKey);
             String path = ResourceUtils.getFile(privateKey).getPath();
             jsch.addIdentity(path);
             session = jsch.getSession(username, host, port);

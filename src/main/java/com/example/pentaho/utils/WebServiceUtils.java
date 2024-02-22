@@ -42,7 +42,7 @@ public class WebServiceUtils {
 
 
     public String getConnection(String webService,JobParams jobParams){
-        String status ="呼叫JOB錯誤_CALL_JOB_ERROR";
+        String status ="CALL_JOB_ERROR";
         try {
             log.info("再確認一次要轉成url的job參數:{}",jobParams);
             StringBuilder temp = new StringBuilder(pentahoComponent.getWebTarget() + webService);
@@ -53,8 +53,9 @@ public class WebServiceUtils {
             basicAuthentication(con);
             con.setRequestMethod("POST");
             int responseCode = con.getResponseCode();
+            log.info("responseCode:{}",responseCode);
             if(responseCode == 200){
-                status="呼叫JOB成功_CALL_JOB_SUCESS";
+                status="CALL_JOB_SUCESS";
             }
         }catch (Exception e){
             log.info("e:{}",e.toString());

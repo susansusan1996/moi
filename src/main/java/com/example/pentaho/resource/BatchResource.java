@@ -11,6 +11,13 @@ import com.example.pentaho.utils.FileUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.jcraft.jsch.SftpException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -78,14 +85,49 @@ public class BatchResource {
 
 /****/
 
-    @PostMapping("/excuteETLJob")
-    public ResponseEntity<String> sftpUploadAndExecuteTrans(@RequestPart("jobParams") String jobParamsJson, @RequestPart("uploadFile") MultipartFile file) throws IOException {
+
+
+
+    @Operation(description = "檔案上傳 & 呼叫JOB",
+            parameters = {
+                    @Parameter(in = ParameterIn.HEADER,
+                            name = "Authorization",
+                            description = "驗證jwt token,body附帶user={\"userId\":1,\"unitName\":\"A05\"}",
+                            required = true,
+                            schema = @Schema(type = "string"))}
+    ,
+        responses = {
+                @ApiResponse(responseCode = "200", description = "呼叫JOB成功",
+                        content = @Content(schema = @Schema(implementation = String.class), examples= @ExampleObject(value = "CALL_JOB_SUCESS"))),
+                @ApiResponse(responseCode = "500", description = "呼叫JOB失敗",
+                        content = @Content(schema = @Schema(implementation = String.class), examples= @ExampleObject(value = "CALL_JOB_ERROR"))),
+        }
+)
+@PostMapping("/excuteETLJob")
+    public ResponseEntity<String> sftpUploadAndExecuteTrans(
+        @Parameter(
+                description ="批次ID & 原始CSVID," +
+                        " Example: {\"batchFormId\":\"eb694f67-4c55-4a4f-85b0-5989ce2e65ff\",\"batchFormOriginalFileId\":\"eb694f67-4c55-4a4f-85b0-5989ce2e65ff\"} ",
+                required = true,
+                schema = @Schema(type = "string"),
+                example= "{\"batchFormId\":\"eb694f67-4c55-4a4f-85b0-5989ce2e65ff\",\"batchFormOriginalFileId\":\"eb694f67-4c55-4a4f-85b0-5989ce2e65ff\"}"
+        )
+        @RequestPart("jobParams") String jobParamsJson,
+        @Parameter(
+                description = "使用者上傳的CSV檔",
+                required = true
+        )
+        @RequestPart("uploadFile") MultipartFile file) throws IOException {
         if(file == null){
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"檔案為空");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"UPLOAD_ERROR");
         }
         JobParams jobParams = objectMapper.readValue(jobParamsJson, JobParams.class);
         log.info("jobParams:{}",jobParams);
-        return new ResponseEntity<>(jobService.sftpUploadAndExecuteTrans(file, jobParams),HttpStatus.OK);
+        String status = jobService.sftpUploadAndExecuteTrans(file, jobParams);
+        if(!"CALL_JOB_SUCESS".equals(status)){
+            return new ResponseEntity<>(status,HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return new ResponseEntity<>(status,HttpStatus.OK);
     }
 
     @PostMapping(path = "/finished")
