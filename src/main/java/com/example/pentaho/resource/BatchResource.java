@@ -103,22 +103,26 @@ public class BatchResource {
 @PostMapping("/excuteETLJob")
     public ResponseEntity<String> sftpUploadAndExecuteTrans(
         @Parameter(
-                description ="批次ID & 原始CSVID," +
-                        " Example: {\"Id\":\"eb694f67-4c55-4a4f-85b0-5989ce2e65ff\",\"originalFileId\":\"eb694f67-4c55-4a4f-85b0-5989ce2e65ff\"} ",
+                description ="批次ID" ,
                 required = true,
-                schema = @Schema(type = "str\n" +
-                        "       ing"),
-                example= "{\"batchFormId\":\"eb694f67-4c55-4a4f-85b0-5989ce2e65ff\",\"batchFormOriginalFileId\":\"eb694f67-4c55-4a4f-85b0-5989ce2e65ff\"}"
-        ) @RequestParam("jobParams") String jobParamsJson,
+                schema = @Schema(type = "string"))
+        @RequestParam("id") String id,
+        @Parameter(
+                description ="原始CSVID" ,
+                required = true,
+                schema = @Schema(type = "string"))
+        @RequestParam("originalFileId") String originalFileId,
         @Parameter(
                 description = "使用者上傳的CSV檔",
                 required = true
         )
-        @RequestParam MultipartFile file) throws IOException {
+        @RequestParam("file") MultipartFile file) throws IOException {
         if(file == null){
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"UPLOAD_ERROR");
         }
-        JobParams jobParams = objectMapper.readValue(jobParamsJson, JobParams.class);
+        JobParams jobParams = new JobParams();
+        jobParams.setBATCH_ID(id);
+        jobParams.setBATCHFORM_ORIGINAL_FILE_ID(originalFileId);
         log.info("jobParams:{}",jobParams);
         String status = jobService.sftpUploadAndExecuteTrans(file, jobParams);
         if(!"CALL_JOB_SUCESS".equals(status)){
