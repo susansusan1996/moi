@@ -27,7 +27,6 @@ public class UserResource {
     /**
      * login
      * @param user
-     * @param response
      * @return
      */
     @PostMapping("/login")

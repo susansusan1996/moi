@@ -49,12 +49,12 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
              * 驗證使用者身分
              * 先直接給予JwtToken
              */
-            if (authHeader.substring(6, authHeader.length()) == null && "".equals(authHeader.substring(7, authHeader.length()))) {
+            if (authHeader.substring(7, authHeader.length()) == null && "".equals(authHeader.substring(7, authHeader.length()))) {
                 /**前端補403導回登入頁?**/
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not allowed");
             }
 
-        String RSATokenJwt = authHeader.substring(6, authHeader.length());
+        String RSATokenJwt = authHeader.substring(7, authHeader.length());
         log.info("RASJWTToken:{}", RSATokenJwt);
 
         /**

@@ -29,14 +29,14 @@ public class JobParams implements Serializable {
     /**
      * 執行批次的ID
      */
-    @JsonProperty("batchFormId")
+    @JsonProperty("Id")
     private String BATCH_ID;
 
 
     /**
      * csv檔案的ID
      */
-    @JsonProperty("batchFormOriginalFileId")
+    @JsonProperty("originalFileId")
     private String BATCHFORM_ORIGINAL_FILE_ID;
 
     /**

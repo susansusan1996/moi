@@ -27,11 +27,11 @@ public class UserService  {
      */
     public Login findUserByUserName(User user) {
         /**待確認使否需要驗證**/
-        if("user".equals(user.getUserName())){
+//        if("user".equals(user.getUserName())){
             /**模擬DB找到userId**/
-            user.setUserId(Long.valueOf("1"));
-            user.setUnitName("A05");
-        }
+//            user.setUserId(Long.valueOf("1"));
+//            user.setUnitName("A05");
+//        }
         return Login.ofRSAJWTToken(user,keyComponent.getApPrikeyName());
 
     }

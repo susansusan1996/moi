@@ -85,9 +85,6 @@ public class BatchResource {
 
 /****/
 
-
-
-
     @Operation(description = "檔案上傳 & 呼叫JOB",
             parameters = {
                     @Parameter(in = ParameterIn.HEADER,
@@ -107,17 +104,17 @@ public class BatchResource {
     public ResponseEntity<String> sftpUploadAndExecuteTrans(
         @Parameter(
                 description ="批次ID & 原始CSVID," +
-                        " Example: {\"batchFormId\":\"eb694f67-4c55-4a4f-85b0-5989ce2e65ff\",\"batchFormOriginalFileId\":\"eb694f67-4c55-4a4f-85b0-5989ce2e65ff\"} ",
+                        " Example: {\"Id\":\"eb694f67-4c55-4a4f-85b0-5989ce2e65ff\",\"originalFileId\":\"eb694f67-4c55-4a4f-85b0-5989ce2e65ff\"} ",
                 required = true,
-                schema = @Schema(type = "string"),
+                schema = @Schema(type = "str\n" +
+                        "       ing"),
                 example= "{\"batchFormId\":\"eb694f67-4c55-4a4f-85b0-5989ce2e65ff\",\"batchFormOriginalFileId\":\"eb694f67-4c55-4a4f-85b0-5989ce2e65ff\"}"
-        )
-        @RequestPart("jobParams") String jobParamsJson,
+        ) @RequestParam("jobParams") String jobParamsJson,
         @Parameter(
                 description = "使用者上傳的CSV檔",
                 required = true
         )
-        @RequestPart("uploadFile") MultipartFile file) throws IOException {
+        @RequestParam MultipartFile file) throws IOException {
         if(file == null){
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"UPLOAD_ERROR");
         }

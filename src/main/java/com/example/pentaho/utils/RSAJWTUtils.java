@@ -20,7 +20,7 @@ public class RSAJWTUtils {
     private final static Logger log = LoggerFactory.getLogger(RSAJWTUtils.class);
 
 
-    private static final String JWT_PAYLOAD_USER_KEY = "user";
+    private static final String JWT_PAYLOAD_USER_KEY = "userInfo";
 
 
 

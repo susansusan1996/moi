@@ -5,24 +5,36 @@ import org.springframework.stereotype.Component;
 @Component
 public class User  {
 
+
+//      "haveToChangePwd": false,
+//      "localizeName": "管理員姓名",
+//      "departName": "管理機關_管理部門",
+//      "id": "673f7eec-8ae5-4e79-ad3a-42029eedf742",
+//      "username": "admin",
+//      "email": "admin@gmail.com",
+//      "roles": [
+//      "ROLE_ADMIN",
+//      "ROLE_IUSER",
+//      "ROLE_MODERATOR"
+
     /**使用者ID*/
-    private Long userId;
+    private String id;
 
     /**使用者名稱*/
     private String userName;
 
     /**使用者單位名稱*/
-    private String unitName;
+    private String departName;
 
     /**使用者密碼*/
     private String password;
 
-    public Long getUserId() {
-        return userId;
+    public String getId() {
+        return id;
     }
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getUserName() {
@@ -41,32 +53,24 @@ public class User  {
         this.password = password;
     }
 
-    public String getUnitName() {
-        return unitName;
+    public String getDepartName() {
+        return departName;
     }
 
-    public void setUnitName(String unitName) {
-        this.unitName = unitName;
+    public void setDepartName(String departName) {
+        this.departName = departName;
     }
 
     public User() {
     }
 
-    public User(Long userId) {
-        this.userId = userId;
-    }
-
-    public User(Long userId, String unitName) {
-        this.userId = userId;
-        this.unitName = unitName;
-    }
-
     @Override
     public String toString() {
         return "User{" +
-                "userId=" + userId +
+                "id='" + id + '\'' +
                 ", userName='" + userName + '\'' +
-                ", unitName='" + unitName + '\'' +
+                ", departName='" + departName + '\'' +
+                ", password='" + password + '\'' +
                 '}';
     }
 }

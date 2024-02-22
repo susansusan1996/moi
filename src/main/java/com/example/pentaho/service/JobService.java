@@ -11,10 +11,8 @@ import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.io.*;
 import java.lang.reflect.Method;
@@ -375,8 +373,8 @@ public class JobService {
          * /home/addr/batch_data/receive/unitName/yyyyMMdd
          * /home/addr/batch_data/send/unitName/yyyyMMdd
          */
-        String receiveDir =directories.getReceiveFileDir()+ UserContextUtils.getUserHolder().getUnitName() + "/" + dateStamp + "/";
-        String sendDir=directories.getSendFileDir()+ UserContextUtils.getUserHolder().getUnitName() + "/" + dateStamp + "/";
+        String receiveDir =directories.getReceiveFileDir()+ UserContextUtils.getUserHolder().getDepartName() + "/" + dateStamp + "/";
+        String sendDir=directories.getSendFileDir()+ UserContextUtils.getUserHolder().getDepartName() + "/" + dateStamp + "/";
 
         log.info("receiveDir:{}",receiveDir);
         log.info("sendDir:{}",sendDir);
@@ -391,8 +389,8 @@ public class JobService {
         String[] targetDirs = targetDirs(dateStamp);
         boolean sftpUpload = fileUploadService.sftpUpload(file,targetDirs,fileName);
         /**pentaho params*/
-        String userId = String.valueOf(UserContextUtils.getUserHolder().getUserId());
-        String unitName = UserContextUtils.getUserHolder().getUnitName();
+        String userId = String.valueOf(UserContextUtils.getUserHolder().getId());
+        String unitName = UserContextUtils.getUserHolder().getDepartName();
         jobParams.setDATA_DATE(dateStamp);
         jobParams.setDATA_SRC(unitName);
         jobParams.setFILE(fileName);
