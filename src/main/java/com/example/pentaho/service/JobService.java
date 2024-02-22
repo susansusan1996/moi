@@ -398,7 +398,7 @@ public class JobService {
         jobParams.setFILE(fileName);
         jobParams.setUSER_ID(userId);
         if(!sftpUpload){
-            String status="檔案上傳失敗_Upload_ERROR";
+            String status="UPLOAD_ERROR";
             jobParams.setStatus(status);
             return status;
         }
