@@ -1,9 +1,11 @@
 package com.example.pentaho.service;
 
+import com.example.pentaho.component.Address;
 import com.example.pentaho.component.IbdTbIhChangeDoorplateHis;
 import com.example.pentaho.component.SingleQueryDTO;
 import com.example.pentaho.repository.IbdTbAddrDataNewRepository;
 import com.example.pentaho.repository.IbdTbIhChangeDoorplateHisRepository;
+import com.example.pentaho.utils.AddressParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +15,8 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class SingleQueryService {
@@ -37,9 +41,9 @@ public class SingleQueryService {
     /**
      * 找單一個值 (redis: get)
      */
-    public String findByKey(SingleQueryDTO singleQueryDTO) {
-        String redisValue = stringRedisTemplate.opsForValue().get(singleQueryDTO.getRedisKey());
-        log.info("redisValue: {}", redisValue);
+    public String findByKey(String key) {
+        String redisValue = stringRedisTemplate.opsForValue().get(key);
+        log.info("redisKey: {} , redisValue: {}", key, redisValue);
         return redisValue;
     }
 
@@ -106,19 +110,74 @@ public class SingleQueryService {
     }
 
 
+    public String findJsonTest(String originalString) {
+        return findByKey("1066693");
+    }
+
+
 
     public String findJson(String originalString) {
         //先到addr_ods.IBD_TB_ADDR_DATA_REPOSITORY_NEW找相對應的seq
-        //TODO:先寫死
-        SingleQueryDTO singleQueryDTO = new SingleQueryDTO();
-        singleQueryDTO.setRedisKey("1066693");
-        Integer seq =  ibdTbAddrDataNewRepository.querySeqByCriteria(singleQueryDTO);
-        //再到REDIS(ADDR_ods.IBD_TB_ADDR_CODE_OF_DATA_STANDARD)找seq相對應column組裝成的json
-        singleQueryDTO.setRedisKey(String.valueOf(seq));
-        return findByKey(singleQueryDTO);
+        //切地址
+        Address address = AddressParser.parseAddress(originalString);
+        if(address!=null) {
+            log.info("address:{}", address);
+            String county = address.getCounty();
+            String countyCd = findByKey(county);
+
+            String town = address.getTown();
+            String townCd = findByKey(town);
+
+            String village = address.getVillage(); //里
+            String villageCd = findByKey(village);
+
+            String neighbor = findNeighborCd(address.getNeighbor()); //鄰
+
+            String road = address.getRoad();
+            String area = address.getArea();
+            String roadAreaSn = findByKey(road + (area == null ? "" : area));
+
+            String lane = address.getLane(); //巷
+            String laneCd = findByKey(lane);
+
+            String alley = address.getAlley(); //弄
+            String subAlley = address.getSubAlley(); //弄
+            String alleyIdSn = findByKey(alley + (subAlley == null ? "" : subAlley));
+
+            String numFlr1 = address.getNumFlr1();
+            String numFlr1Id = findByKey(numFlr1);
+
+            return countyCd + townCd + villageCd + neighbor + roadAreaSn + laneCd +  alleyIdSn + numFlr1Id;
+        }
+//        String lane = address.getLane();
+//        String alley = address.getAlley();
+//        String num = address.getNum();
+//        String seq = address.getSeq();
+//        String floor = address.getFloor();
+//        String others = address.getOthers();
+//        Integer seqence =  ibdTbAddrDataNewRepository.querySeqByCriteria(singleQueryDTO);
+//        //再到REDIS(ADDR_ods.IBD_TB_ADDR_CODE_OF_DATA_STANDARD)找seq相對應column組裝成的json
+//        return findByKey(String.valueOf(seqence));
+        return originalString;
     }
 
     public List<IbdTbIhChangeDoorplateHis> singleQueryTrack(IbdTbIhChangeDoorplateHis IbdTbIhChangeDoorplateHis) {
         return ibdTbIhChangeDoorplateHisRepository.findByhisCity(IbdTbIhChangeDoorplateHis.getHisCity());
+    }
+
+
+    public String findNeighborCd(String rawNeighbor) {
+        Pattern pattern = Pattern.compile("\\d+"); //指提取數字
+        Matcher matcher = pattern.matcher(rawNeighbor);
+        if (matcher.find()) {
+            String neighborResult = matcher.group();
+            // 往前補零，補到三位數
+            String paddedNumber = String.format("%03d", Integer.parseInt(neighborResult));
+            log.info("提取的數字部分為：{}", paddedNumber);
+            return paddedNumber;
+        } else {
+            log.info("沒有數字部分");
+            return "";
+        }
     }
 }

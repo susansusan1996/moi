@@ -1,8 +1,5 @@
 package com.example.pentaho.component;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 
 public class Address {
 
@@ -12,21 +9,25 @@ public class Address {
     private String village;
     private String neighbor;
     private String road;
-    private String section;
+    private String area;
     private String lane;
     private String alley;
-    private String num;
+    private String subAlley;
+    private String numFlr1;
+    private String numFlr2;
+    private String numFlr3;
+    private String numFlr4;
+    private String numFlr5;
     private String seq;
-    private String floor;
-    private String others;
+    private String addrRemains;
     private boolean isParseSuccessed;
     private String originalAddress;
 
     public Address() {
     }
+
     public Address(String address) {
         this.originalAddress = address;
-        this.parseByRegex(address);
     }
 
     public String getZipcode() {
@@ -77,12 +78,12 @@ public class Address {
         this.road = road;
     }
 
-    public String getSection() {
-        return section;
+    public String getArea() {
+        return area;
     }
 
-    public void setSection(String section) {
-        this.section = section;
+    public void setArea(String area) {
+        this.area = area;
     }
 
     public String getLane() {
@@ -101,12 +102,52 @@ public class Address {
         this.alley = alley;
     }
 
-    public String getNum() {
-        return num;
+    public String getSubAlley() {
+        return subAlley;
     }
 
-    public void setNum(String num) {
-        this.num = num;
+    public void setSubAlley(String subAlley) {
+        this.subAlley = subAlley;
+    }
+
+    public String getNumFlr1() {
+        return numFlr1;
+    }
+
+    public void setNumFlr1(String numFlr1) {
+        this.numFlr1 = numFlr1;
+    }
+
+    public String getNumFlr2() {
+        return numFlr2;
+    }
+
+    public void setNumFlr2(String numFlr2) {
+        this.numFlr2 = numFlr2;
+    }
+
+    public String getNumFlr3() {
+        return numFlr3;
+    }
+
+    public void setNumFlr3(String numFlr3) {
+        this.numFlr3 = numFlr3;
+    }
+
+    public String getNumFlr4() {
+        return numFlr4;
+    }
+
+    public void setNumFlr4(String numFlr4) {
+        this.numFlr4 = numFlr4;
+    }
+
+    public String getNumFlr5() {
+        return numFlr5;
+    }
+
+    public void setNumFlr5(String numFlr5) {
+        this.numFlr5 = numFlr5;
     }
 
     public String getSeq() {
@@ -117,20 +158,13 @@ public class Address {
         this.seq = seq;
     }
 
-    public String getFloor() {
-        return floor;
+
+    public String getAddrRemains() {
+        return addrRemains;
     }
 
-    public void setFloor(String floor) {
-        this.floor = floor;
-    }
-
-    public String getOthers() {
-        return others;
-    }
-
-    public void setOthers(String others) {
-        this.others = others;
+    public void setAddrRemains(String addrRemains) {
+        this.addrRemains = addrRemains;
     }
 
     public boolean isParseSuccessed() {
@@ -149,29 +183,29 @@ public class Address {
         this.originalAddress = originalAddress;
     }
 
-    private void parseByRegex(String address) {
-//        String pattern = "(?<zipcode>(^\\d{5}|^\\d{3})?)(?<county>[臺台][北中南東]|新竹|南投|嘉義|彰化|[縣市])?(?<town>\\D+?(市區|鎮區|鎮市|[鄉鎮市區]))?(?<village>\\D+?[村里])?(?<neighbor>\\d+[鄰])?(?<road>\\D+?(村路|[路街道段]))?(?<section>\\D?段)?(?<lane>\\d+巷)?(?<alley>\\d+弄)?(?<num>\\d+號?)?(?<seq>-\\d+?(號))?(?<floor>\\d+樓)?(?<others>.+)?";
-        String dynamicPart = "|新北(市)?|桃園(縣)?|新竹(縣)?|苗栗(縣)?|彰化(縣)?|雲林(縣)?|嘉義(縣)?|花蓮(縣)?|南投(縣)?|";
-        String pattern = "(?<zipcode>(^\\d{5}|^\\d{3})?)(?<county>[臺台][北中南東]([縣市])?"+dynamicPart+")?(?<town>\\D+?(市區|鎮區|鎮市|[鄉鎮市區]))?(?<village>\\D+?[村里])?(?<neighbor>\\d+[鄰])?(?<road>\\D+?(村路|[路街道段]))?(?<section>\\D?段)?(?<lane>\\d+巷)?(?<alley>\\d+弄)?(?<num>\\d+號?)?(?<seq>-\\d+?(號))?(?<floor>\\d+樓)?(?<others>.+)?";
-
-        Pattern regexPattern = Pattern.compile(pattern);
-        Matcher matcher = regexPattern.matcher(address);
-        if (matcher.matches()) {
-            this.isParseSuccessed = true;
-            this.zipcode = matcher.group("zipcode");
-            this.county = matcher.group("county");
-            this.town = matcher.group("town");
-            this.village = matcher.group("village");
-            this.neighbor = matcher.group("neighbor");
-            this.road = matcher.group("road");
-            this.section = matcher.group("section");
-            this.lane = matcher.group("lane");
-            this.alley = matcher.group("alley");
-            this.num = matcher.group("num");
-            this.seq = matcher.group("seq");
-            this.floor = matcher.group("floor");
-            this.others = matcher.group("others");
-        }
+    @Override
+    public String toString() {
+        return "Address{" +
+                "zipcode='" + zipcode + '\'' +
+                ", county='" + county + '\'' +
+                ", town='" + town + '\'' +
+                ", village='" + village + '\'' +
+                ", neighbor='" + neighbor + '\'' +
+                ", road='" + road + '\'' +
+                ", area='" + area + '\'' +
+                ", lane='" + lane + '\'' +
+                ", alley='" + alley + '\'' +
+                ", subAlley='" + subAlley + '\'' +
+                ", numFlr1='" + numFlr1 + '\'' +
+                ", numFlr2='" + numFlr2 + '\'' +
+                ", numFlr3='" + numFlr3 + '\'' +
+                ", numFlr4='" + numFlr4 + '\'' +
+                ", numFlr5='" + numFlr5 + '\'' +
+                ", seq='" + seq + '\'' +
+                ", addrRemains='" + addrRemains + '\'' +
+                ", isParseSuccessed=" + isParseSuccessed +
+                ", originalAddress='" + originalAddress + '\'' +
+                '}';
     }
 }
 
