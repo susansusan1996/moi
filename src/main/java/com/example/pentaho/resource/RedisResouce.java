@@ -25,8 +25,8 @@ public class RedisResouce {
      * 獲取單筆(set、get)
      */
     @GetMapping("/query-data")
-    public ResponseEntity<String> queryData(@RequestBody SingleQueryDTO singleQueryDTO) {
-        return ResponseEntity.ok(redisService.findByKey(singleQueryDTO));
+    public ResponseEntity<String> queryData(@RequestBody String key) {
+        return ResponseEntity.ok(redisService.findByKey(key));
     }
 
 
