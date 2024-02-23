@@ -31,7 +31,6 @@ import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/batchForm")
-//@Tag(name="測試")
 public class BatchResource {
 
     private static Logger log = LoggerFactory.getLogger(BatchResource.class);
@@ -52,7 +51,6 @@ public class BatchResource {
     /**
      * 測試啟動帶有parameter的transformation
      */
-//    @PostMapping("/excuteETLJob")
     public ResponseEntity<Integer> excuteTransWithParams(@RequestBody JobParams jobParams) throws IOException {
         log.info("ETL作業開始，參數為{}: ", jobParams.toString());
         Integer responseCode = jobService.excuteTransWithParams(jobParams);
@@ -66,7 +64,6 @@ public class BatchResource {
     /**
      * etl結束，並傳送檔案給聖森
      */
-//    @PostMapping(path = "/finished")
     public void etlFinishedAndSendFile(@RequestBody JobParams jobParams) throws IOException {
         log.info("ETL回CALL API，參數為{}: ", jobParams.toString());
         fileOutputService.etlFinishedAndSendFile(jobParams);
@@ -83,16 +80,11 @@ public class BatchResource {
         FileUtils.saveFile(directories.getMockEtlSaveFileDirPrefix(), multiFile, filename);
     }
 
-/****/
-
-
-
-
     @Operation(description = "檔案上傳 & 呼叫JOB",
             parameters = {
                     @Parameter(in = ParameterIn.HEADER,
                             name = "Authorization",
-                            description = "驗證jwt token,body附帶user={\"userId\":1,\"unitName\":\"A05\"}",
+                            description = "驗證jwt token,body附帶userInfo={\"Id\":1,\"departName\":\"A05\"} ,departName需為代號",
                             required = true,
                             schema = @Schema(type = "string"))}
     ,
@@ -103,25 +95,27 @@ public class BatchResource {
                         content = @Content(schema = @Schema(implementation = String.class), examples= @ExampleObject(value = "CALL_JOB_ERROR"))),
         }
 )
-@PostMapping("/excuteETLJob")
+    @PostMapping("/excuteETLJob")
     public ResponseEntity<String> sftpUploadAndExecuteTrans(
         @Parameter(
-                description ="批次ID & 原始CSVID," +
-                        " Example: {\"batchFormId\":\"eb694f67-4c55-4a4f-85b0-5989ce2e65ff\",\"batchFormOriginalFileId\":\"eb694f67-4c55-4a4f-85b0-5989ce2e65ff\"} ",
+                description ="批次ID" ,
                 required = true,
-                schema = @Schema(type = "string"),
-                example= "{\"batchFormId\":\"eb694f67-4c55-4a4f-85b0-5989ce2e65ff\",\"batchFormOriginalFileId\":\"eb694f67-4c55-4a4f-85b0-5989ce2e65ff\"}"
-        )
-        @RequestPart("jobParams") String jobParamsJson,
+                schema = @Schema(type = "string"))
+        @RequestParam("Id") String Id,
+        @Parameter(
+                description ="原始CSVID" ,
+                required = true,
+                schema = @Schema(type = "string"))
+        @RequestParam("originalFileId") String originalFileId,
         @Parameter(
                 description = "使用者上傳的CSV檔",
                 required = true
         )
-        @RequestPart("uploadFile") MultipartFile file) throws IOException {
+        @RequestParam("file") MultipartFile file) throws IOException {
         if(file == null){
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"UPLOAD_ERROR");
         }
-        JobParams jobParams = objectMapper.readValue(jobParamsJson, JobParams.class);
+        JobParams jobParams = new JobParams(Id,originalFileId);
         log.info("jobParams:{}",jobParams);
         String status = jobService.sftpUploadAndExecuteTrans(file, jobParams);
         if(!"CALL_JOB_SUCESS".equals(status)){

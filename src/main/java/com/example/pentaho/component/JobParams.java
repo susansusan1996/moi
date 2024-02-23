@@ -29,14 +29,14 @@ public class JobParams implements Serializable {
     /**
      * 執行批次的ID
      */
-    @JsonProperty("batchFormId")
+    @JsonProperty("Id")
     private String BATCH_ID;
 
 
     /**
      * csv檔案的ID
      */
-    @JsonProperty("batchFormOriginalFileId")
+    @JsonProperty("originalFileId")
     private String BATCHFORM_ORIGINAL_FILE_ID;
 
     /**
@@ -82,6 +82,11 @@ public class JobParams implements Serializable {
         this.USER_ID = USER_ID;
         this.DATA_SRC = DATA_SRC;
         this.DATA_DATE = DATA_DATE;
+    }
+
+    public JobParams( String BATCH_ID, String BATCHFORM_ORIGINAL_FILE_ID) {
+        this.BATCH_ID = BATCH_ID;
+        this.BATCHFORM_ORIGINAL_FILE_ID = BATCHFORM_ORIGINAL_FILE_ID;
     }
 
     public String getDATA_SRC() {

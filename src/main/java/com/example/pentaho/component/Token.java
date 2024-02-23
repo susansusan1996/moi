@@ -3,7 +3,12 @@ package com.example.pentaho.component;
 
 import com.example.pentaho.utils.RSAJWTUtils;
 import com.example.pentaho.utils.RsaUtils;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.gson.Gson;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
@@ -27,6 +32,8 @@ public class Token {
     private final static Logger log = LoggerFactory.getLogger(Token.class);
 
     private static ObjectMapper objectMapper =new ObjectMapper();
+
+    private static Gson gson = new Gson();
 
 
     private String token;
@@ -116,11 +123,9 @@ public class Token {
             Jws<Claims> claimsJws = Jwts.parser().setSigningKey(publicKey).parseClaimsJws(RSAJWTToken);
             Claims body = claimsJws.getBody();
             log.info("body:{}", body.toString());
-            String userInfo = body.get("user", String.class);
-            if(userInfo.equals("") || userInfo == null){
-              return null;
-            }
-            return objectMapper.readValue(userInfo, User.class);
+            log.info("userInfo",body.get("userInfo"));
+            String userInfo = gson.toJson(body.get("userInfo"));
+            return objectMapper.readValue(userInfo,User.class);
         } catch (Exception e) {
             log.info("e:{}", e.toString());
             return null;
