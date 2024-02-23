@@ -4,6 +4,9 @@ import java.sql.Timestamp;
 
 public class IbdTbIhChangeDoorplateHis {
 
+
+    //ADDRESS_ID BSZ7538-0
+
     private String newAdr;
 
     private String hisAdr;
