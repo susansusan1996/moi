@@ -88,7 +88,7 @@ public class FileOutputService {
 
 
     public void postFileToServer(String sourceFilePath, String targetUrl, JobParams jobParams) throws IOException {
-//        targetUrl = getFullUrl(new StringBuilder(targetUrl), jobParams);
+        targetUrl = getFullUrl(new StringBuilder(targetUrl), jobParams);
         log.info("targetUrl: {}",targetUrl);
         File file = new File(sourceFilePath);
         if (!file.exists()) {
@@ -103,10 +103,10 @@ public class FileOutputService {
                 return file.getName();
             }
         });
-        parts.add("id",jobParams.getBATCH_ID());
-        parts.add("originalFileId",jobParams.getBATCHFORM_ORIGINAL_FILE_ID());
-        parts.add("processedCounts",1);
-        parts.add("status",jobParams.getStatus());
+//        parts.add("id",jobParams.getBATCH_ID());
+//        parts.add("originalFileId",jobParams.getBATCHFORM_ORIGINAL_FILE_ID());
+//        parts.add("processedCounts",1);
+//        parts.add("status",jobParams.getStatus());
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(parts, headers);
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<Void> responseEntity = restTemplate.exchange(targetUrl, HttpMethod.PUT, requestEntity, Void.class, parts);
