@@ -89,7 +89,7 @@ public class Token {
 //            byte[] keyBytes = inputStream.readAllBytes();
             File file = ResourceUtils.getFile(keyName);
             byte[] keyBytes = readFileAsBytes(file);
-            byte[] decodedKeyBytes = Base64.getMimeDecoder().decode(keyBytes);
+            byte[] decodedKeyBytes = Base64.getDecoder().decode(keyBytes);
             X509EncodedKeySpec keySpec = new X509EncodedKeySpec(decodedKeyBytes);
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             PublicKey publicKey = keyFactory.generatePublic(keySpec);
