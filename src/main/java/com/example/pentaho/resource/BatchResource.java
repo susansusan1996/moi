@@ -126,6 +126,7 @@ public class BatchResource {
 
     @PostMapping(path = "/finished")
     public void sftpDownloadAndSend(@RequestBody String requestBody) throws IOException, SftpException {
+        log.info("requestBody:{}",requestBody);
         //解析requestBody中的參數
         ObjectMapper objectMapper = new ObjectMapper();
         ObjectNode jsonObject = objectMapper.createObjectNode();

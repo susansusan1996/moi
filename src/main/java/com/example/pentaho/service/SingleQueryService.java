@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
@@ -118,7 +119,8 @@ public class SingleQueryService {
         return findByKey(singleQueryDTO);
     }
 
-    public List<IbdTbIhChangeDoorplateHis> singleQueryTrack(IbdTbIhChangeDoorplateHis IbdTbIhChangeDoorplateHis) {
-        return ibdTbIhChangeDoorplateHisRepository.findByhisCity(IbdTbIhChangeDoorplateHis.getHisCity());
+    public List<IbdTbIhChangeDoorplateHis> singleQueryTrack(String addressId) {
+        log.info("addressId:{}",addressId);
+        return ibdTbIhChangeDoorplateHisRepository.findByAddressId(addressId);
     }
 }

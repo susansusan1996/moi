@@ -2,9 +2,9 @@ server:
   port: 8080
 
 pentaho:
-  web-target: http://localhost:8080
-  username: cluster
-  password: cluster
+  web-target: http://52.33.116.195:8080/pentaho
+  username: admin
+  password: password
 
 directory:
   path: C:\test2
@@ -25,7 +25,7 @@ directory:
 
 #如果是自己要在 aws api server上測試，要改成rsa.pub(用自己的公鑰)
 key:
-  pubkey-name: D:\rsa_key\jwt.pub    #聖森公鑰
+  pubkey-name: D:\key\ras.pub    #聖森公鑰
   ap-prikey-name: D:\rsa_key\rsa.pri #AP私鑰
   ap-pubkey-name: D:\rsa_key\rsa.pub #AP公鑰
 
