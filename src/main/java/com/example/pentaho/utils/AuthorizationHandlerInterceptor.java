@@ -68,6 +68,7 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
         }
             if(Token.fromRSAJWTToken(RSATokenJwt,keyName)){
                 User user = Token.extractUserFromRSAJWTToken(RSATokenJwt,keyName);
+                log.info("user:{}",user);
                 UserContextUtils.setUserHolder(user);
                 return true;
             }

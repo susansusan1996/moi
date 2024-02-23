@@ -1,32 +1,56 @@
 package com.example.pentaho.component;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 public class User  {
 
+    @JsonProperty("token")
+    private String token;
 
-//      "haveToChangePwd": false,
-//      "localizeName": "管理員姓名",
-//      "departName": "管理機關_管理部門",
-//      "id": "673f7eec-8ae5-4e79-ad3a-42029eedf742",
-//      "username": "admin",
-//      "email": "admin@gmail.com",
-//      "roles": [
-//      "ROLE_ADMIN",
-//      "ROLE_IUSER",
-//      "ROLE_MODERATOR"
+    @JsonProperty("refreshToken")
+    private String refreshToken;
+
+    @JsonProperty("remoteAddr")
+    private  String remoteAddr;
+
+    @JsonProperty("xrealIp")
+    private String xrealIp;
+
+    @JsonProperty("haveToChangePwd")
+    private boolean haveToChangePwd;
+
+    @JsonProperty("localizeName")
+    private String localizeName;
+
+
+    @JsonProperty("email")
+    private String email;
+
+    @JsonProperty("roles")
+    private List<String> roles;
+
+
+
 
     /**使用者ID*/
+    @JsonProperty("id")
     private String id;
 
     /**使用者名稱*/
-    private String userName;
+    @JsonProperty("username")
+    private String username;
 
     /**使用者單位名稱*/
+    @JsonProperty("departName")
     private String departName;
 
     /**使用者密碼*/
+    @JsonProperty("password")
     private String password;
 
     public String getId() {
@@ -37,12 +61,12 @@ public class User  {
         this.id = id;
     }
 
-    public String getUserName() {
-        return userName;
+    public String getUsername() {
+        return username;
     }
 
-    public void setUserName(String userName) {
-        this.userName = userName;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getPassword() {
@@ -61,14 +85,80 @@ public class User  {
         this.departName = departName;
     }
 
+    public boolean isHaveToChangePwd() {
+        return haveToChangePwd;
+    }
+
+    public void setHaveToChangePwd(boolean haveToChangePwd) {
+        this.haveToChangePwd = haveToChangePwd;
+    }
+
+
+
     public User() {
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+    public String getRefreshToken() {
+        return refreshToken;
+    }
+
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
+    }
+
+    public String getRemoteAddr() {
+        return remoteAddr;
+    }
+
+    public void setRemoteAddr(String remoteAddr) {
+        this.remoteAddr = remoteAddr;
+    }
+
+    public String getXrealIp() {
+        return xrealIp;
+    }
+
+    public void setXrealIp(String xrealIp) {
+        this.xrealIp = xrealIp;
+    }
+
+    public String getLocalizeName() {
+        return localizeName;
+    }
+
+    public void setLocalizeName(String localizeName) {
+        this.localizeName = localizeName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public List<String> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(List<String> roles) {
+        this.roles = roles;
     }
 
     @Override
     public String toString() {
         return "User{" +
                 "id='" + id + '\'' +
-                ", userName='" + userName + '\'' +
+                ", userName='" + username + '\'' +
                 ", departName='" + departName + '\'' +
                 ", password='" + password + '\'' +
                 '}';
