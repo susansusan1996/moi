@@ -383,23 +383,27 @@ public class JobService {
     }
 
     public String sftpUploadAndExecuteTrans(MultipartFile file,JobParams jobParams){
+        /**以'批次ID'為檔名**/
         String fileName = getFileName(file.getOriginalFilename(), jobParams.getBATCH_ID());
+        /**目錄**/
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
         String dateStamp = dateFormat.format(new Date());
         String[] targetDirs = targetDirs(dateStamp);
+        /**SFTP**/
         boolean sftpUpload = fileUploadService.sftpUpload(file,targetDirs,fileName);
-        /**pentaho params*/
-        String userId = String.valueOf(UserContextUtils.getUserHolder().getId());
-        String unitName = UserContextUtils.getUserHolder().getDepartName();
-        jobParams.setDATA_DATE(dateStamp);
-        jobParams.setDATA_SRC(unitName);
-        jobParams.setFILE(fileName);
-        jobParams.setUSER_ID(userId);
+        /**上傳失敗**/
         if(!sftpUpload){
             String status="UPLOAD_ERROR";
             jobParams.setStatus(status);
             return status;
         }
+        /**準備要給 pentaho params*/
+        String Id = String.valueOf(UserContextUtils.getUserHolder().getId());
+        String departName = UserContextUtils.getUserHolder().getDepartName();
+        jobParams.setDATA_DATE(dateStamp);
+        jobParams.setDATA_SRC(departName);
+        jobParams.setFILE(fileName);
+        jobParams.setUSER_ID(Id);
         return webServiceUtils.getConnection(PentahoWebService.executeTrans,jobParams);
     }
 

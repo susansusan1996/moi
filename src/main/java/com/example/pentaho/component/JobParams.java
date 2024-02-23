@@ -84,6 +84,11 @@ public class JobParams implements Serializable {
         this.DATA_DATE = DATA_DATE;
     }
 
+    public JobParams( String BATCH_ID, String BATCHFORM_ORIGINAL_FILE_ID) {
+        this.BATCH_ID = BATCH_ID;
+        this.BATCHFORM_ORIGINAL_FILE_ID = BATCHFORM_ORIGINAL_FILE_ID;
+    }
+
     public String getDATA_SRC() {
         return DATA_SRC;
     }
