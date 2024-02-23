@@ -2,6 +2,7 @@ package com.example.pentaho.service;
 
 import com.example.pentaho.component.IbdTbIhChangeDoorplateHis;
 import com.example.pentaho.component.SingleQueryDTO;
+import com.example.pentaho.repository.IbdTbAddrDataNewRepository;
 import com.example.pentaho.repository.IbdTbIhChangeDoorplateHisRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +29,9 @@ public class SingleQueryService {
 
     @Autowired
     private IbdTbIhChangeDoorplateHisRepository ibdTbIhChangeDoorplateHisRepository;
+
+    @Autowired
+    private IbdTbAddrDataNewRepository ibdTbAddrDataNewRepository;
 
 
     /**
@@ -101,7 +105,20 @@ public class SingleQueryService {
         return elements;
     }
 
-    public List<IbdTbIhChangeDoorplateHis> singleQueryTrack(IbdTbIhChangeDoorplateHis IbdTbIhChangeDoorplateHis){
-       return ibdTbIhChangeDoorplateHisRepository.findByhisCity(IbdTbIhChangeDoorplateHis.getHisCity());
+
+
+    public String findJson(String originalString) {
+        //先到addr_ods.IBD_TB_ADDR_DATA_REPOSITORY_NEW找相對應的seq
+        //TODO:先寫死
+        SingleQueryDTO singleQueryDTO = new SingleQueryDTO();
+        singleQueryDTO.setRedisKey("1066693");
+        Integer seq =  ibdTbAddrDataNewRepository.querySeqByCriteria(singleQueryDTO);
+        //再到REDIS(ADDR_ods.IBD_TB_ADDR_CODE_OF_DATA_STANDARD)找seq相對應column組裝成的json
+        singleQueryDTO.setRedisKey(String.valueOf(seq));
+        return findByKey(singleQueryDTO);
+    }
+
+    public List<IbdTbIhChangeDoorplateHis> singleQueryTrack(IbdTbIhChangeDoorplateHis IbdTbIhChangeDoorplateHis) {
+        return ibdTbIhChangeDoorplateHisRepository.findByhisCity(IbdTbIhChangeDoorplateHis.getHisCity());
     }
 }
