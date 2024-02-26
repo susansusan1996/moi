@@ -108,10 +108,10 @@ public class SingleQueryService {
 
 
 
-    public String findJson(String originalString) {
+    public String findJson(SingleQueryDTO singleQueryDTO) {
         //先到addr_ods.IBD_TB_ADDR_DATA_REPOSITORY_NEW找相對應的seq
         //TODO:先寫死
-        SingleQueryDTO singleQueryDTO = new SingleQueryDTO();
+//        SingleQueryDTO singleQueryDTO = new SingleQueryDTO();
         singleQueryDTO.setRedisKey("1066693");
         Integer seq =  ibdTbAddrDataNewRepository.querySeqByCriteria(singleQueryDTO);
         //再到REDIS(ADDR_ods.IBD_TB_ADDR_CODE_OF_DATA_STANDARD)找seq相對應column組裝成的json
