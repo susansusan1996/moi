@@ -370,11 +370,11 @@ public class JobService {
 
     public String[] targetDirs(String dateStamp){
         /**
-         * /home/addr/batch_data/receive/unitName/yyyyMMdd
-         * /home/addr/batch_data/send/unitName/yyyyMMdd
+         * /home/addr/batch_data/receive/orgId/yyyyMMdd
+         * /home/addr/batch_data/send/orgId/yyyyMMdd
          */
-        String receiveDir =directories.getReceiveFileDir()+ UserContextUtils.getUserHolder().getDepartName() + "/" + dateStamp + "/";
-        String sendDir=directories.getSendFileDir()+ UserContextUtils.getUserHolder().getDepartName() + "/" + dateStamp + "/";
+        String receiveDir =directories.getReceiveFileDir()+ UserContextUtils.getUserHolder().getOrgId() + "/" + dateStamp + "/";
+        String sendDir=directories.getSendFileDir()+ UserContextUtils.getUserHolder().getOrgId() + "/" + dateStamp + "/";
 
         log.info("receiveDir:{}",receiveDir);
         log.info("sendDir:{}",sendDir);
@@ -385,7 +385,7 @@ public class JobService {
     public String sftpUploadAndExecuteTrans(MultipartFile file,JobParams jobParams){
         /**以'批次ID'為檔名**/
         String fileName = getFileName(file.getOriginalFilename(), jobParams.getBATCH_ID());
-        /**目錄**/
+        /**建立目錄**/
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
         String dateStamp = dateFormat.format(new Date());
         String[] targetDirs = targetDirs(dateStamp);
@@ -399,10 +399,9 @@ public class JobService {
         }
         /**準備要給 pentaho params*/
         String Id = String.valueOf(UserContextUtils.getUserHolder().getId());
-        String departName = UserContextUtils.getUserHolder().getDepartName();
+        String orgId = UserContextUtils.getUserHolder().getOrgId();
         jobParams.setDATA_DATE(dateStamp);
-        jobParams.setDATA_SRC(departName);
-        jobParams.setFILE(fileName);
+        jobParams.setDATA_SRC(orgId);
         jobParams.setUSER_ID(Id);
         return webServiceUtils.getConnection(PentahoWebService.executeTrans,jobParams);
     }

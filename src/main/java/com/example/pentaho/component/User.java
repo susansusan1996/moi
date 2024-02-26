@@ -45,6 +45,10 @@ public class User  {
     @JsonProperty("username")
     private String username;
 
+    /**單位代號**/
+    @JsonProperty("orgId")
+    private String orgId;
+
     /**使用者單位名稱*/
     @JsonProperty("departName")
     private String departName;
@@ -52,6 +56,18 @@ public class User  {
     /**使用者密碼*/
     @JsonProperty("password")
     private String password;
+
+
+    public User() {
+    }
+
+    public String getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(String orgId) {
+        this.orgId = orgId;
+    }
 
     public String getId() {
         return id;
@@ -93,10 +109,6 @@ public class User  {
         this.haveToChangePwd = haveToChangePwd;
     }
 
-
-
-    public User() {
-    }
 
     public String getToken() {
         return token;

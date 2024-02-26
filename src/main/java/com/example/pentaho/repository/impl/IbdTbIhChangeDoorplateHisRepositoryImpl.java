@@ -18,18 +18,17 @@ public class IbdTbIhChangeDoorplateHisRepositoryImpl implements IbdTbIhChangeDoo
     private static final Logger log = LoggerFactory.getLogger(IbdTbIhChangeDoorplateHisRepositoryImpl.class);
     private final SqlExecutor sqlExecutor;
 
-
     public IbdTbIhChangeDoorplateHisRepositoryImpl(SqlExecutor sqlExecutor) {
         this.sqlExecutor = sqlExecutor;
     }
 
 
     @Override
-    public List<IbdTbIhChangeDoorplateHis> findByhisCity(String hisCity) {
+    public List<IbdTbIhChangeDoorplateHis> findByAddressId(String addressId) {
         Query query = Query.builder()
                 .append("SELECT * \n")
                 .append("FROM addr_ods.IBD_TB_IH_CHANGE_DOORPLATE_HIS \n")
-                .append("WHERE HIS_VILLAGE = :hisCity", hisCity)
+                .append("WHERE ADDRESS_ID =:addressId", addressId)
                 .build();
         log.info("query:{}",query);
         log.info("params:{}",query.getParameters());

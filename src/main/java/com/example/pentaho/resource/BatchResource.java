@@ -108,6 +108,11 @@ public class BatchResource {
                 schema = @Schema(type = "string"))
         @RequestParam("originalFileId") String originalFileId,
         @Parameter(
+                description ="申請單號" ,
+                required = true,
+                schema = @Schema(type = "string"))
+        @RequestParam("formName") String formName,
+        @Parameter(
                 description = "使用者上傳的CSV檔",
                 required = true
         )
@@ -115,7 +120,7 @@ public class BatchResource {
         if(file == null){
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"UPLOAD_ERROR");
         }
-        JobParams jobParams = new JobParams(Id,originalFileId);
+        JobParams jobParams = new JobParams(formName,Id,originalFileId);
         log.info("jobParams:{}",jobParams);
         String status = jobService.sftpUploadAndExecuteTrans(file, jobParams);
         if(!"CALL_JOB_SUCESS".equals(status)){
@@ -126,6 +131,7 @@ public class BatchResource {
 
     @PostMapping(path = "/finished")
     public void sftpDownloadAndSend(@RequestBody String requestBody) throws IOException, SftpException {
+        log.info("requestBody:{}",requestBody);
         //解析requestBody中的參數
         ObjectMapper objectMapper = new ObjectMapper();
         ObjectNode jsonObject = objectMapper.createObjectNode();

@@ -8,6 +8,8 @@ import com.example.pentaho.utils.AddressParser;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,9 +59,16 @@ public class SingleQueryResouce {
     /***
      * 單筆查詢軌跡
      */
+    @Operation(description = "單筆查詢軌跡",
+    parameters = {  @Parameter(in = ParameterIn.HEADER,
+            name = "Authorization",
+            description = "驗證jwt token,body附帶userInfo={\"Id\":1,\"departName\":\"A05\"} ,departName需為代號",
+            required = true,
+            schema = @Schema(type = "string"))
+    })
     @PostMapping("/query-track")
-    public ResponseEntity<List<IbdTbIhChangeDoorplateHis>> queryTrack(@RequestBody IbdTbIhChangeDoorplateHis IbdTbIhChangeDoorplateHis){
-       return new ResponseEntity<>(singleQueryService.singleQueryTrack(IbdTbIhChangeDoorplateHis), HttpStatus.OK);
+    public ResponseEntity<List<IbdTbIhChangeDoorplateHis>> queryTrack(@RequestBody String addressId ){
+       return new ResponseEntity<>(singleQueryService.singleQueryTrack(addressId), HttpStatus.OK);
     }
 
 }

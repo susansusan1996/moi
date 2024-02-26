@@ -112,8 +112,6 @@ public class Token {
         try {
             log.info("keyName:{}", keyName);
             //公鑰驗證jwt token
-//            InputStream inputStream = RsaUtils.class.getClassLoader().getResourceAsStream(keyName);
-//            byte[] keyBytes = inputStream.readAllBytes();
             File file = ResourceUtils.getFile(keyName);
             byte[] keyBytes = readFileAsBytes(file);
             byte[] decodedKeyBytes = Base64.getDecoder().decode(keyBytes);

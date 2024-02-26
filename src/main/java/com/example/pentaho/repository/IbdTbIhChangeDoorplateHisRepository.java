@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface IbdTbIhChangeDoorplateHisRepository {
 
-    List<IbdTbIhChangeDoorplateHis> findByhisCity(String hisCity);
+    List<IbdTbIhChangeDoorplateHis> findByAddressId(String AddressId);
 }
