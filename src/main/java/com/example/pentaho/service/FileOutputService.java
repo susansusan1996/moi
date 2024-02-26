@@ -123,18 +123,19 @@ public class FileOutputService {
     public void sftpDownloadFileAndSend(JobParams jobParams) throws SftpException, IOException {
         log.info("jobParams:{}",jobParams);
         String targetDir = directories.getSendFileDir() + jobParams.getDATA_SRC() + "/" + jobParams.getDATA_DATE()+"/";
+        String fileName = jobParams.getFILE() + ".zip";
         sftpUtils.connect();
-        boolean hasFile = sftpUtils.listFiles(targetDir,jobParams.getFILE());
+        boolean hasFile = sftpUtils.listFiles(targetDir,fileName);
         if(!hasFile){
             jobParams.setStatus("找不到檔案_處理錯誤_SYS_FAILED");
         }
-        boolean hasDownload = sftpUtils.downloadFile(directories.getLocalTempDir(), targetDir, jobParams.getFILE());
+        boolean hasDownload = sftpUtils.downloadFile(directories.getLocalTempDir(), targetDir,fileName);
         if(!hasDownload){
             jobParams.setStatus("無法下載_處理錯誤_SYS_FAILED");
         }
         sftpUtils.disconnect();
         jobParams.setStatus("完成_DONE");
-        String sourceFilePath = directories.getLocalTempDir()+jobParams.getFILE();
+        String sourceFilePath = directories.getLocalTempDir()+fileName;
         postFileToServer(sourceFilePath, apServerComponent.getTargetUrl(), jobParams);
     }
     

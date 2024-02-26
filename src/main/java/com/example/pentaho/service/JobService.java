@@ -385,7 +385,7 @@ public class JobService {
     public String sftpUploadAndExecuteTrans(MultipartFile file,JobParams jobParams){
         /**以'批次ID'為檔名**/
         String fileName = getFileName(file.getOriginalFilename(), jobParams.getBATCH_ID());
-        /**目錄**/
+        /**建立目錄**/
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
         String dateStamp = dateFormat.format(new Date());
         String[] targetDirs = targetDirs(dateStamp);
@@ -402,7 +402,6 @@ public class JobService {
         String orgId = UserContextUtils.getUserHolder().getOrgId();
         jobParams.setDATA_DATE(dateStamp);
         jobParams.setDATA_SRC(orgId);
-        jobParams.setFILE(fileName);
         jobParams.setUSER_ID(Id);
         return webServiceUtils.getConnection(PentahoWebService.executeTrans,jobParams);
     }
