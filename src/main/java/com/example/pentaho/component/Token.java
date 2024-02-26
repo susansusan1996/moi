@@ -2,12 +2,7 @@ package com.example.pentaho.component;
 
 
 import com.example.pentaho.utils.RSAJWTUtils;
-import com.example.pentaho.utils.RsaUtils;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.gson.Gson;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
@@ -71,7 +66,7 @@ public class Token {
             PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(decodedKeyBytes);
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             PrivateKey RSAprivateKey = keyFactory.generatePrivate(spec);
-          return new Token(RSAJWTUtils.generateTokenExpireInMinutes(user, RSAprivateKey, 20));//20分鐘過期
+          return new Token(RSAJWTUtils.generateTokenExpireInMinutes(user, RSAprivateKey, 1440));//20分鐘過期
         }catch (Exception e){
             log.info("e:{}",e.toString());
           return null;
