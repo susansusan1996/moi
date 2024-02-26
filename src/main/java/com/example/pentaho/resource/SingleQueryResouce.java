@@ -51,9 +51,19 @@ public class SingleQueryResouce {
                             required = true,
                             schema = @Schema(type = "string"))}
     )
-    @GetMapping("/query-single")
-    public ResponseEntity<String> queryAddressJson(@RequestBody String originalString) {
-        return ResponseEntity.ok(singleQueryService.findJson(originalString));
+    @PostMapping("/query-single")
+    public ResponseEntity<String> queryAddressJson(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "單筆查詢",
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = SingleQueryDTO.class),
+                            examples = @ExampleObject(value = "{\"originalAddress\":\"衛國里007鄰衛國街１１４巷９弄１０號B六樓之５\",\"county\":\"臺南市(可為空)\",\"town\":\"東區(可為空)\"}")
+                    )
+            )
+            @RequestBody SingleQueryDTO singleQueryDTO) {
+        log.info("單筆查詢，參數為:{}", singleQueryDTO);
+        return ResponseEntity.ok(singleQueryService.findJson(singleQueryDTO));
     }
 
     /***
