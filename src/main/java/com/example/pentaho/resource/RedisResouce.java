@@ -26,7 +26,7 @@ public class RedisResouce {
      */
     @GetMapping("/query-data")
     public ResponseEntity<String> queryData(@RequestBody String key) {
-        return ResponseEntity.ok(redisService.findByKey(key));
+        return ResponseEntity.ok(redisService.findByKey(key, null));
     }
 
 
@@ -52,8 +52,8 @@ public class RedisResouce {
      * 模糊比對，找出相符的 KEY (scan)
      */
     @GetMapping("/scan-data-list")
-    public ResponseEntity<Set<String>> scanAddr(@RequestBody SingleQueryDTO singleQueryDTO) {
-        return ResponseEntity.ok(redisService.findListByScan(singleQueryDTO));
+    public ResponseEntity<Set<String>> scanAddr(@RequestBody String key) {
+        return ResponseEntity.ok(redisService.findListByScan(key));
     }
 
 

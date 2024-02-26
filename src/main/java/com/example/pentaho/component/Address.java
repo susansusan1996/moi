@@ -18,6 +18,9 @@ public class Address {
     private String numFlr3;
     private String numFlr4;
     private String numFlr5;
+    private String basementStr;
+    private String numFlrPos;
+    private String room; //室
     private String seq;
     private String addrRemains;
     private boolean isParseSuccessed;
@@ -183,6 +186,30 @@ public class Address {
         this.originalAddress = originalAddress;
     }
 
+    public String getBasementStr() {
+        return basementStr;
+    }
+
+    public void setBasementStr(String basementStr) {
+        this.basementStr = basementStr;
+    }
+
+    public String getNumFlrPos() {
+        return numFlrPos;
+    }
+
+    public void setNumFlrPos(String numFlrPos) {
+        this.numFlrPos = numFlrPos;
+    }
+
+    public String getRoom() {
+        return room;
+    }
+
+    public void setRoom(String room) {
+        this.room = room;
+    }
+
     @Override
     public String toString() {
         return "Address{" +
@@ -201,6 +228,9 @@ public class Address {
                 ", numFlr3='" + numFlr3 + '\'' +
                 ", numFlr4='" + numFlr4 + '\'' +
                 ", numFlr5='" + numFlr5 + '\'' +
+                ", basementStr='" + basementStr + '\'' +
+                ", numFlrPos='" + numFlrPos + '\'' +
+                ", room='" + room + '\'' +
                 ", seq='" + seq + '\'' +
                 ", addrRemains='" + addrRemains + '\'' +
                 ", isParseSuccessed=" + isParseSuccessed +

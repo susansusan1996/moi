@@ -37,14 +37,22 @@ public class SingleQueryService {
     @Autowired
     private IbdTbAddrDataNewRepository ibdTbAddrDataNewRepository;
 
+    @Autowired
+    private AddressParser addressParser;
+
 
     /**
      * 找單一個值 (redis: get)
      */
-    public String findByKey(String key) {
-        String redisValue = stringRedisTemplate.opsForValue().get(key);
-        log.info("redisKey: {} , redisValue: {}", key, redisValue);
-        return redisValue;
+    public String findByKey(String key, String defaultValue) {
+        if (key != null && !key.isEmpty()) {
+            String redisValue = stringRedisTemplate.opsForValue().get(key);
+            if(redisValue != null && !redisValue.isEmpty()){
+                log.info("redisKey: {} , redisValue: {}", key, redisValue);
+                return redisValue;
+            }
+        }
+        return defaultValue;
     }
 
 
@@ -61,11 +69,11 @@ public class SingleQueryService {
     /**
      * 模糊比對，找出相符的 KEY (redis: scan)
      */
-    public Set<String> findListByScan(SingleQueryDTO singleQueryDTO) {
+    public Set<String> findListByScan(String key) {
         Set<String> keySet = stringRedisTemplate.execute((RedisCallback<Set<String>>) connection -> {
             Set<String> keySetTemp = new ConcurrentSkipListSet<>();
             try (Cursor<byte[]> cursor = connection.scan(ScanOptions.scanOptions()
-                    .match(singleQueryDTO.getRedisKey() + "*") //模糊比對
+                    .match("*" + key + "*") //模糊比對
                     .count(SCAN_SIZE)
                     .build())) {
                 while (cursor.hasNext() && keySetTemp.size() < SCAN_SIZE) {
@@ -111,53 +119,66 @@ public class SingleQueryService {
 
 
     public String findJsonTest(String originalString) {
-        return findByKey("1066693");
+        return findByKey("1066693", null);
     }
-
 
 
     public String findJson(String originalString) {
         //先到addr_ods.IBD_TB_ADDR_DATA_REPOSITORY_NEW找相對應的seq
         //切地址
-        Address address = AddressParser.parseAddress(originalString);
-        if(address!=null) {
+        Address address = addressParser.parseAddress(originalString);
+        if (address != null) {
             log.info("address:{}", address);
             String county = address.getCounty();
-            String countyCd = findByKey(county);
+            //如果是別名，要找到正確的名稱
+
+            String countyCd = findByKey(county, null);
 
             String town = address.getTown();
-            String townCd = findByKey(town);
+            String townCd = findByKey(county+":"+town, null);
 
             String village = address.getVillage(); //里
-            String villageCd = findByKey(village);
+            String villageCd = findByKey(town+":"+village, null);
 
             String neighbor = findNeighborCd(address.getNeighbor()); //鄰
 
             String road = address.getRoad();
             String area = address.getArea();
-            String roadAreaSn = findByKey(road + (area == null ? "" : area));
+            String roadAreaSn = findByKey(road + (area == null ? "" : area), null);
 
             String lane = address.getLane(); //巷
-            String laneCd = findByKey(lane);
+            String laneCd = findByKey(lane, null);
 
             String alley = address.getAlley(); //弄
             String subAlley = address.getSubAlley(); //弄
-            String alleyIdSn = findByKey(alley + (subAlley == null ? "" : subAlley));
+            String alleyIdSn = findByKey(alley + (subAlley == null ? "" : subAlley), "0000000");
 
             String numFlr1 = address.getNumFlr1();
-            String numFlr1Id = findByKey(numFlr1);
+            String numFlr1Id = findByKey("NUM_FLR_1:" + numFlr1, "000000");
 
-            return countyCd + townCd + villageCd + neighbor + roadAreaSn + laneCd +  alleyIdSn + numFlr1Id;
+            String numFlr2 = address.getNumFlr2();
+            String numFlr2Id = findByKey("NUM_FLR_2:" + numFlr2, "00000");
+
+            String numFlr3 = address.getNumFlr3();
+            String numFlr3d = findByKey("NUM_FLR_3:" + numFlr3, "0000");
+
+            String numFlr4 = address.getNumFlr4();
+            String numFlr4d = findByKey("NUM_FLR_4:" + numFlr4, "000");
+
+            String numFlr5 = address.getNumFlr5();
+            String numFlr5d = findByKey("NUM_FLR_5:" + numFlr5, "0");
+
+            String numTypeCd = "95";
+            String numFlrId = numFlr1Id + numFlr2Id + numFlr3d + numFlr4d + numFlr5d;
+//            String basementStr = "0"; //可能為0、1、2 (1為地下、2為頂樓)
+//            String numFlrPos = "10000"; //五碼數字(10000、12000為最多)
+            String room = address.getRoom(); //里
+            String roomIdSn = findByKey(room, "00000");
+            return countyCd + townCd + villageCd + neighbor + roadAreaSn + laneCd + alleyIdSn + numTypeCd +
+                    numFlrId + roomIdSn
+//                    + numFlrPos+  basementStr
+                    ;
         }
-//        String lane = address.getLane();
-//        String alley = address.getAlley();
-//        String num = address.getNum();
-//        String seq = address.getSeq();
-//        String floor = address.getFloor();
-//        String others = address.getOthers();
-//        Integer seqence =  ibdTbAddrDataNewRepository.querySeqByCriteria(singleQueryDTO);
-//        //再到REDIS(ADDR_ods.IBD_TB_ADDR_CODE_OF_DATA_STANDARD)找seq相對應column組裝成的json
-//        return findByKey(String.valueOf(seqence));
         return originalString;
     }
 
