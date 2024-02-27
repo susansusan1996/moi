@@ -1,15 +1,14 @@
 package com.example.pentaho.resource;
 
+import com.example.pentaho.component.BigDataParams;
 import com.example.pentaho.component.Directory;
 import com.example.pentaho.component.IbdTbAddrStatisticsOverallDev;
-import com.example.pentaho.component.JobParams;
 import com.example.pentaho.repository.IbdTbAddrStatisticsOverallDevRepository;
 import com.example.pentaho.service.FileOutputService;
 import com.example.pentaho.service.FileUploadService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -60,9 +59,15 @@ public class BigDataResource {
     }
 
 
+    /***
+     * 改回傳log就好
+     * @param batchId
+     * @return
+     * @throws IOException
+     */
     @PostMapping("/finished")
-    public void sftpDownloadBigDataFile(@RequestBody JobParams jobParams) throws IOException {
-        fileOutputService.postFileAndLog(jobParams.getBATCH_ID());
+    public ResponseEntity<List<IbdTbAddrStatisticsOverallDev>> sftpDownloadBigDataFile(@RequestBody String batchId) throws IOException {
+     return new ResponseEntity<>(fileOutputService.findLog(batchId),HttpStatus.OK);
     }
 
 }

@@ -368,18 +368,23 @@ public class JobService {
         return batchId+".csv";
     }
 
-    public String[] targetDirs(String dateStamp){
+    public String[] targetDirs(String dateStamp) {
         /**
          * /home/addr/batch_data/receive/orgId/yyyyMMdd
          * /home/addr/batch_data/send/orgId/yyyyMMdd
          */
-        String receiveDir =directories.getReceiveFileDir()+ UserContextUtils.getUserHolder().getOrgId() + "/" + dateStamp + "/";
-        String sendDir=directories.getSendFileDir()+ UserContextUtils.getUserHolder().getOrgId() + "/" + dateStamp + "/";
+        String receiveDir = directories.getReceiveFileDir() + UserContextUtils.getUserHolder().getOrgId() + "/" + dateStamp + "/";
+        String sendDir = directories.getSendFileDir() + UserContextUtils.getUserHolder().getOrgId() + "/" + dateStamp + "/";
 
-        log.info("receiveDir:{}",receiveDir);
-        log.info("sendDir:{}",sendDir);
-        String[] targetDirs = new String[]{receiveDir,sendDir};
+        log.info("receiveDir:{}", receiveDir);
+        log.info("sendDir:{}", sendDir);
+        String[] targetDirs = new String[]{receiveDir, sendDir};
         return targetDirs;
+    }
+
+
+    public String checkData(MultipartFile file){
+        return "";
     }
 
     public String sftpUploadAndExecuteTrans(MultipartFile file,JobParams jobParams){
