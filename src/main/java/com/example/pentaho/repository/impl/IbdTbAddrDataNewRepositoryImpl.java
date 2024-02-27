@@ -23,12 +23,25 @@ public class IbdTbAddrDataNewRepositoryImpl implements IbdTbAddrDataNewRepositor
     @Override
     public Integer querySeqByCriteria(SingleQueryDTO singleQueryDTO) {
         Query query = Query.builder()
-                .append("SELECT seq \n")
+                .append("SELECT seq ")
                 .append("FROM addr_ods.IBD_TB_ADDR_DATA_REPOSITORY_NEW where seq = :seq", singleQueryDTO.getRedisKey())
                 .build();
         log.info("query:{}", query);
         log.info("params:{}", query.getParameters());
         List<Integer> list = sqlExecutor.queryForList(query, Integer.class);
         return list.isEmpty() ? null : list.get(0);
+    }
+
+    @Override
+    public List<String> queryAllArea() {
+        Query query = Query.builder()
+                .append("SELECT DISTINCT AREA FROM addr_ods.IBD_TB_ADDR_DATA_REPOSITORY_NEW ")
+                .append("WHERE AREA IS NOT NULL ")
+                .append("AND DATA_SOURCE = 'DOORPLATE'")
+                .append("AND VALIDITY = 'T'")
+                .build();
+        log.info("query:{}", query);
+        log.info("params:{}", query.getParameters());
+        return sqlExecutor.queryForList(query, String.class);
     }
 }
