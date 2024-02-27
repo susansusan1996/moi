@@ -19,6 +19,9 @@ public class SingleQueryDTO {
 
     private String originalAddress;
 
+    private String county; //縣市(選填)
+
+    private String town;  //區(選填)
 
     public String getRedisKey() {
         return redisKey;
@@ -53,6 +56,23 @@ public class SingleQueryDTO {
         this.originalAddress = originalAddress;
     }
 
+
+    public String getCounty() {
+        return county;
+    }
+
+    public void setCounty(String county) {
+        this.county = county;
+    }
+
+    public String getTown() {
+        return town;
+    }
+
+    public void setTown(String town) {
+        this.town = town;
+    }
+
     @Override
     public String toString() {
         return "SingleQueryDTO{" +
@@ -60,6 +80,8 @@ public class SingleQueryDTO {
                 ", redisValue='" + redisValue + '\'' +
                 ", redisValueList=" + redisValueList +
                 ", originalAddress='" + originalAddress + '\'' +
+                ", county='" + county + '\'' +
+                ", town='" + town + '\'' +
                 '}';
     }
 }

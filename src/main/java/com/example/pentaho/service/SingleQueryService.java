@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
@@ -118,13 +119,12 @@ public class SingleQueryService {
     }
 
 
-    public String findJsonTest(String originalString) {
+    public String findJsonTest(SingleQueryDTO singleQueryDTO) {
         return findByKey("1066693", null);
     }
 
 
     public String findJson(String originalString) {
-        //先到addr_ods.IBD_TB_ADDR_DATA_REPOSITORY_NEW找相對應的seq
         //切地址
         Address address = addressParser.parseAddress(originalString);
         if (address != null) {
@@ -182,8 +182,9 @@ public class SingleQueryService {
         return originalString;
     }
 
-    public List<IbdTbIhChangeDoorplateHis> singleQueryTrack(IbdTbIhChangeDoorplateHis IbdTbIhChangeDoorplateHis) {
-        return ibdTbIhChangeDoorplateHisRepository.findByhisCity(IbdTbIhChangeDoorplateHis.getHisCity());
+    public List<IbdTbIhChangeDoorplateHis> singleQueryTrack(String addressId) {
+        log.info("addressId:{}",addressId);
+        return ibdTbIhChangeDoorplateHisRepository.findByAddressId(addressId);
     }
 
 

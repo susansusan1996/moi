@@ -49,12 +49,12 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
              * 驗證使用者身分
              * 先直接給予JwtToken
              */
-            if (authHeader.substring(6, authHeader.length()) == null && "".equals(authHeader.substring(7, authHeader.length()))) {
+            if (authHeader.substring(7, authHeader.length()) == null && "".equals(authHeader.substring(7, authHeader.length()))) {
                 /**前端補403導回登入頁?**/
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not allowed");
             }
 
-        String RSATokenJwt = authHeader.substring(6, authHeader.length());
+        String RSATokenJwt = authHeader.substring(7, authHeader.length());
         log.info("RASJWTToken:{}", RSATokenJwt);
 
         /**
@@ -63,11 +63,12 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
          */
         String keyName = keyComponent.getPubkeyName();
         log.info("requestURI:{}",request.getRequestURI());
-        if("/api/batchForm/finished".equals(request.getRequestURI())){
+        if("/api/batchForm/finished".equals(request.getRequestURI()) ||"/api/singlequery/query-single".equals(request.getRequestURI())){
           keyName =keyComponent.getApPubkeyName();
         }
             if(Token.fromRSAJWTToken(RSATokenJwt,keyName)){
                 User user = Token.extractUserFromRSAJWTToken(RSATokenJwt,keyName);
+                log.info("user:{}",user);
                 UserContextUtils.setUserHolder(user);
                 return true;
             }

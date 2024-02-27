@@ -1,8 +1,16 @@
 package com.example.pentaho.component;
 
+import org.springframework.stereotype.Component;
+
 import java.sql.Timestamp;
 
 public class IbdTbIhChangeDoorplateHis {
+
+
+    //ADDRESS_ID BSZ7538-0
+
+
+    private String addressId;
 
     private String newAdr;
 
@@ -37,6 +45,13 @@ public class IbdTbIhChangeDoorplateHis {
 
     private Timestamp etlDt;
 
+
+    public IbdTbIhChangeDoorplateHis() {
+    }
+
+    public IbdTbIhChangeDoorplateHis(String addressId) {
+        this.addressId = addressId;
+    }
 
     public String getNewAdr() {
         return newAdr;
@@ -172,5 +187,37 @@ public class IbdTbIhChangeDoorplateHis {
 
     public void setEtlDt(Timestamp etlDt) {
         this.etlDt = etlDt;
+    }
+
+    public String getAddressId() {
+        return addressId;
+    }
+
+    public void setAddressId(String addressId) {
+        this.addressId = addressId;
+    }
+
+    @Override
+    public String toString() {
+        return "IbdTbIhChangeDoorplateHis{" +
+                "addressId='" + addressId + '\'' +
+                ", newAdr='" + newAdr + '\'' +
+                ", hisAdr='" + hisAdr + '\'' +
+                ", hisCity='" + hisCity + '\'' +
+                ", hisVillage='" + hisVillage + '\'' +
+                ", hisNeighborCd='" + hisNeighborCd + '\'' +
+                ", hisNeighbor='" + hisNeighbor + '\'' +
+                ", hisAddress='" + hisAddress + '\'' +
+                ", updateDt='" + updateDt + '\'' +
+                ", UpdateCode='" + UpdateCode + '\'' +
+                ", businessCode='" + businessCode + '\'' +
+                ", lv=" + lv +
+                ", doorplateSeq=" + doorplateSeq +
+                ", historySeq=" + historySeq +
+                ", status='" + status + '\'' +
+                ", dataYr='" + dataYr + '\'' +
+                ", adrVersion='" + adrVersion + '\'' +
+                ", etlDt=" + etlDt +
+                '}';
     }
 }

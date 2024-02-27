@@ -103,6 +103,10 @@ public class FileOutputService {
                 return file.getName();
             }
         });
+//        parts.add("id",jobParams.getBATCH_ID());
+//        parts.add("originalFileId",jobParams.getBATCHFORM_ORIGINAL_FILE_ID());
+//        parts.add("processedCounts",1);
+//        parts.add("status",jobParams.getStatus());
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(parts, headers);
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<Void> responseEntity = restTemplate.exchange(targetUrl, HttpMethod.PUT, requestEntity, Void.class, parts);
@@ -119,18 +123,19 @@ public class FileOutputService {
     public void sftpDownloadFileAndSend(JobParams jobParams) throws SftpException, IOException {
         log.info("jobParams:{}",jobParams);
         String targetDir = directories.getSendFileDir() + jobParams.getDATA_SRC() + "/" + jobParams.getDATA_DATE()+"/";
+        String fileName = jobParams.getFILE() + ".zip";
         sftpUtils.connect();
-        boolean hasFile = sftpUtils.listFiles(targetDir,jobParams.getFILE());
+        boolean hasFile = sftpUtils.listFiles(targetDir,fileName);
         if(!hasFile){
             jobParams.setStatus("找不到檔案_處理錯誤_SYS_FAILED");
         }
-        boolean hasDownload = sftpUtils.downloadFile(directories.getLocalTempDir(), targetDir, jobParams.getFILE());
+        boolean hasDownload = sftpUtils.downloadFile(directories.getLocalTempDir(), targetDir,fileName);
         if(!hasDownload){
             jobParams.setStatus("無法下載_處理錯誤_SYS_FAILED");
         }
         sftpUtils.disconnect();
         jobParams.setStatus("完成_DONE");
-        String sourceFilePath = directories.getLocalTempDir()+jobParams.getFILE();
+        String sourceFilePath = directories.getLocalTempDir()+fileName;
         postFileToServer(sourceFilePath, apServerComponent.getTargetUrl(), jobParams);
     }
     

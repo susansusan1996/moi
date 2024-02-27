@@ -2,8 +2,8 @@ package com.example.pentaho.component;
 
 
 import com.example.pentaho.utils.RSAJWTUtils;
-import com.example.pentaho.utils.RsaUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
@@ -27,6 +27,8 @@ public class Token {
     private final static Logger log = LoggerFactory.getLogger(Token.class);
 
     private static ObjectMapper objectMapper =new ObjectMapper();
+
+    private static Gson gson = new Gson();
 
 
     private String token;
@@ -64,7 +66,7 @@ public class Token {
             PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(decodedKeyBytes);
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             PrivateKey RSAprivateKey = keyFactory.generatePrivate(spec);
-          return new Token(RSAJWTUtils.generateTokenExpireInMinutes(user, RSAprivateKey, 20));//20分鐘過期
+          return new Token(RSAJWTUtils.generateTokenExpireInMinutes(user, RSAprivateKey, 1440));//20分鐘過期
         }catch (Exception e){
             log.info("e:{}",e.toString());
           return null;
@@ -105,8 +107,6 @@ public class Token {
         try {
             log.info("keyName:{}", keyName);
             //公鑰驗證jwt token
-//            InputStream inputStream = RsaUtils.class.getClassLoader().getResourceAsStream(keyName);
-//            byte[] keyBytes = inputStream.readAllBytes();
             File file = ResourceUtils.getFile(keyName);
             byte[] keyBytes = readFileAsBytes(file);
             byte[] decodedKeyBytes = Base64.getDecoder().decode(keyBytes);
@@ -116,11 +116,9 @@ public class Token {
             Jws<Claims> claimsJws = Jwts.parser().setSigningKey(publicKey).parseClaimsJws(RSAJWTToken);
             Claims body = claimsJws.getBody();
             log.info("body:{}", body.toString());
-            String userInfo = body.get("user", String.class);
-            if(userInfo.equals("") || userInfo == null){
-              return null;
-            }
-            return objectMapper.readValue(userInfo, User.class);
+            log.info("userInfo",body.get("userInfo"));
+            String userInfo = gson.toJson(body.get("userInfo"));
+            return objectMapper.readValue(userInfo,User.class);
         } catch (Exception e) {
             log.info("e:{}", e.toString());
             return null;

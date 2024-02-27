@@ -11,10 +11,8 @@ import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.io.*;
 import java.lang.reflect.Method;
@@ -372,11 +370,11 @@ public class JobService {
 
     public String[] targetDirs(String dateStamp){
         /**
-         * /home/addr/batch_data/receive/unitName/yyyyMMdd
-         * /home/addr/batch_data/send/unitName/yyyyMMdd
+         * /home/addr/batch_data/receive/orgId/yyyyMMdd
+         * /home/addr/batch_data/send/orgId/yyyyMMdd
          */
-        String receiveDir =directories.getReceiveFileDir()+ UserContextUtils.getUserHolder().getUnitName() + "/" + dateStamp + "/";
-        String sendDir=directories.getSendFileDir()+ UserContextUtils.getUserHolder().getUnitName() + "/" + dateStamp + "/";
+        String receiveDir =directories.getReceiveFileDir()+ UserContextUtils.getUserHolder().getOrgId() + "/" + dateStamp + "/";
+        String sendDir=directories.getSendFileDir()+ UserContextUtils.getUserHolder().getOrgId() + "/" + dateStamp + "/";
 
         log.info("receiveDir:{}",receiveDir);
         log.info("sendDir:{}",sendDir);
@@ -385,23 +383,26 @@ public class JobService {
     }
 
     public String sftpUploadAndExecuteTrans(MultipartFile file,JobParams jobParams){
+        /**以'批次ID'為檔名**/
         String fileName = getFileName(file.getOriginalFilename(), jobParams.getBATCH_ID());
+        /**建立目錄**/
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
         String dateStamp = dateFormat.format(new Date());
         String[] targetDirs = targetDirs(dateStamp);
+        /**SFTP**/
         boolean sftpUpload = fileUploadService.sftpUpload(file,targetDirs,fileName);
-        /**pentaho params*/
-        String userId = String.valueOf(UserContextUtils.getUserHolder().getUserId());
-        String unitName = UserContextUtils.getUserHolder().getUnitName();
-        jobParams.setDATA_DATE(dateStamp);
-        jobParams.setDATA_SRC(unitName);
-        jobParams.setFILE(fileName);
-        jobParams.setUSER_ID(userId);
+        /**上傳失敗**/
         if(!sftpUpload){
             String status="UPLOAD_ERROR";
             jobParams.setStatus(status);
             return status;
         }
+        /**準備要給 pentaho params*/
+        String Id = String.valueOf(UserContextUtils.getUserHolder().getId());
+        String orgId = UserContextUtils.getUserHolder().getOrgId();
+        jobParams.setDATA_DATE(dateStamp);
+        jobParams.setDATA_SRC(orgId);
+        jobParams.setUSER_ID(Id);
         return webServiceUtils.getConnection(PentahoWebService.executeTrans,jobParams);
     }
 
