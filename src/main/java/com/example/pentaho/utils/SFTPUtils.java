@@ -258,11 +258,11 @@ public class SFTPUtils {
      */
     public boolean listFiles(String directory,String fileName) throws SftpException {
         try {
-            log.info("directory:{}", directory);
-            log.info("fileName:{}", fileName);
+            log.info("比對目錄:{}", directory);
+            log.info("比對檔名:{}", fileName);
             Vector<LsEntry> entries = sftp.ls(directory);
             for (LsEntry ls : entries) {
-                log.info("fileName:{}", ls.getFilename());
+                log.info("檔案:{}", ls.getFilename());
                 if (fileName.equals(ls.getFilename())) {
                     return true;
                 }

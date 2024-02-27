@@ -389,7 +389,7 @@ public class JobService {
 
     public String sftpUploadAndExecuteTrans(MultipartFile file,JobParams jobParams){
         /**以'批次ID'為檔名**/
-        String fileName = getFileName(file.getOriginalFilename(), jobParams.getBATCH_ID());
+        String fileName = getFileName(file.getOriginalFilename(), jobParams.getFORM_NAME());
         /**建立目錄**/
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
         String dateStamp = dateFormat.format(new Date());

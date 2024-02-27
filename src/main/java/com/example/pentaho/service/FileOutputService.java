@@ -19,8 +19,10 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
+import java.nio.file.Path;
 import java.util.List;
 
 
@@ -99,10 +101,17 @@ public class FileOutputService {
      */
     public int postBatchFormRequest(String sourceFilePath, String action, JobParams jobParams) throws IOException {
         String targetUrl = apServerComponent.getTargetUrl()+ action;
-        log.info("targetUrl: {}",targetUrl);
+        log.info("job參數:{}",jobParams);
+        log.info("聖森uri: {}",targetUrl);
+        log.info("本機暫存:{}",sourceFilePath);
         HttpHeaders headers = new HttpHeaders();
         /****/
-        headers.set("Authorization","Bearer eyJhbGciOiJSUzI1NiJ9.eyJ1c2VyIjoie30iLCJqdGkiOiJNVE0yTmpRMk9HWXRPRGcyWWkwME9UTXhMV0UyWlRRdE9URmlNelE1WlRjek5ETTAiLCJleHAiOjE3Mzc2MDE4MzJ9.3ghp8wCHziA6Az9UpS8ssL1d_JB5apN-3pbIV28BWx3bOK-FjRGA9676-EDpqhXrth_Sqln_TFd4wT0RGJ4V1M0RtKXj3EMpFBBV0otdAsgZLm0JcK7LjUrXmWvyfsBcasnHQ83rMo4hE4GeBgXlrhPUlRxnPcVbk4UrVkaMtxyngDfkGpInPJokUWzrScgo7TDA-aKmodw2eZbxYPjGTw1fzXTYHpJC4VNyAYbeGOTd9uMh-cCAyyYMsw__JmkQOAYPpKLnHdyHSb6C8ezxAZJNrI5Rpg4cG0ousXh694IXmixI_R7Q1nVBMFl7GG946fgTO9twiqhuaB64beUILg");
+        Path path = Path.of(apServerComponent.getToken());
+        String token = Files.readString(path, StandardCharsets.UTF_8);
+        log.info("token:{}",token);
+//        headers.set("Authorization","Bearer eyJhbGciOiJSUzI1NiJ9.eyJ1c2VyIjoie30iLCJqdGkiOiJNVE0yTmpRMk9HWXRPRGcyWWkwME9UTXhMV0UyWlRRdE9URmlNelE1WlRjek5ETTAiLCJleHAiOjE3Mzc2MDE4MzJ9.3ghp8wCHziA6Az9UpS8ssL1d_JB5apN-3pbIV28BWx3bOK-FjRGA9676-EDpqhXrth_Sqln_TFd4wT0RGJ4V1M0RtKXj3EMpFBBV0otdAsgZLm0JcK7LjUrXmWvyfsBcasnHQ83rMo4hE4GeBgXlrhPUlRxnPcVbk4UrVkaMtxyngDfkGpInPJokUWzrScgo7TDA-aKmodw2eZbxYPjGTw1fzXTYHpJC4VNyAYbeGOTd9uMh-cCAyyYMsw__JmkQOAYPpKLnHdyHSb6C8ezxAZJNrI5Rpg4cG0ousXh694IXmixI_R7Q1nVBMFl7GG946fgTO9twiqhuaB64beUILg");
+        headers.set("Authorization",token);
+
         MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
         if(!"".equals(sourceFilePath)){
             File file = new File(sourceFilePath);
@@ -115,7 +124,6 @@ public class FileOutputService {
         });
         }
         }
-        parts.add("file",null);
         parts.add("id",jobParams.getBATCH_ID());
         parts.add("originalFileId",jobParams.getBATCHFORM_ORIGINAL_FILE_ID());
         parts.add("processedCounts","0");
@@ -146,15 +154,17 @@ public class FileOutputService {
         log.info("jobParams:{}",jobParams);
         String targetDir = directories.getSendFileDir() + jobParams.getDATA_SRC() + "/" + jobParams.getDATA_DATE()+"/";
         String fileName = jobParams.getFORM_NAME() + ".zip";
-        log.info("targetDir:{}",targetDir);
-        log.info("fileName:{}",fileName);
+        log.info("目標目錄:{}",targetDir);
+        log.info("目標檔名:{}",fileName);
         /**SFTP抓檔落地**/
         String sourceFilePath = "";
         String status="SYS_FAILED";
         sftpUtils.connect();
         boolean hasFile = sftpUtils.listFiles(targetDir,fileName);
+        log.info("已完成zip檔:{}",hasFile);
         if(hasFile){
             boolean hasDownload = sftpUtils.downloadFile(directories.getLocalTempDir(), targetDir,fileName);
+            log.info("已下載zip檔:{}",hasDownload);
             if(hasDownload){
                 status ="DONE";
                 sourceFilePath= directories.getLocalTempDir()+fileName;
