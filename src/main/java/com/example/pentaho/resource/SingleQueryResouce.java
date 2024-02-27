@@ -29,6 +29,9 @@ public class SingleQueryResouce {
     @Autowired
     private SingleQueryService singleQueryService;
 
+    @Autowired
+    private AddressParser addressParser;
+
 
     /**
      * 拆分地址
@@ -36,7 +39,7 @@ public class SingleQueryResouce {
     @GetMapping("/query-address")
     public ResponseEntity<Address> queryData(@RequestBody SingleQueryDTO singleQueryDTO) {
 //        return ResponseEntity.ok(new Address(singleQueryDTO.getOriginalAddress()));
-        return ResponseEntity.ok(AddressParser.parseAddress(singleQueryDTO.getOriginalAddress()));
+        return ResponseEntity.ok(addressParser.parseAddress(singleQueryDTO.getOriginalAddress()));
 
     }
 
