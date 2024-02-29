@@ -31,8 +31,8 @@ public class TestRSAJWT {
         }};
         String path = ResourceUtils.getFile("D:\\rsa_key\\rsa.pri").getPath();
         PrivateKey privateKey = RsaUtils.getPrivateKey(path);
-        String token = RSAJWTUtils.generateTokenExpireInMinutes(userinfo, privateKey, 20); //20分鐘過期
-        RSAToken ="Bearer "+ RSAJWTUtils.generateTokenExpireInMinutes(userinfo, privateKey, 20); //20分鐘過期
+//        String token = RSAJWTUtils.generateTokenExpireInMinutes(userinfo, privateKey, 100000); //20分鐘過期
+        RSAToken ="Bearer "+ RSAJWTUtils.generateTokenExpireInMinutes(userinfo, privateKey, 525600); //20分鐘過期
         System.out.println("RSAToken: "+RSAToken);
     }
 

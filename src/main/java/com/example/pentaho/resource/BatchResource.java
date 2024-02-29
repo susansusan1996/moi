@@ -3,8 +3,6 @@ package com.example.pentaho.resource;
 
 import com.example.pentaho.component.Directory;
 import com.example.pentaho.component.JobParams;
-import com.example.pentaho.component.User;
-import com.example.pentaho.service.BatchService;
 import com.example.pentaho.service.FileOutputService;
 import com.example.pentaho.service.JobService;
 import com.example.pentaho.utils.FileUtils;
@@ -28,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 
 @RestController
 @RequestMapping("/api/batchForm")
@@ -130,12 +129,10 @@ public class BatchResource {
     }
 
     @PostMapping(path = "/finished")
-    public void sftpDownloadAndSend(@RequestBody String requestBody) throws IOException, SftpException {
+    public void sftpDownloadAndSend(@RequestBody String requestBody) throws IOException, SftpException, URISyntaxException {
         log.info("requestBody:{}",requestBody);
-        //解析requestBody中的參數
-        ObjectMapper objectMapper = new ObjectMapper();
+        /**解析requestBody中的參數**/
         ObjectNode jsonObject = objectMapper.createObjectNode();
-        log.info("requestBody:{}",requestBody);
         String[] params = requestBody.split("&");
         for (String param : params) {
             String[] keyValue = param.split("=");
@@ -143,12 +140,10 @@ public class BatchResource {
             String value = keyValue.length > 1 ? keyValue[1] : "";
             jsonObject.put(key, value);
         }
-
         log.info("jsonObject:{}",jsonObject.toString());
-
         JobParams jobParams1 = objectMapper.readValue(jsonObject.toString(), JobParams.class);
         log.info("jobParams1:{}",jobParams1);
-        fileOutputService.sftpDownloadFileAndSend(jobParams1);
+        fileOutputService.sftpDownloadBatchFormFileAndSend(jobParams1);
     }
 
 }

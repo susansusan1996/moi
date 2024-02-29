@@ -22,14 +22,14 @@ public class JobParams implements Serializable {
 
     /**
      * 申請單號(formName)
-     * pentaho的param,用於job step的 target tableName的變數
+     * pentaho的param,用於job 找出csv檔 & 產出zip檔名
      * */
-    @JsonProperty("filename")
-    private String FILE;
+    @JsonProperty("formName")
+    private String FORM_NAME;
 
     /**
      * 執行批次的ID
-     * pentaho的param,用於job step的找到上傳的檔案(batchId.csv) & 產檔命名(batchId.zip)
+     * pentaho的param,用於job完成後傳回AP，AP再傳回聖森
      */
     @JsonProperty("Id")
     private String BATCH_ID;
@@ -80,8 +80,8 @@ public class JobParams implements Serializable {
      */
     private String status;
 
-    public JobParams(String FILE, String BATCH_ID, String BATCHFORM_ORIGINAL_FILE_ID) {
-        this.FILE = FILE;
+    public JobParams(String FORM_NAME, String BATCH_ID, String BATCHFORM_ORIGINAL_FILE_ID) {
+        this.FORM_NAME = FORM_NAME;
         this.BATCH_ID = BATCH_ID;
         this.BATCHFORM_ORIGINAL_FILE_ID = BATCHFORM_ORIGINAL_FILE_ID;
     }
@@ -128,12 +128,12 @@ public class JobParams implements Serializable {
     }
 
 
-    public String getFILE() {
-        return FILE;
+    public String getFORM_NAME() {
+        return FORM_NAME;
     }
 
-    public void setFILE(String FILE) {
-        this.FILE = FILE;
+    public void setFORM_NAME(String FORM_NAME) {
+        this.FORM_NAME = FORM_NAME;
     }
 
     public String getBATCH_ID() {
@@ -183,7 +183,7 @@ public class JobParams implements Serializable {
         return "JobParams{" +
                 "JobParamsJson='" + JobParamsJson + '\'' +
                 ", jobs='" + jobs + '\'' +
-                ", FILE='" + FILE + '\'' +
+                ", FORM_NAME='" + FORM_NAME + '\'' +
                 ", BATCH_ID='" + BATCH_ID + '\'' +
                 ", BATCHFORM_ORIGINAL_FILE_ID='" + BATCHFORM_ORIGINAL_FILE_ID + '\'' +
                 ", USER_ID='" + USER_ID + '\'' +

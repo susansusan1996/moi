@@ -43,13 +43,14 @@ public class WebServiceUtils {
 
     public String getConnection(String webService,JobParams jobParams){
         String status ="CALL_JOB_ERROR";
+        HttpURLConnection con =null;
         try {
             log.info("再確認一次要轉成url的job參數:{}",jobParams);
             StringBuilder temp = new StringBuilder(pentahoComponent.getWebTarget() + webService);
             String fullUrl = getFullUrl(temp,jobParams);
             log.info("fullUrl:{}",fullUrl);
             URL url = new URL(fullUrl);
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con = (HttpURLConnection) url.openConnection();
             basicAuthentication(con);
             con.setRequestMethod("POST");
             int responseCode = con.getResponseCode();
@@ -59,6 +60,10 @@ public class WebServiceUtils {
             }
         }catch (Exception e){
             log.info("e:{}",e.toString());
+        }finally {
+            if(con!=null){
+                con.disconnect();
+            }
         }
         jobParams.setStatus(status);
         return status;

@@ -368,23 +368,28 @@ public class JobService {
         return batchId+".csv";
     }
 
-    public String[] targetDirs(String dateStamp){
+    public String[] targetDirs(String dateStamp) {
         /**
          * /home/addr/batch_data/receive/orgId/yyyyMMdd
          * /home/addr/batch_data/send/orgId/yyyyMMdd
          */
-        String receiveDir =directories.getReceiveFileDir()+ UserContextUtils.getUserHolder().getOrgId() + "/" + dateStamp + "/";
-        String sendDir=directories.getSendFileDir()+ UserContextUtils.getUserHolder().getOrgId() + "/" + dateStamp + "/";
+        String receiveDir = directories.getReceiveFileDir() + UserContextUtils.getUserHolder().getOrgId() + "/" + dateStamp + "/";
+        String sendDir = directories.getSendFileDir() + UserContextUtils.getUserHolder().getOrgId() + "/" + dateStamp + "/";
 
-        log.info("receiveDir:{}",receiveDir);
-        log.info("sendDir:{}",sendDir);
-        String[] targetDirs = new String[]{receiveDir,sendDir};
+        log.info("receiveDir:{}", receiveDir);
+        log.info("sendDir:{}", sendDir);
+        String[] targetDirs = new String[]{receiveDir, sendDir};
         return targetDirs;
+    }
+
+
+    public String checkData(MultipartFile file){
+        return "";
     }
 
     public String sftpUploadAndExecuteTrans(MultipartFile file,JobParams jobParams){
         /**以'批次ID'為檔名**/
-        String fileName = getFileName(file.getOriginalFilename(), jobParams.getBATCH_ID());
+        String fileName = getFileName(file.getOriginalFilename(), jobParams.getFORM_NAME());
         /**建立目錄**/
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
         String dateStamp = dateFormat.format(new Date());
