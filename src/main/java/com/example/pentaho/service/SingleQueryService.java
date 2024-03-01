@@ -128,7 +128,7 @@ public class SingleQueryService {
 
     public String findJson(String originalString) {
         Address address = findMappingId(originalString);
-        String seq =  finSeqByMappingIdInRedis(address.getMappingId());
+        String seq = finSeqByMappingIdInRedis(address.getMappingId());
         return ibdTbAddrCodeOfDataStandardRepository.findBySeq(Integer.valueOf(seq));
     }
 
@@ -179,8 +179,6 @@ public class SingleQueryService {
 
             String numTypeCd = "95";
             String numFlrId = numFlr1Id + numFlr2Id + numFlr3d + numFlr4d + numFlr5d;
-//            String basementStr = "0"; //可能為0、1、2 (1為地下、2為頂樓)
-//            String numFlrPos = "10000"; //五碼數字(10000、12000為最多)
             String room = address.getRoom(); //里
             String roomIdSn = findByKey(room, "00000");
             String basementStr = address.getBasementStr() == null ? "0" : address.getBasementStr();
@@ -204,18 +202,21 @@ public class SingleQueryService {
 
 
     public String findNeighborCd(String rawNeighbor) {
-        Pattern pattern = Pattern.compile("\\d+"); //指提取數字
-        Matcher matcher = pattern.matcher(rawNeighbor);
-        if (matcher.find()) {
-            String neighborResult = matcher.group();
-            // 往前補零，補到三位數
-            String paddedNumber = String.format("%03d", Integer.parseInt(neighborResult));
-            log.info("提取的數字部分為：{}", paddedNumber);
-            return paddedNumber;
+        if (rawNeighbor != null && !rawNeighbor.isEmpty()) {
+            Pattern pattern = Pattern.compile("\\d+"); //指提取數字
+            Matcher matcher = pattern.matcher(rawNeighbor);
+            if (matcher.find()) {
+                String neighborResult = matcher.group();
+                // 往前補零，補到三位數
+                String paddedNumber = String.format("%03d", Integer.parseInt(neighborResult));
+                log.info("提取的數字部分為：{}", paddedNumber);
+                return paddedNumber;
+            }
         } else {
             log.info("沒有數字部分");
             return "000";
         }
+        return "000";
     }
 
     public String deleteBasementString(String rawString) {
@@ -227,17 +228,14 @@ public class SingleQueryService {
 
 
     public String getNumFlrPos(Address address) {
-        String numFlr1 = address.getNumFlr1();
-        String numFlr2 = address.getNumFlr2();
-        String numFlr3 = address.getNumFlr3();
-        String numFlr4 = address.getNumFlr4();
-        String numFlr5 = address.getNumFlr5();
         String[] patternFlr1 = {".+號$", ".+樓$", ".+之$"};
         String[] patternFlr2 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^之.+號", "^[A-ZＡ-Ｚ]+$"};
         String[] patternFlr3 = {"V.+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
         String[] patternFlr4 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
         String[] patternFlr5 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
-        return getNum(numFlr1, patternFlr1) + getNum(numFlr2, patternFlr2) + getNum(numFlr3, patternFlr3) + getNum(numFlr4, patternFlr4) + getNum(numFlr5, patternFlr5);
+        return getNum(address.getNumFlr1(), patternFlr1) + getNum(address.getNumFlr2(), patternFlr2) +
+                getNum(address.getNumFlr3(), patternFlr3) + getNum(address.getNumFlr4(), patternFlr4) +
+                getNum(address.getNumFlr5(), patternFlr5);
     }
 
 
@@ -247,7 +245,6 @@ public class SingleQueryService {
                 Pattern pattern = Pattern.compile(patternArray[i]);
                 Matcher matcher = pattern.matcher(inputString);
                 if (matcher.matches()) {
-                    log.info(patternArray[i] + "position 結果為:{}", i + 1);
                     return String.valueOf(i + 1);
                 }
             }
@@ -258,8 +255,8 @@ public class SingleQueryService {
     }
 
 
-    String finSeqByMappingIdInRedis(String mappingId){
-        return findByKey(mappingId,null);
+    String finSeqByMappingIdInRedis(String mappingId) {
+        return findByKey(mappingId, null);
     }
 
 
