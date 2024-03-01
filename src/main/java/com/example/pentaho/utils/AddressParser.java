@@ -22,15 +22,6 @@ public class AddressParser {
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
-    private IbdTbAddrDataNewRepository ibdTbAddrDataNewRepository;
-
-    public IbdTbAddrDataNewRepository getIbdTbAddrDataNewRepository() {
-        return ibdTbAddrDataNewRepository;
-    }
-
-    public void setIbdTbAddrDataNewRepository(IbdTbAddrDataNewRepository ibdTbAddrDataNewRepository) {
-        this.ibdTbAddrDataNewRepository = ibdTbAddrDataNewRepository;
-    }
 
     private final String ALL_CHAR = "[0-9A-ZＡ-Ｚ\\uFF10-\\uFF19一二三四五六七八九十百千甲乙丙丁戊己庚]";
     private final String DYNAMIC_COUNTY_PART = "|新北(市)?|宜蘭(縣)?|桃園(縣)?|苗栗(縣)?|彰化(縣)?|雲林(縣)?|花蓮(縣)?|南投(縣)?|高雄(市)?|澎湖(縣)?|金門(縣)?|連江(縣)|基隆(市)?|新竹([縣市])?|嘉義([縣市])?|";
