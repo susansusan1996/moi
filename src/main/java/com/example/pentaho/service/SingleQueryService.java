@@ -13,7 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.*;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.regex.Matcher;
@@ -221,7 +223,7 @@ public class SingleQueryService {
 
     public String deleteBasementString(String rawString) {
         if (rawString != null) {
-            return rawString.replace("basement:", "");
+            return replaceWithOneToNine(rawString).replace("basement:", "");
         }
         return "";
     }
@@ -258,6 +260,51 @@ public class SingleQueryService {
     String finSeqByMappingIdInRedis(String mappingId) {
         return findByKey(mappingId, null);
     }
+
+
+    public static String replaceWithOneToNine(String input) {
+        Map<String, String> map = new HashMap<>();
+        map.put("壹", "1");
+        map.put("貳", "2");
+        map.put("叁", "3");
+        map.put("肆", "4");
+        map.put("伍", "5");
+        map.put("陸", "6");
+        map.put("柒", "7");
+        map.put("捌", "8");
+        map.put("玖", "9");
+        map.put("零", "0");
+        map.put("一", "1");
+        map.put("二", "2");
+        map.put("三", "3");
+        map.put("四", "4");
+        map.put("五", "5");
+        map.put("六", "6");
+        map.put("七", "7");
+        map.put("八", "8");
+        map.put("九", "9");
+        map.put("０", "0");
+        map.put("１", "1");
+        map.put("２", "2");
+        map.put("３", "3");
+        map.put("４", "4");
+        map.put("５", "5");
+        map.put("６", "6");
+        map.put("７", "7");
+        map.put("８", "8");
+        map.put("９", "9");
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < input.length(); i++) {
+            String currentChar = String.valueOf(input.charAt(i));
+            if (map.containsKey(currentChar)) {
+                result.append(map.get(currentChar));
+            } else {
+                result.append(currentChar);
+            }
+        }
+        return result.toString();
+    }
+
 
 
 }
