@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.*;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
@@ -48,7 +47,7 @@ public class SingleQueryService {
     public String findByKey(String key, String defaultValue) {
         if (key != null && !key.isEmpty()) {
             String redisValue = stringRedisTemplate.opsForValue().get(key);
-            if(redisValue != null && !redisValue.isEmpty()){
+            if (redisValue != null && !redisValue.isEmpty()) {
                 log.info("redisKey: {} , redisValue: {}", key, redisValue);
                 return redisValue;
             }
@@ -60,9 +59,9 @@ public class SingleQueryService {
     /**
      * 找為LIST的值 (redis: LRANGE)
      */
-    public List<String> findListByKey(SingleQueryDTO singleQueryDTO) {
+    public List<String> findListByKey(String key) {
         ListOperations<String, String> listOps = stringRedisTemplate.opsForList();
-        List<String> elements = listOps.range(singleQueryDTO.getRedisKey(), 0, -1);
+        List<String> elements = listOps.range(key, 0, -1);
         log.info("elements:{}", elements);
         return elements;
     }
@@ -124,9 +123,9 @@ public class SingleQueryService {
     }
 
 
-    public String findJson(String originalString) {
+    public Address findJson(String originalString) {
         //切地址
-        Address address = addressParser.parseAddress(originalString);
+        Address address = addressParser.parseAddress(originalString, null);
         if (address != null) {
             log.info("address:{}", address);
             String county = address.getCounty();
@@ -135,38 +134,39 @@ public class SingleQueryService {
             String countyCd = findByKey(county, null);
 
             String town = address.getTown();
-            String townCd = findByKey(county+":"+town, null);
+            String townCd = findByKey(county + ":" + town, "000");
 
             String village = address.getVillage(); //里
-            String villageCd = findByKey(town+":"+village, null);
+            String villageCd = findByKey(town + ":" + village, "000");
 
             String neighbor = findNeighborCd(address.getNeighbor()); //鄰
 
             String road = address.getRoad();
             String area = address.getArea();
-            String roadAreaSn = findByKey(road + (area == null ? "" : area), null);
+
+            String roadAreaSn = findByKey((road == null ? "" : road) + (area == null ? "" : area), "0000000");
 
             String lane = address.getLane(); //巷
-            String laneCd = findByKey(lane, null);
+            String laneCd = findByKey(lane, "0000");
 
             String alley = address.getAlley(); //弄
             String subAlley = address.getSubAlley(); //弄
-            String alleyIdSn = findByKey(alley + (subAlley == null ? "" : subAlley), "0000000");
+            String alleyIdSn = findByKey((alley == null ? "" : alley) + (subAlley == null ? "" : subAlley), "0000000");
 
             String numFlr1 = address.getNumFlr1();
-            String numFlr1Id = findByKey("NUM_FLR_1:" + numFlr1, "000000");
+            String numFlr1Id = findByKey("NUM_FLR_1:" + deleteBasementString(numFlr1), "000000");
 
             String numFlr2 = address.getNumFlr2();
-            String numFlr2Id = findByKey("NUM_FLR_2:" + numFlr2, "00000");
+            String numFlr2Id = findByKey("NUM_FLR_2:" + deleteBasementString(numFlr2), "00000");
 
             String numFlr3 = address.getNumFlr3();
-            String numFlr3d = findByKey("NUM_FLR_3:" + numFlr3, "0000");
+            String numFlr3d = findByKey("NUM_FLR_3:" + deleteBasementString(numFlr3), "0000");
 
             String numFlr4 = address.getNumFlr4();
-            String numFlr4d = findByKey("NUM_FLR_4:" + numFlr4, "000");
+            String numFlr4d = findByKey("NUM_FLR_4:" + deleteBasementString(numFlr4), "000");
 
             String numFlr5 = address.getNumFlr5();
-            String numFlr5d = findByKey("NUM_FLR_5:" + numFlr5, "0");
+            String numFlr5d = findByKey("NUM_FLR_5:" + deleteBasementString(numFlr5), "0");
 
             String numTypeCd = "95";
             String numFlrId = numFlr1Id + numFlr2Id + numFlr3d + numFlr4d + numFlr5d;
@@ -174,16 +174,18 @@ public class SingleQueryService {
 //            String numFlrPos = "10000"; //五碼數字(10000、12000為最多)
             String room = address.getRoom(); //里
             String roomIdSn = findByKey(room, "00000");
-            return countyCd + townCd + villageCd + neighbor + roadAreaSn + laneCd + alleyIdSn + numTypeCd +
-                    numFlrId + roomIdSn
-//                    + numFlrPos+  basementStr
-                    ;
+            String basementStr = address.getBasementStr() == null ? "0" : address.getBasementStr();
+            address.setMappingId(countyCd + townCd + villageCd + neighbor + roadAreaSn + laneCd + alleyIdSn + numTypeCd +
+                            numFlrId + basementStr
+//                    + numFlrPos
+                            + roomIdSn
+            );
         }
-        return originalString;
+        return address;
     }
 
     public List<IbdTbIhChangeDoorplateHis> singleQueryTrack(String addressId) {
-        log.info("addressId:{}",addressId);
+        log.info("addressId:{}", addressId);
         return ibdTbIhChangeDoorplateHisRepository.findByAddressId(addressId);
     }
 
@@ -199,7 +201,14 @@ public class SingleQueryService {
             return paddedNumber;
         } else {
             log.info("沒有數字部分");
-            return "";
+            return "000";
         }
+    }
+
+    public String deleteBasementString(String rawString) {
+        if (rawString != null) {
+            return rawString.replace("basement:", "");
+        }
+        return "";
     }
 }

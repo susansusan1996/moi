@@ -34,8 +34,8 @@ public class RedisResouce {
      * 獲取一個key的多筆資料(RPUSH、LRANGE )
      */
     @GetMapping("/query-data-list")
-    public ResponseEntity<List<String>> findAddr(@RequestBody SingleQueryDTO singleQueryDTO) {
-        return ResponseEntity.ok(redisService.findListByKey(singleQueryDTO));
+    public ResponseEntity<List<String>> findAddr(@RequestBody String key) {
+        return ResponseEntity.ok(redisService.findListByKey(key));
     }
 
 

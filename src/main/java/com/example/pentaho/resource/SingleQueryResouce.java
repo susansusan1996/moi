@@ -39,7 +39,7 @@ public class SingleQueryResouce {
     @GetMapping("/query-address")
     public ResponseEntity<Address> queryData(@RequestBody SingleQueryDTO singleQueryDTO) {
 //        return ResponseEntity.ok(new Address(singleQueryDTO.getOriginalAddress()));
-        return ResponseEntity.ok(addressParser.parseAddress(singleQueryDTO.getOriginalAddress()));
+        return ResponseEntity.ok(addressParser.parseAddress(singleQueryDTO.getOriginalAddress(),null));
 
     }
 
@@ -73,7 +73,7 @@ public class SingleQueryResouce {
 
 
     @GetMapping("/query-single-test")
-    public ResponseEntity<String> queryAddress(@RequestBody String originalString) {
+    public ResponseEntity<Address> queryAddress(@RequestBody String originalString) {
         return ResponseEntity.ok(singleQueryService.findJson(originalString));
     }
 
