@@ -1,6 +1,7 @@
 package com.example.pentaho.service;
 
 import com.example.pentaho.component.*;
+import com.example.pentaho.exception.MoiException;
 import com.example.pentaho.repository.IbdTbAddrStatisticsOverallDevRepository;
 import com.example.pentaho.utils.ResourceUtils;
 import com.example.pentaho.utils.SFTPUtils;
@@ -12,21 +13,25 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 
 import java.io.*;
+import java.lang.reflect.Method;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.UUID;
 
 
 @Service
+@Transactional
 public class FileOutputService {
 
 
@@ -93,53 +98,52 @@ public class FileOutputService {
 
     /**
      * post file
+     * 這個方法parts不能沒有file參數，且value也不能為空
      * @param sourceFilePath
      * @param action
      * @param jobParams
      * @return
      * @throws IOException
      */
-    public int postBatchFormRequest(String sourceFilePath, String action, JobParams jobParams) throws IOException {
-        String targetUrl = apServerComponent.getTargetUrl()+ action;
-        log.info("job參數:{}",jobParams);
-        log.info("聖森uri: {}",targetUrl);
-        log.info("本機暫存:{}",sourceFilePath);
-        HttpHeaders headers = new HttpHeaders();
-        /****/
-        Path path = Path.of(apServerComponent.getToken());
-        String token = Files.readString(path, StandardCharsets.UTF_8);
-        log.info("token:{}",token);
-//        headers.set("Authorization","Bearer eyJhbGciOiJSUzI1NiJ9.eyJ1c2VyIjoie30iLCJqdGkiOiJNVE0yTmpRMk9HWXRPRGcyWWkwME9UTXhMV0UyWlRRdE9URmlNelE1WlRjek5ETTAiLCJleHAiOjE3Mzc2MDE4MzJ9.3ghp8wCHziA6Az9UpS8ssL1d_JB5apN-3pbIV28BWx3bOK-FjRGA9676-EDpqhXrth_Sqln_TFd4wT0RGJ4V1M0RtKXj3EMpFBBV0otdAsgZLm0JcK7LjUrXmWvyfsBcasnHQ83rMo4hE4GeBgXlrhPUlRxnPcVbk4UrVkaMtxyngDfkGpInPJokUWzrScgo7TDA-aKmodw2eZbxYPjGTw1fzXTYHpJC4VNyAYbeGOTd9uMh-cCAyyYMsw__JmkQOAYPpKLnHdyHSb6C8ezxAZJNrI5Rpg4cG0ousXh694IXmixI_R7Q1nVBMFl7GG946fgTO9twiqhuaB64beUILg");
-        headers.set("Authorization",token);
-
-        MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
-        if(!"".equals(sourceFilePath)){
-            File file = new File(sourceFilePath);
-        if (file.exists()) {
-        parts.set("file", new org.springframework.core.io.ByteArrayResource(Files.readAllBytes(file.toPath())) {
-            @Override
-            public String getFilename() {
-                return file.getName();
-            }
-        });
-        }
-        }
-        parts.add("id",jobParams.getBATCH_ID());
-        parts.add("originalFileId",jobParams.getBATCHFORM_ORIGINAL_FILE_ID());
-        parts.add("processedCounts","0");
-        parts.add("status",jobParams.getStatus());
-        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(parts, headers);
-        RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<Void> responseEntity = restTemplate.exchange(targetUrl, HttpMethod.PUT, requestEntity, Void.class,parts);
-
-        HttpStatusCode statusCode = responseEntity.getStatusCode();
-        if (statusCode == HttpStatus.OK) {
-            log.info("File uploaded successfully.");
-        } else {
-            log.error("File upload failed. Response Code: {} ", statusCode.value());
-        }
-        return statusCode.value();
-    }
+//    public int postBatchFormRequest(String sourceFilePath, String action, JobParams jobParams) throws IOException {
+//        String targetUrl = apServerComponent.getTargetUrl()+ action;
+//        log.info("job參數:{}",jobParams);
+//        log.info("聖森uri: {}",targetUrl);
+//        log.info("本機暫存:{}",sourceFilePath);
+//        HttpHeaders headers = new HttpHeaders();
+//        /****/
+//        Path path = Path.of(apServerComponent.getToken());
+//        String token = Files.readString(path, StandardCharsets.UTF_8);
+//        headers.set("Authorization",token);
+//
+//        MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
+//        if(!"".equals(sourceFilePath)){
+//            File file = new File(sourceFilePath);
+//        if (file.exists()) {
+//        parts.set("file", new org.springframework.core.io.ByteArrayResource(Files.readAllBytes(file.toPath())) {
+//            @Override
+//            public String getFilename() {
+//                return file.getName();
+//            }
+//        });
+//        }
+//        }
+//        parts.add("id",jobParams.getBATCH_ID());
+//        parts.add("originalFileId",jobParams.getBATCHFORM_ORIGINAL_FILE_ID());
+//        parts.add("processedCounts","0");
+//        parts.add("status",jobParams.getStatus());
+//        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(parts, headers);
+//        RestTemplate restTemplate = new RestTemplate();
+//        ResponseEntity<Void> responseEntity = restTemplate.exchange(targetUrl, HttpMethod.PUT, requestEntity, Void.class,parts);
+//
+//        HttpStatusCode statusCode = responseEntity.getStatusCode();
+//        if (statusCode == HttpStatus.OK) {
+//            log.info("File uploaded successfully.");
+//        } else {
+//            log.error("File upload failed. Response Code: {} ", statusCode.value());
+//        }
+//        return statusCode.value();
+//    }
 
 
     /***
@@ -172,16 +176,19 @@ public class FileOutputService {
         }
         jobParams.setStatus(status);
         sftpUtils.disconnect();
-        postBatchFormRequest(sourceFilePath,"/batchForm/systemUpdate",jobParams);
+        BatchFormParams batchFormParams = new BatchFormParams("6C4AC7D3-33C3-4798-8766-07FBA28F9E45", "8384D71C-8733-49C2-8894-0132A09E4E72", "0", jobParams.getStatus(), null);
+        postBatchFormRequest("/batchForm/systemUpdate",batchFormParams,sourceFilePath);
+//      postBatchFormRequest(sourceFilePath,"/batchForm/systemUpdate",jobParams);
     }
 
     /**
-     * 等邏輯
-     * @param batchId
-     * @return
+     *
+     * @param formName
+     * @return List<IbdTbAddrStatisticsOverallDev>
      */
-    public List<IbdTbAddrStatisticsOverallDev> findLog(String batchId){
-        return ibdTbAddrStatisticsOverallDevRepository.findAll();
+    public Integer findLog(String formName){
+        List<Integer> cnts = ibdTbAddrStatisticsOverallDevRepository.findCntByDataset(formName);
+        return cnts.isEmpty()? 0:cnts.get(0);
     }
 
     /***
@@ -261,8 +268,8 @@ public class FileOutputService {
             sourceFilePath = directories.getLocalTempDir()+bigDataParams.getId()+".zip";
             fileUri = directories.getLocalTempDir()+bigDataParams.getId()+".zip";
         }
-        List<IbdTbAddrStatisticsOverallDev> logs = findLog(bigDataParams.getId());
-        bigDataParams.setRecordCounts(logs.isEmpty()?"0":String.valueOf(logs.size()));
+        Integer cnt = findLog(bigDataParams.getId());
+        bigDataParams.setRecordCounts(cnt == null? "0":String.valueOf(cnt));
         File file = new File(fileUri);
         if (!file.exists()) {
             bigDataParams.setFileUri("no exist");
@@ -270,6 +277,80 @@ public class FileOutputService {
         bigDataParams.setFileUri(fileUri);
         return postBigQueryResquest(sourceFilePath,"/bigQueryForm/systemUpdate",bigDataParams);
     }
+
+
+
+    public int postBatchFormRequest(String action, Object params, String filePath) throws IOException {
+        String targerUrl = apServerComponent.getTargetUrl() + action;
+        log.info("targetUrl:{}",targerUrl);
+
+        String fileName ="";
+        File file = new File(filePath);
+        if (file.exists()) {
+            fileName = String.valueOf(Path.of(filePath).getFileName());
+            log.info("fileName:{}",fileName);
+//            throw new IOException("File not found: " + filePath);
+        }
+
+        URL url = new URL(targerUrl);
+        HttpURLConnection con = (HttpURLConnection) url.openConnection();
+        con.setRequestMethod("PUT");
+
+        /**necessay**/
+        con.setDoOutput(true);
+        /**necessay**/
+        String boundary = UUID.randomUUID().toString();
+        con.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+        Path path = Path.of(apServerComponent.getToken());
+        String token = Files.readString(path, StandardCharsets.UTF_8);
+        con.setRequestProperty("Authorization",token);
+//      con.setRequestProperty("Authorization","Bearer eyJhbGciOiJSUzI1NiJ9.eyJ1c2VyIjoie30iLCJqdGkiOiJNVE0yTmpRMk9HWXRPRGcyWWkwME9UTXhMV0UyWlRRdE9URmlNelE1WlRjek5ETTAiLCJleHAiOjE3Mzc2MDE4MzJ9.3ghp8wCHziA6Az9UpS8ssL1d_JB5apN-3pbIV28BWx3bOK-FjRGA9676-EDpqhXrth_Sqln_TFd4wT0RGJ4V1M0RtKXj3EMpFBBV0otdAsgZLm0JcK7LjUrXmWvyfsBcasnHQ83rMo4hE4GeBgXlrhPUlRxnPcVbk4UrVkaMtxyngDfkGpInPJokUWzrScgo7TDA-aKmodw2eZbxYPjGTw1fzXTYHpJC4VNyAYbeGOTd9uMh-cCAyyYMsw__JmkQOAYPpKLnHdyHSb6C8ezxAZJNrI5Rpg4cG0ousXh694IXmixI_R7Q1nVBMFl7GG946fgTO9twiqhuaB64beUILg");
+
+        try (OutputStream out = con.getOutputStream();
+             PrintWriter writer = new PrintWriter(new OutputStreamWriter(out, "UTF-8"), true)) {
+//            writer.append("--").append(boundary).append("\r\n");
+//            writer.append("Content-Disposition: form-data; name=\"id\"\r\n\r\n");
+//            writer.append(params.getBATCH_ID()).append("\r\n");
+
+//            writer.append("--").append(boundary).append("\r\n");
+//            writer.append("Content-Disposition: form-data; name=\"originalFileId\"\r\n\r\n");
+//            writer.append(params.getBATCHFORM_ORIGINAL_FILE_ID()).append("\r\n");
+
+//            writer.append("--").append(boundary).append("\r\n");
+//            writer.append("Content-Disposition: form-data; name=\"processedCounts\"\r\n\r\n");
+//            writer.append("0").append("\r\n");
+
+//            writer.append("--").append(boundary).append("\r\n");
+//            writer.append("Content-Disposition: form-data; name=\"status\"\r\n\r\n");
+//            writer.append(params.getStatus()).append("\r\n");
+            String content = getContent(boundary, params);
+            writer.append(content);
+
+            if (!"".equals(fileName)) {
+                // 如果檔案名稱非空，則將檔案內容寫入請求主體
+                writer.append("--").append(boundary).append("\r\n");
+                writer.append("Content-Disposition: form-data; name=\"file\"; filename=\"").append(fileName).append("\"\r\n");
+                writer.append("Content-Type: application/zip\r\n\r\n");
+                writer.flush();
+                log.info("filePath:{}",filePath);
+                Files.copy(file.toPath(), out);
+                out.flush();
+                writer.append("\r\n");
+            }
+            writer.append("--").append(boundary).append("--").append("\r\n");
+            writer.flush();
+        }
+
+
+        int responseCode = con.getResponseCode();
+        String responseMessage = con.getResponseMessage();
+        log.info("Response Code: " + responseCode);
+        log.info("Response Message: " + responseMessage);
+
+        con.disconnect();
+        return responseCode;
+    }
+
 
     private String getFullUrl(StringBuilder url, JobParams jobParams) {
         url.append("?");
@@ -292,5 +373,43 @@ public class FileOutputService {
         }
         return newUrl;
     }
+
+
+
+
+
+
+
+    public String getContent(String boundary,Object params) {
+        StringBuilder content = new StringBuilder();
+        if (params != null) {
+            Method[] methods = params.getClass().getMethods();
+            for (Method method : methods) {
+                if (method.getName().startsWith("get") && !method.getName().equals("getClass")) {
+                    try {
+                        /**調用getter**/
+                        Object value = method.invoke(params);
+                        if (value != null && !"".equals(value)) {
+                            if (method.getName().indexOf("File") == 3) {
+                                continue;
+                            }else{
+                                content.append("--").append(boundary).append("\r\n");
+                                String name = method.getName().substring(3);
+                                name = Character.toLowerCase(name.charAt(0)) + name.substring(1);
+                                String format = String.format("Content-Disposition: form-data; name=\"%s\"\r\n\r\n",name);
+                                content.append(format);
+                                content.append(value).append("\r\n");
+                            }
+                        }
+                    } catch (Exception e) {
+                        throw new MoiException("url解析錯誤 " + method.getName() + ": " + e.getMessage(), e);
+                    }
+                }
+            }
+        }
+        log.info("content:{}",content);
+        return content.toString();
+    }
+
 
 }

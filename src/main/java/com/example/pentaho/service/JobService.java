@@ -408,7 +408,7 @@ public class JobService {
         jobParams.setDATA_DATE(dateStamp);
         jobParams.setDATA_SRC(orgId);
         jobParams.setUSER_ID(Id);
-        return webServiceUtils.getConnection(PentahoWebService.executeTrans,jobParams);
+        return webServiceUtils.getConnection(PentahoWebService.executeJobs,jobParams);
     }
 
 }
