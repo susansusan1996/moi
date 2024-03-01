@@ -117,7 +117,7 @@ public class FileOutputService {
 //        headers.set("Authorization",token);
 //
 //        MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
-//        if(!"".equals(sourceFilePath)){
+//        if("DONE".equals(jobParams.getStatus())){
 //            File file = new File(sourceFilePath);
 //        if (file.exists()) {
 //        parts.set("file", new org.springframework.core.io.ByteArrayResource(Files.readAllBytes(file.toPath())) {
@@ -127,10 +127,13 @@ public class FileOutputService {
 //            }
 //        });
 //        }
+//        }else{
+//            parts.add("file",null);
 //        }
 //        parts.add("id",jobParams.getBATCH_ID());
 //        parts.add("originalFileId",jobParams.getBATCHFORM_ORIGINAL_FILE_ID());
 //        parts.add("processedCounts","0");
+//        log.info("status:{}",jobParams.getStatus());
 //        parts.add("status",jobParams.getStatus());
 //        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(parts, headers);
 //        RestTemplate restTemplate = new RestTemplate();
@@ -156,27 +159,31 @@ public class FileOutputService {
      */
     public void sftpDownloadBatchFormFileAndSend(JobParams jobParams) throws SftpException, IOException {
         log.info("jobParams:{}",jobParams);
-        String targetDir = directories.getSendFileDir() + jobParams.getDATA_SRC() + "/" + jobParams.getDATA_DATE()+"/";
-        String fileName = jobParams.getFORM_NAME() + ".zip";
-        log.info("目標目錄:{}",targetDir);
-        log.info("目標檔名:{}",fileName);
-        /**SFTP抓檔落地**/
         String sourceFilePath = "";
-        String status="SYS_FAILED";
-        sftpUtils.connect();
-        boolean hasFile = sftpUtils.listFiles(targetDir,fileName);
-        log.info("已完成zip檔:{}",hasFile);
-        if(hasFile){
-            boolean hasDownload = sftpUtils.downloadFile(directories.getLocalTempDir(), targetDir,fileName);
-            log.info("已下載zip檔:{}",hasDownload);
-            if(hasDownload){
-                status ="DONE";
-                sourceFilePath= directories.getLocalTempDir()+fileName;
+        String status = "SYS_FAILED";
+        /**有成功才去抓檔**/
+        if("DONE".equals(jobParams.getStatus())) {
+            String targetDir = directories.getSendFileDir() + jobParams.getDATA_SRC() + "/" + jobParams.getDATA_DATE() + "/";
+            String fileName = jobParams.getFORM_NAME() + ".zip";
+            log.info("目標目錄:{}", targetDir);
+            log.info("目標檔名:{}", fileName);
+            /**SFTP抓檔落地**/
+
+            sftpUtils.connect();
+            boolean hasFile = sftpUtils.listFiles(targetDir, fileName);
+            log.info("已完成zip檔:{}", hasFile);
+            if (hasFile) {
+                boolean hasDownload = sftpUtils.downloadFile(directories.getLocalTempDir(), targetDir, fileName);
+                log.info("已下載zip檔:{}", hasDownload);
+                if (hasDownload) {
+                    status = "DONE";
+                    sourceFilePath = directories.getLocalTempDir() + fileName;
+                }
             }
+            sftpUtils.disconnect();
         }
         jobParams.setStatus(status);
-        sftpUtils.disconnect();
-        BatchFormParams batchFormParams = new BatchFormParams("6C4AC7D3-33C3-4798-8766-07FBA28F9E45", "8384D71C-8733-49C2-8894-0132A09E4E72", "0", jobParams.getStatus(), null);
+        BatchFormParams batchFormParams = new BatchFormParams(jobParams.getBATCH_ID(), jobParams.getBATCHFORM_ORIGINAL_FILE_ID(), "0", jobParams.getStatus(), null);
         postBatchFormRequest("/batchForm/systemUpdate",batchFormParams,sourceFilePath);
 //      postBatchFormRequest(sourceFilePath,"/batchForm/systemUpdate",jobParams);
     }
@@ -284,12 +291,15 @@ public class FileOutputService {
         String targerUrl = apServerComponent.getTargetUrl() + action;
         log.info("targetUrl:{}",targerUrl);
 
+        File file = null;
         String fileName ="";
-        File file = new File(filePath);
-        if (file.exists()) {
-            fileName = String.valueOf(Path.of(filePath).getFileName());
-            log.info("fileName:{}",fileName);
+        if(!"".equals(filePath)){
+           file = new File(filePath);
+            if (file.exists()) {
+                fileName = String.valueOf(Path.of(filePath).getFileName());
+                log.info("fileName:{}",fileName);
 //            throw new IOException("File not found: " + filePath);
+            }
         }
 
         URL url = new URL(targerUrl);
