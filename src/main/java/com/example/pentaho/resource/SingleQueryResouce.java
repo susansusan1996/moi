@@ -73,7 +73,7 @@ public class SingleQueryResouce {
 
 
     @GetMapping("/query-single-test")
-    public ResponseEntity<Address> queryAddress(@RequestBody String originalString) {
+    public ResponseEntity<String> queryAddress(@RequestBody String originalString) {
         return ResponseEntity.ok(singleQueryService.findJson(originalString));
     }
 

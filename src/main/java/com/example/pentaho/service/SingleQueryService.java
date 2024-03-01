@@ -3,6 +3,7 @@ package com.example.pentaho.service;
 import com.example.pentaho.component.Address;
 import com.example.pentaho.component.IbdTbIhChangeDoorplateHis;
 import com.example.pentaho.component.SingleQueryDTO;
+import com.example.pentaho.repository.IbdTbAddrCodeOfDataStandardRepository;
 import com.example.pentaho.repository.IbdTbAddrDataNewRepository;
 import com.example.pentaho.repository.IbdTbIhChangeDoorplateHisRepository;
 import com.example.pentaho.utils.AddressParser;
@@ -39,6 +40,9 @@ public class SingleQueryService {
 
     @Autowired
     private AddressParser addressParser;
+
+    @Autowired
+    private IbdTbAddrCodeOfDataStandardRepository ibdTbAddrCodeOfDataStandardRepository;
 
 
     /**
@@ -122,8 +126,13 @@ public class SingleQueryService {
         return findByKey("1066693", null);
     }
 
+    public String findJson(String originalString) {
+        Address address = findMappingId(originalString);
+        String seq =  finSeqByMappingIdInRedis(address.getMappingId());
+        return ibdTbAddrCodeOfDataStandardRepository.findBySeq(Integer.valueOf(seq));
+    }
 
-    public Address findJson(String originalString) {
+    public Address findMappingId(String originalString) {
         //切地址
         Address address = addressParser.parseAddress(originalString, null);
         if (address != null) {
@@ -175,10 +184,14 @@ public class SingleQueryService {
             String room = address.getRoom(); //里
             String roomIdSn = findByKey(room, "00000");
             String basementStr = address.getBasementStr() == null ? "0" : address.getBasementStr();
+
+            //處理numFlrPos
+            String numFlrPos = getNumFlrPos(address);
+            log.info("numFlrPos為:{}", numFlrPos);
             address.setMappingId(countyCd + townCd + villageCd + neighbor + roadAreaSn + laneCd + alleyIdSn + numTypeCd +
-                            numFlrId + basementStr
-//                    + numFlrPos
-                            + roomIdSn
+                    numFlrId + basementStr
+                    + numFlrPos
+                    + roomIdSn
             );
         }
         return address;
@@ -211,4 +224,43 @@ public class SingleQueryService {
         }
         return "";
     }
+
+
+    public String getNumFlrPos(Address address) {
+        String numFlr1 = address.getNumFlr1();
+        String numFlr2 = address.getNumFlr2();
+        String numFlr3 = address.getNumFlr3();
+        String numFlr4 = address.getNumFlr4();
+        String numFlr5 = address.getNumFlr5();
+        String[] patternFlr1 = {".+號$", ".+樓$", ".+之$"};
+        String[] patternFlr2 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^之.+號", "^[A-ZＡ-Ｚ]+$"};
+        String[] patternFlr3 = {"V.+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
+        String[] patternFlr4 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
+        String[] patternFlr5 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
+        return getNum(numFlr1, patternFlr1) + getNum(numFlr2, patternFlr2) + getNum(numFlr3, patternFlr3) + getNum(numFlr4, patternFlr4) + getNum(numFlr5, patternFlr5);
+    }
+
+
+    private String getNum(String inputString, String[] patternArray) {
+        if (inputString != null && !inputString.isEmpty()) {
+            for (int i = 0; i < patternArray.length; i++) {
+                Pattern pattern = Pattern.compile(patternArray[i]);
+                Matcher matcher = pattern.matcher(inputString);
+                if (matcher.matches()) {
+                    log.info(patternArray[i] + "position 結果為:{}", i + 1);
+                    return String.valueOf(i + 1);
+                }
+            }
+        } else {
+            return "0"; //如果沒有該片段地址，就補0
+        }
+        return "x";
+    }
+
+
+    String finSeqByMappingIdInRedis(String mappingId){
+        return findByKey(mappingId,null);
+    }
+
+
 }
