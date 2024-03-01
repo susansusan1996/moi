@@ -23,6 +23,11 @@ public class IbdTbIhChangeDoorplateHisRepositoryImpl implements IbdTbIhChangeDoo
     }
 
 
+    /**
+     * @param addressId
+     * @return
+     */
+    //todo:還有兩張表躍join
     @Override
     public List<IbdTbIhChangeDoorplateHis> findByAddressId(String addressId) {
         Query query = Query.builder()
