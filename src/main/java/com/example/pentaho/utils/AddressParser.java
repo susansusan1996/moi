@@ -91,7 +91,7 @@ public class AddressParser {
                 for (String area : areaSet) {
                     if (input.contains(area)) {
                         address.setArea(area);
-                        log.info("找到area==>{}:", area);
+                        log.info("找到area==>:{}", area);
                         return removeLastMatch(input, area); //從後面數來，第一個匹配的字串刪除(防止從前面刪，會有跟area重名的村里名被刪掉)
                     }
                 }
