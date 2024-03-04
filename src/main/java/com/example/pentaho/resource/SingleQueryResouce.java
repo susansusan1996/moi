@@ -89,7 +89,16 @@ public class SingleQueryResouce {
                     schema = @Schema(type = "string"))
             })
     @PostMapping("/query-track")
-    public ResponseEntity<List<IbdTbIhChangeDoorplateHis>> queryTrack(@RequestBody String addressId ){
+    public ResponseEntity<List<IbdTbIhChangeDoorplateHis>> queryTrack(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "編碼",
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = String.class),
+                            examples = @ExampleObject(value = "BSZ7538-0")
+                    )
+            )
+            @RequestBody String addressId ){
         return new ResponseEntity<>(singleQueryService.singleQueryTrack(addressId), HttpStatus.OK);
     }
 
