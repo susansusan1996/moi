@@ -3,6 +3,7 @@ package com.example.pentaho.service;
 import com.example.pentaho.component.Address;
 import com.example.pentaho.component.IbdTbIhChangeDoorplateHis;
 import com.example.pentaho.component.SingleQueryDTO;
+import com.example.pentaho.repository.IbdTbAddrCodeOfDataStandardRepository;
 import com.example.pentaho.repository.IbdTbAddrDataNewRepository;
 import com.example.pentaho.repository.IbdTbIhChangeDoorplateHisRepository;
 import com.example.pentaho.utils.AddressParser;
@@ -11,9 +12,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.*;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.regex.Matcher;
@@ -41,6 +43,9 @@ public class SingleQueryService {
     @Autowired
     private AddressParser addressParser;
 
+    @Autowired
+    private IbdTbAddrCodeOfDataStandardRepository ibdTbAddrCodeOfDataStandardRepository;
+
 
     /**
      * 找單一個值 (redis: get)
@@ -48,7 +53,7 @@ public class SingleQueryService {
     public String findByKey(String key, String defaultValue) {
         if (key != null && !key.isEmpty()) {
             String redisValue = stringRedisTemplate.opsForValue().get(key);
-            if(redisValue != null && !redisValue.isEmpty()){
+            if (redisValue != null && !redisValue.isEmpty()) {
                 log.info("redisKey: {} , redisValue: {}", key, redisValue);
                 return redisValue;
             }
@@ -60,9 +65,9 @@ public class SingleQueryService {
     /**
      * 找為LIST的值 (redis: LRANGE)
      */
-    public List<String> findListByKey(SingleQueryDTO singleQueryDTO) {
+    public List<String> findListByKey(String key) {
         ListOperations<String, String> listOps = stringRedisTemplate.opsForList();
-        List<String> elements = listOps.range(singleQueryDTO.getRedisKey(), 0, -1);
+        List<String> elements = listOps.range(key, 0, -1);
         log.info("elements:{}", elements);
         return elements;
     }
@@ -123,10 +128,15 @@ public class SingleQueryService {
         return findByKey("1066693", null);
     }
 
-
     public String findJson(String originalString) {
+        Address address = findMappingId(originalString);
+        String seq = finSeqByMappingIdInRedis(address.getMappingId());
+        return ibdTbAddrCodeOfDataStandardRepository.findBySeq(Integer.valueOf(seq));
+    }
+
+    public Address findMappingId(String originalString) {
         //切地址
-        Address address = addressParser.parseAddress(originalString);
+        Address address = addressParser.parseAddress(originalString, null);
         if (address != null) {
             log.info("address:{}", address);
             String county = address.getCounty();
@@ -135,71 +145,167 @@ public class SingleQueryService {
             String countyCd = findByKey(county, null);
 
             String town = address.getTown();
-            String townCd = findByKey(county+":"+town, null);
+            String townCd = findByKey(county + ":" + town, "000");
 
             String village = address.getVillage(); //里
-            String villageCd = findByKey(town+":"+village, null);
+            String villageCd = findByKey(town + ":" + village, "000");
 
             String neighbor = findNeighborCd(address.getNeighbor()); //鄰
 
             String road = address.getRoad();
             String area = address.getArea();
-            String roadAreaSn = findByKey(road + (area == null ? "" : area), null);
+
+            String roadAreaSn = findByKey((road == null ? "" : road) + (area == null ? "" : area), "0000000");
 
             String lane = address.getLane(); //巷
-            String laneCd = findByKey(lane, null);
+            String laneCd = findByKey(lane, "0000");
 
             String alley = address.getAlley(); //弄
             String subAlley = address.getSubAlley(); //弄
-            String alleyIdSn = findByKey(alley + (subAlley == null ? "" : subAlley), "0000000");
+            String alleyIdSn = findByKey((alley == null ? "" : alley) + (subAlley == null ? "" : subAlley), "0000000");
 
             String numFlr1 = address.getNumFlr1();
-            String numFlr1Id = findByKey("NUM_FLR_1:" + numFlr1, "000000");
+            String numFlr1Id = findByKey("NUM_FLR_1:" + deleteBasementString(numFlr1), "000000");
 
             String numFlr2 = address.getNumFlr2();
-            String numFlr2Id = findByKey("NUM_FLR_2:" + numFlr2, "00000");
+            String numFlr2Id = findByKey("NUM_FLR_2:" + deleteBasementString(numFlr2), "00000");
 
             String numFlr3 = address.getNumFlr3();
-            String numFlr3d = findByKey("NUM_FLR_3:" + numFlr3, "0000");
+            String numFlr3d = findByKey("NUM_FLR_3:" + deleteBasementString(numFlr3), "0000");
 
             String numFlr4 = address.getNumFlr4();
-            String numFlr4d = findByKey("NUM_FLR_4:" + numFlr4, "000");
+            String numFlr4d = findByKey("NUM_FLR_4:" + deleteBasementString(numFlr4), "000");
 
             String numFlr5 = address.getNumFlr5();
-            String numFlr5d = findByKey("NUM_FLR_5:" + numFlr5, "0");
+            String numFlr5d = findByKey("NUM_FLR_5:" + deleteBasementString(numFlr5), "0");
 
             String numTypeCd = "95";
             String numFlrId = numFlr1Id + numFlr2Id + numFlr3d + numFlr4d + numFlr5d;
-//            String basementStr = "0"; //可能為0、1、2 (1為地下、2為頂樓)
-//            String numFlrPos = "10000"; //五碼數字(10000、12000為最多)
             String room = address.getRoom(); //里
             String roomIdSn = findByKey(room, "00000");
-            return countyCd + townCd + villageCd + neighbor + roadAreaSn + laneCd + alleyIdSn + numTypeCd +
-                    numFlrId + roomIdSn
-//                    + numFlrPos+  basementStr
-                    ;
+            String basementStr = address.getBasementStr() == null ? "0" : address.getBasementStr();
+
+            //處理numFlrPos
+            String numFlrPos = getNumFlrPos(address);
+            log.info("numFlrPos為:{}", numFlrPos);
+            address.setMappingId(countyCd + townCd + villageCd + neighbor + roadAreaSn + laneCd + alleyIdSn + numTypeCd +
+                    numFlrId + basementStr
+                    + numFlrPos
+                    + roomIdSn
+            );
         }
-        return originalString;
+        return address;
     }
 
     public List<IbdTbIhChangeDoorplateHis> singleQueryTrack(String addressId) {
-        log.info("addressId:{}",addressId);
+        log.info("addressId:{}", addressId);
         return ibdTbIhChangeDoorplateHisRepository.findByAddressId(addressId);
     }
 
 
     public String findNeighborCd(String rawNeighbor) {
-        Pattern pattern = Pattern.compile("\\d+"); //指提取數字
-        Matcher matcher = pattern.matcher(rawNeighbor);
-        if (matcher.find()) {
-            String neighborResult = matcher.group();
-            // 往前補零，補到三位數
-            String paddedNumber = String.format("%03d", Integer.parseInt(neighborResult));
-            log.info("提取的數字部分為：{}", paddedNumber);
-            return paddedNumber;
+        if (rawNeighbor != null && !rawNeighbor.isEmpty()) {
+            Pattern pattern = Pattern.compile("\\d+"); //指提取數字
+            Matcher matcher = pattern.matcher(replaceWithOneToNine(rawNeighbor));
+            if (matcher.find()) {
+                String neighborResult = matcher.group();
+                // 往前補零，補到三位數
+                String paddedNumber = String.format("%03d", Integer.parseInt(neighborResult));
+                log.info("提取的數字部分為：{}", paddedNumber);
+                return paddedNumber;
+            }
         } else {
             log.info("沒有數字部分");
-            return "";
+            return "000";
         }
+        return "000";
     }
+
+    public String deleteBasementString(String rawString) {
+        if (rawString != null) {
+            return replaceWithOneToNine(rawString).replace("basement:", "");
+        }
+        return "";
+    }
+
+
+    public String getNumFlrPos(Address address) {
+        String[] patternFlr1 = {".+號$", ".+樓$", ".+之$"};
+        String[] patternFlr2 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^之.+號", "^[A-ZＡ-Ｚ]+$"};
+        String[] patternFlr3 = {"V.+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
+        String[] patternFlr4 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
+        String[] patternFlr5 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
+        return getNum(address.getNumFlr1(), patternFlr1) + getNum(address.getNumFlr2(), patternFlr2) +
+                getNum(address.getNumFlr3(), patternFlr3) + getNum(address.getNumFlr4(), patternFlr4) +
+                getNum(address.getNumFlr5(), patternFlr5);
+    }
+
+
+    private String getNum(String inputString, String[] patternArray) {
+        if (inputString != null && !inputString.isEmpty()) {
+            for (int i = 0; i < patternArray.length; i++) {
+                Pattern pattern = Pattern.compile(patternArray[i]);
+                Matcher matcher = pattern.matcher(inputString);
+                if (matcher.matches()) {
+                    return String.valueOf(i + 1);
+                }
+            }
+        } else {
+            return "0"; //如果沒有該片段地址，就補0
+        }
+        return "x";
+    }
+
+
+    String finSeqByMappingIdInRedis(String mappingId) {
+        return findByKey(mappingId, null);
+    }
+
+
+    public static String replaceWithOneToNine(String input) {
+        Map<String, String> map = new HashMap<>();
+        map.put("壹", "1");
+        map.put("貳", "2");
+        map.put("叁", "3");
+        map.put("肆", "4");
+        map.put("伍", "5");
+        map.put("陸", "6");
+        map.put("柒", "7");
+        map.put("捌", "8");
+        map.put("玖", "9");
+        map.put("零", "0");
+        map.put("一", "1");
+        map.put("二", "2");
+        map.put("三", "3");
+        map.put("四", "4");
+        map.put("五", "5");
+        map.put("六", "6");
+        map.put("七", "7");
+        map.put("八", "8");
+        map.put("九", "9");
+        map.put("０", "0");
+        map.put("１", "1");
+        map.put("２", "2");
+        map.put("３", "3");
+        map.put("４", "4");
+        map.put("５", "5");
+        map.put("６", "6");
+        map.put("７", "7");
+        map.put("８", "8");
+        map.put("９", "9");
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < input.length(); i++) {
+            String currentChar = String.valueOf(input.charAt(i));
+            if (map.containsKey(currentChar)) {
+                result.append(map.get(currentChar));
+            } else {
+                result.append(currentChar);
+            }
+        }
+        log.info("數字改為:{}",result.toString());
+        return result.toString();
+    }
+
+
+
 }
