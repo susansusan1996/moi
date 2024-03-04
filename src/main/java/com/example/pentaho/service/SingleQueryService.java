@@ -206,7 +206,7 @@ public class SingleQueryService {
     public String findNeighborCd(String rawNeighbor) {
         if (rawNeighbor != null && !rawNeighbor.isEmpty()) {
             Pattern pattern = Pattern.compile("\\d+"); //指提取數字
-            Matcher matcher = pattern.matcher(rawNeighbor);
+            Matcher matcher = pattern.matcher(replaceWithOneToNine(rawNeighbor));
             if (matcher.find()) {
                 String neighborResult = matcher.group();
                 // 往前補零，補到三位數
@@ -302,6 +302,7 @@ public class SingleQueryService {
                 result.append(currentChar);
             }
         }
+        log.info("數字改為:{}",result.toString());
         return result.toString();
     }
 
