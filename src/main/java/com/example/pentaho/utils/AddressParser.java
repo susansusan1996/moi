@@ -1,7 +1,6 @@
 package com.example.pentaho.utils;
 
 import com.example.pentaho.component.Address;
-import com.example.pentaho.repository.IbdTbAddrDataNewRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +13,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.example.pentaho.utils.NumberParser.replaceWithChineseNumber;
+
 @Component
 public class AddressParser {
     private static final Logger log = LoggerFactory.getLogger(AddressParser.class);
@@ -22,24 +23,24 @@ public class AddressParser {
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
-
+    private final String BASEMENT_PATTERN = "basement:[一二三四五六七八九十百千]+樓"; //經過一次PARSE之後，如果有地下或屋頂，都會被改為basement:開頭
     private final String ALL_CHAR = "[0-9A-ZＡ-Ｚ\\uFF10-\\uFF19零一二三四五六七八九十百千甲乙丙丁戊己庚]";
-    private final String DYNAMIC_COUNTY_PART = "|新北(市)?|宜蘭(縣)?|桃園(縣)?|苗栗(縣)?|彰化(縣)?|雲林(縣)?|花蓮(縣)?|南投(縣)?|高雄(市)?|澎湖(縣)?|金門(縣)?|連江(縣)|基隆(市)?|新竹([縣市])?|嘉義([縣市])?|";
+    private final String DYNAMIC_COUNTY_PART = "新北(市)?|宜蘭(縣)?|桃園([縣市])?|苗栗(縣)?|彰化(縣)?|雲林(縣)?|花蓮(縣)?|南投縣?|南投?|高雄(市)?|澎湖(縣)?|金門(縣)?|連江(縣)|基隆(市)?|新竹([縣市])?|嘉義([縣市])?|屏東(縣)?|";
     private final String DYNAMIC_ALLEY_PART = "|卓厝|安農新邨|吉祥園|蕭厝|泰安新村|美喬|１弄圳東|堤外|中興二村|溝邊|長埤|清水|南苑|二橫路|朝安|黃泥塘|建行新村|牛頭|永和山莊";
-    private final String COUNTY = "(?<zipcode>(^\\d{5}|^\\d{3})?)(?<county>[臺台][北中南東]([縣市])?" + DYNAMIC_COUNTY_PART + ")?";
+    private final String COUNTY = "(?<zipcode>(^\\d{5}|^\\d{3})?)(?<county>"+DYNAMIC_COUNTY_PART+"[臺台]{0,1}[北中南東]{1}([縣市]{0,1})?" + ")?";
     private final String TOWN = "(?<town>\\D+?(市區|鎮區|鎮市|[鄉鎮市區]))?";
     private final String VILLAGE = "(?<village>\\D+?[村里])?";
-    private final String NEIGHBOR = "(?<neighbor>"+ALL_CHAR+"+鄰)?";
+    private final String NEIGHBOR = "(?<neighbor>" + ALL_CHAR + "+鄰)?";
     private final String ROAD = "(?<road>.+段|.+街|.+大道|.+路)?";
-    private final String LANE = "(?<lane>[0-9\\uFF10-\\uFF19]+巷)?";
-    private final String ALLEY = "(?<alley>"+ALL_CHAR+"+弄" + DYNAMIC_ALLEY_PART + ")?";
-    private final String SUBALLEY = "(?<subAlley>"+ALL_CHAR+"+[衖衕橫])?";
-    private final String NUMFLR1 = "(?<numFlr1>"+ALL_CHAR+"+[號樓之區棟]|basement:[一二三四五六七八九十百千]+樓)?";
-    private final String NUMFLR2 = "(?<numFlr2>之"+ALL_CHAR+"+|"+ALL_CHAR+"+[號樓之區棟]|basement:[一二三四五六七八九十百千]+樓|"+ALL_CHAR+"+(?!室))?";
-    private final String NUMFLR3 = "(?<numFlr3>之"+ALL_CHAR+"+|"+ALL_CHAR+"+[號樓之區棟]|basement:[一二三四五六七八九十百千]+樓|"+ALL_CHAR+"+(?!室))?";
-    private final String NUMFLR4 = "(?<numFlr4>之"+ALL_CHAR+"+|"+ALL_CHAR+"+[號樓之區棟]|basement:[一二三四五六七八九十百千]+樓|"+ALL_CHAR+"+(?!室))?";
-    private final String NUMFLR5 = "(?<numFlr5>之"+ALL_CHAR+"+|basement:[一二三四五六七八九十百千]+樓)?";
-    private final String ROOM = "(?<room>"+ALL_CHAR+"+室)?";
+    private final String LANE = "(?<lane>.+巷)?";
+    private final String ALLEY = "(?<alley>" + ALL_CHAR + "+弄" + DYNAMIC_ALLEY_PART + ")?";
+    private final String SUBALLEY = "(?<subAlley>" + ALL_CHAR + "+[衖衕橫])?";
+    private final String NUMFLR1 = "(?<numFlr1>" + ALL_CHAR + "+[號樓之區棟]|"+BASEMENT_PATTERN+")?";
+    private final String NUMFLR2 = "(?<numFlr2>之" + ALL_CHAR + "+|" + ALL_CHAR + "+[號樓之區棟]|"+BASEMENT_PATTERN+"|" + ALL_CHAR + "+(?!室))?";
+    private final String NUMFLR3 = "(?<numFlr3>之" + ALL_CHAR + "+|" + ALL_CHAR + "+[號樓之區棟]|"+BASEMENT_PATTERN+"|" + ALL_CHAR + "+(?!室))?";
+    private final String NUMFLR4 = "(?<numFlr4>之" + ALL_CHAR + "+|" + ALL_CHAR + "+[號樓之區棟]|"+BASEMENT_PATTERN+"|" + ALL_CHAR + "+(?!室))?";
+    private final String NUMFLR5 = "(?<numFlr5>之" + ALL_CHAR + "+|"+BASEMENT_PATTERN+")?";
+    private final String ROOM = "(?<room>" + ALL_CHAR + "+室)?";
     private final String BASEMENTSTR = "(?<basementStr>地下.*層|地下|地下室|底層|屋頂|頂樓|屋頂突出物|屋頂樓|頂層)?";
     private final String ADDRREMAINS = "(?<addrRemains>.+)?";
 
@@ -62,7 +63,7 @@ public class AddressParser {
     }
 
     private static String extractNumericPart(String input) {
-        Pattern numericPattern = Pattern.compile("[一二三四五六七八九十百千]+");
+        Pattern numericPattern = Pattern.compile("[一二三四五六七八九十百千0-9]+");
         Matcher numericMatcher = numericPattern.matcher(input);
         if (numericMatcher.find()) {
             return numericMatcher.group();
@@ -154,7 +155,8 @@ public class AddressParser {
                     // 提取數字
                     String numericPart = extractNumericPart(basementString);
                     // 加上"basement:"讓轉換為之４６一樓，的一樓可以被解析出來
-                    origninalAddress = origninalAddress.replaceAll(basementString, "basement:" + numericPart + "樓");
+                    // 會組成basement:一樓/basement:二樓...
+                    origninalAddress = origninalAddress.replaceAll(basementString, "basement:" + replaceWithChineseNumber(numericPart) + "樓");
                     log.info("basementString 提取數字部分:{} ", numericPart);
                     address.setBasementStr("1");
                     break;

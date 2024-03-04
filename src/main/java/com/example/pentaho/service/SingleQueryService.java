@@ -13,13 +13,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.*;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.example.pentaho.utils.NumberParser.replaceWithHalfWidthNumber;
 
 @Service
 public class SingleQueryService {
@@ -130,7 +130,9 @@ public class SingleQueryService {
 
     public String findJson(String originalString) {
         Address address = findMappingId(originalString);
+        log.info("mappingId:{}", address.getMappingId());
         String seq = finSeqByMappingIdInRedis(address.getMappingId());
+        log.info("seq:{}", seq);
         return ibdTbAddrCodeOfDataStandardRepository.findBySeq(Integer.valueOf(seq));
     }
 
@@ -155,14 +157,14 @@ public class SingleQueryService {
             String road = address.getRoad();
             String area = address.getArea();
 
-            String roadAreaSn = findByKey((road == null ? "" : road) + (area == null ? "" : area), "0000000");
+            String roadAreaSn = findByKey(replaceWithHalfWidthNumber(road) + (area == null ? "" : area), "0000000");
 
             String lane = address.getLane(); //巷
-            String laneCd = findByKey(lane, "0000");
+            String laneCd = findByKey(replaceWithHalfWidthNumber(lane), "0000");
 
             String alley = address.getAlley(); //弄
             String subAlley = address.getSubAlley(); //弄
-            String alleyIdSn = findByKey((alley == null ? "" : alley) + (subAlley == null ? "" : subAlley), "0000000");
+            String alleyIdSn = findByKey(replaceWithHalfWidthNumber(alley) + replaceWithHalfWidthNumber(subAlley), "0000000");
 
             String numFlr1 = address.getNumFlr1();
             String numFlr1Id = findByKey("NUM_FLR_1:" + deleteBasementString(numFlr1), "000000");
@@ -182,7 +184,7 @@ public class SingleQueryService {
             String numTypeCd = "95";
             String numFlrId = numFlr1Id + numFlr2Id + numFlr3d + numFlr4d + numFlr5d;
             String room = address.getRoom(); //里
-            String roomIdSn = findByKey(room, "00000");
+            String roomIdSn = findByKey(replaceWithHalfWidthNumber(room), "00000");
             String basementStr = address.getBasementStr() == null ? "0" : address.getBasementStr();
 
             //處理numFlrPos
@@ -206,7 +208,7 @@ public class SingleQueryService {
     public String findNeighborCd(String rawNeighbor) {
         if (rawNeighbor != null && !rawNeighbor.isEmpty()) {
             Pattern pattern = Pattern.compile("\\d+"); //指提取數字
-            Matcher matcher = pattern.matcher(replaceWithOneToNine(rawNeighbor));
+            Matcher matcher = pattern.matcher(replaceWithHalfWidthNumber(rawNeighbor));
             if (matcher.find()) {
                 String neighborResult = matcher.group();
                 // 往前補零，補到三位數
@@ -223,7 +225,7 @@ public class SingleQueryService {
 
     public String deleteBasementString(String rawString) {
         if (rawString != null) {
-            return replaceWithOneToNine(rawString).replace("basement:", "");
+            return replaceWithHalfWidthNumber(rawString).replace("basement:", "");
         }
         return "";
     }
@@ -232,7 +234,7 @@ public class SingleQueryService {
     public String getNumFlrPos(Address address) {
         String[] patternFlr1 = {".+號$", ".+樓$", ".+之$"};
         String[] patternFlr2 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^之.+號", "^[A-ZＡ-Ｚ]+$"};
-        String[] patternFlr3 = {"V.+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
+        String[] patternFlr3 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
         String[] patternFlr4 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
         String[] patternFlr5 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
         return getNum(address.getNumFlr1(), patternFlr1) + getNum(address.getNumFlr2(), patternFlr2) +
@@ -260,52 +262,6 @@ public class SingleQueryService {
     String finSeqByMappingIdInRedis(String mappingId) {
         return findByKey(mappingId, null);
     }
-
-
-    public static String replaceWithOneToNine(String input) {
-        Map<String, String> map = new HashMap<>();
-        map.put("壹", "1");
-        map.put("貳", "2");
-        map.put("叁", "3");
-        map.put("肆", "4");
-        map.put("伍", "5");
-        map.put("陸", "6");
-        map.put("柒", "7");
-        map.put("捌", "8");
-        map.put("玖", "9");
-        map.put("零", "0");
-        map.put("一", "1");
-        map.put("二", "2");
-        map.put("三", "3");
-        map.put("四", "4");
-        map.put("五", "5");
-        map.put("六", "6");
-        map.put("七", "7");
-        map.put("八", "8");
-        map.put("九", "9");
-        map.put("０", "0");
-        map.put("１", "1");
-        map.put("２", "2");
-        map.put("３", "3");
-        map.put("４", "4");
-        map.put("５", "5");
-        map.put("６", "6");
-        map.put("７", "7");
-        map.put("８", "8");
-        map.put("９", "9");
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < input.length(); i++) {
-            String currentChar = String.valueOf(input.charAt(i));
-            if (map.containsKey(currentChar)) {
-                result.append(map.get(currentChar));
-            } else {
-                result.append(currentChar);
-            }
-        }
-        log.info("數字改為:{}",result.toString());
-        return result.toString();
-    }
-
 
 
 }

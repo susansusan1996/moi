@@ -70,11 +70,14 @@ public class SingleQueryResouce {
     }
 
 
-
-
     @PostMapping("/query-single-test")
     public ResponseEntity<String> queryAddress(@RequestBody String originalString) {
-        return ResponseEntity.ok(singleQueryService.findJson(originalString));
+//        try {
+            return ResponseEntity.ok(singleQueryService.findJson(originalString));
+//        } catch (Exception e) {
+//            log.info("無法解析地址:{}", e.getMessage());
+//            return ResponseEntity.ok("無法解析地址");
+//        }
     }
 
 
