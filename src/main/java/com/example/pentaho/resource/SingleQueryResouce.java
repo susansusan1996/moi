@@ -47,7 +47,7 @@ public class SingleQueryResouce {
     @GetMapping("/query-address")
     public ResponseEntity<Address> queryData(@RequestBody SingleQueryDTO singleQueryDTO) {
 //        return ResponseEntity.ok(new Address(singleQueryDTO.getOriginalAddress()));
-        return ResponseEntity.ok(addressParser.parseAddress(singleQueryDTO.getOriginalAddress()));
+        return ResponseEntity.ok(addressParser.parseAddress(singleQueryDTO.getOriginalAddress(),null));
 
     }
 
@@ -65,11 +65,11 @@ public class SingleQueryResouce {
     @PostMapping("/query-single")
     public ResponseEntity<String> queryAddressJson(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "單筆查詢",
+                    description = "單筆查詢，request body 要帶 json，需包含:originalAddress、county(可為空)、town(可為空)。具體資料格式如下:",
                     required = true,
                     content = @Content(
                             schema = @Schema(implementation = SingleQueryDTO.class),
-                            examples = @ExampleObject(value = "{\"originalAddress\":\"衛國里007鄰衛國街１１４巷９弄１０號B六樓之５\",\"county\":\"臺南市(可為空)\",\"town\":\"東區(可為空)\"}")
+                            examples = @ExampleObject(value = "{\"originalAddress\":\"台南市東區衛國里007鄰衛國街１１４巷９弄１０號B六樓之５\",\"county\":\"臺南市(可為空)\",\"town\":\"東區(可為空)\"}")
                     )
             )
             @RequestBody SingleQueryDTO singleQueryDTO) {
@@ -78,11 +78,14 @@ public class SingleQueryResouce {
     }
 
 
-
-
-    @GetMapping("/query-single-test")
+    @PostMapping("/query-single-test")
     public ResponseEntity<String> queryAddress(@RequestBody String originalString) {
-        return ResponseEntity.ok(singleQueryService.findJson(originalString));
+//        try {
+            return ResponseEntity.ok(singleQueryService.findJson(originalString));
+//        } catch (Exception e) {
+//            log.info("無法解析地址:{}", e.getMessage());
+//            return ResponseEntity.ok("無法解析地址");
+//        }
     }
 
 
