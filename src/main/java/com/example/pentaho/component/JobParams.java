@@ -69,6 +69,8 @@ public class JobParams implements Serializable {
     /**
      *
      * processedCounts
+     * call_job_fail,update 0筆
+     * sys_sucess,sys_failed read file
      */
     @JsonProperty("processedCounts")
     private Integer processedCounts;
