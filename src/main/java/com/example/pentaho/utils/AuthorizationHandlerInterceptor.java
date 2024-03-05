@@ -63,7 +63,7 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
          */
         String keyName = keyComponent.getPubkeyName();
         log.info("requestURI:{}",request.getRequestURI());
-        if("/api/batchForm/finished".equals(request.getRequestURI()) ||"/api/singlequery/query-single".equals(request.getRequestURI())){
+        if("/api/batchForm/finished".equals(request.getRequestURI())){
           keyName =keyComponent.getApPubkeyName();
         }
             if(Token.fromRSAJWTToken(RSATokenJwt,keyName)){

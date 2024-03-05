@@ -25,6 +25,8 @@ public class Address {
     private String addrRemains;
     private boolean isParseSuccessed;
     private String originalAddress;
+    private String mappingId; //64碼
+
 
     public Address() {
     }
@@ -210,6 +212,14 @@ public class Address {
         this.room = room;
     }
 
+    public String getMappingId() {
+        return mappingId;
+    }
+
+    public void setMappingId(String mappingId) {
+        this.mappingId = mappingId;
+    }
+
     @Override
     public String toString() {
         return "Address{" +
@@ -235,6 +245,7 @@ public class Address {
                 ", addrRemains='" + addrRemains + '\'' +
                 ", isParseSuccessed=" + isParseSuccessed +
                 ", originalAddress='" + originalAddress + '\'' +
+                ", mappingId='" + mappingId + '\'' +
                 '}';
     }
 }
