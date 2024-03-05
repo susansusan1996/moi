@@ -29,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 @RestController
-@RequestMapping("/api/singlequery/")
+@RequestMapping("/api/singlequery")
 public class SingleQueryResouce {
 
     private static Logger log = LoggerFactory.getLogger(SingleQueryResouce.class);
@@ -86,63 +86,5 @@ public class SingleQueryResouce {
     }
 
 
-    /***
-     * 單筆查詢軌跡
-     */
-    @Operation(description = "單筆查詢軌跡",
-            parameters = {  @Parameter(in = ParameterIn.HEADER,
-                    name = "Authorization",
-                    description = "驗證jwt token,body附帶userInfo={\"Id\":1,\"departName\":\"A05\"} ,departName需為代號",
-                    required = true,
-                    schema = @Schema(type = "string"))
-            })
-    @PostMapping("/query-track")
-    public ResponseEntity<List<IbdTbIhChangeDoorplateHis>> queryTrack(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "編碼",
-                    required = true,
-                    content = @Content(
-                            schema = @Schema(implementation = String.class),
-                            examples = @ExampleObject(value = "BSZ7538-0")
-                    )
-            )
-            @RequestBody String addressId ){
-        return new ResponseEntity<>(singleQueryService.singleQueryTrack(addressId), HttpStatus.OK);
-    }
 
-
-    @PostMapping("/query-batch-track")
-    public void queryBatchTrack (@Parameter(
-            description ="批次ID" ,
-            required = true,
-            schema = @Schema(type = "string"))
-    @RequestParam("Id") String Id,
-    @Parameter(
-            description ="原始CSVID" ,
-            required = true,
-            schema = @Schema(type = "string"))
-    @RequestParam("originalFileId") String originalFileId,
-    @Parameter(
-            description ="申請單號" ,
-            required = true,
-            schema = @Schema(type = "string"))
-    @RequestParam("formName") String formName,
-    @Parameter(
-            description = "使用者上傳的CSV檔",
-            required = true
-    )
-    @RequestParam("file") MultipartFile file) throws IOException {
-        log.info("Received request");
-        /**check**/
-        if(file == null){
-            throw new MoiException("檔案為空");
-        }
-
-        if(!file.getOriginalFilename().endsWith(".csv")){
-           throw new MoiException("檔案須為CSV");
-       }
-        log.info("start processing");
-        SingleBatchQueryParams singleBatchQueryParams = new SingleBatchQueryParams(Id, originalFileId, "0", "SYS_FAILED", formName + ".csv");
-        singleQueryService.queryBatchTrack(file,singleBatchQueryParams);
-    }
 }
