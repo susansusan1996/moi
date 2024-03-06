@@ -7,6 +7,7 @@ import com.example.pentaho.repository.IbdTbAddrCodeOfDataStandardRepository;
 import com.example.pentaho.repository.IbdTbAddrDataNewRepository;
 import com.example.pentaho.repository.IbdTbIhChangeDoorplateHisRepository;
 import com.example.pentaho.utils.AddressParser;
+import com.example.pentaho.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -166,6 +167,10 @@ public class SingleQueryService {
             String subAlley = address.getSubAlley(); //弄
             String alleyIdSn = findByKey(replaceWithHalfWidthNumber(alley) + replaceWithHalfWidthNumber(subAlley), "0000000");
 
+            //如果有"之45一樓"，要額外處理
+            if (StringUtils.isNotNullOrEmpty(address.getContinuousNum())) {
+                formatCoutinuousFlrNum(address.getContinuousNum(), address);
+            }
             String numFlr1 = address.getNumFlr1();
             String numFlr1Id = findByKey("NUM_FLR_1:" + deleteBasementString(numFlr1), "000000");
 
@@ -206,7 +211,7 @@ public class SingleQueryService {
 
 
     public String findNeighborCd(String rawNeighbor) {
-        if (rawNeighbor != null && !rawNeighbor.isEmpty()) {
+        if (StringUtils.isNotNullOrEmpty(rawNeighbor)) {
             Pattern pattern = Pattern.compile("\\d+"); //指提取數字
             Matcher matcher = pattern.matcher(replaceWithHalfWidthNumber(rawNeighbor));
             if (matcher.find()) {
@@ -261,6 +266,57 @@ public class SingleQueryService {
 
     String finSeqByMappingIdInRedis(String mappingId) {
         return findByKey(mappingId, null);
+    }
+
+    //處理: 之45一樓 (像這種連續的號碼，就會被歸在這裡)
+    public void formatCoutinuousFlrNum(String input, Address address) {
+        if (StringUtils.isNotNullOrEmpty(input)) {
+            String firstPattern = "(?<coutinuousNum1>之[\\d\\uFF10-\\uFF19]+)(?<coutinuousNum2>\\D+樓)?"; //之45一樓
+            String secondPattern = "(?<coutinuousNum1>之\\D+)(?<coutinuousNum2>[\\d\\uFF10-\\uFF19]+樓)?"; //之四五1樓
+            Matcher matcherFirst = Pattern.compile(firstPattern).matcher(input);
+            Matcher matcherSecond = Pattern.compile(secondPattern).matcher(input);
+            String[] flrArray = {address.getNumFlr1(), address.getNumFlr2(), address.getNumFlr3(), address.getNumFlr4(), address.getNumFlr5()};
+            int count = 0;
+            for (int i = 0; i < flrArray.length; i++) {
+                if (StringUtils.isNullOrEmpty(flrArray[i])) {
+                    log.info("目前最大到:{}，新分解好的flr，就要再往後塞到:{}", "numFlr" + (i), "numFlr" + (i + 1));
+                    count = i + 1;
+                    break;
+                }
+            }
+            if (matcherFirst.matches()) {
+                setFlrNum(count, matcherFirst.group("coutinuousNum1"), matcherFirst.group("coutinuousNum2"), address);
+            } else if (matcherSecond.matches()) {
+                setFlrNum(count, matcherFirst.group("coutinuousNum1"), matcherFirst.group("coutinuousNum2"), address);
+            }
+        }
+    }
+
+    private void setFlrNum(int count, String first, String second, Address address) {
+        first = replaceWithHalfWidthNumber(first);
+        second = replaceWithHalfWidthNumber(second);
+        log.info("first:{},second:{}", first, second);
+        switch (count) {
+            case 1:
+                address.setNumFlr1(first);
+                address.setNumFlr2(second);
+                address.setNumFlr3(address.getAddrRemains()); //剩下跑到remain的就塞到最後
+                break;
+            case 2:
+                address.setNumFlr2(first);
+                address.setNumFlr3(second);
+                address.setNumFlr4(address.getAddrRemains());//剩下跑到remain的就塞到最後
+                break;
+            case 3:
+                address.setNumFlr3(first);
+                address.setNumFlr4(second);
+                address.setNumFlr5(address.getAddrRemains());//剩下跑到remain的就塞到最後
+                break;
+            case 4:
+                address.setNumFlr4(first);
+                address.setNumFlr5(second);
+                break;
+        }
     }
 
 

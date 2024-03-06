@@ -27,7 +27,7 @@ public class AddressParser {
     private final String ALL_CHAR = "[0-9A-ZＡ-Ｚ\\uFF10-\\uFF19零一二三四五六七八九十百千甲乙丙丁戊己庚]";
     private final String DYNAMIC_COUNTY_PART = "新北(市)?|宜蘭(縣)?|桃園([縣市])?|苗栗(縣)?|彰化(縣)?|雲林(縣)?|花蓮(縣)?|南投縣?|南投?|高雄(市)?|澎湖(縣)?|金門(縣)?|連江(縣)|基隆(市)?|新竹([縣市])?|嘉義([縣市])?|屏東(縣)?|";
     private final String DYNAMIC_ALLEY_PART = "|卓厝|安農新邨|吉祥園|蕭厝|泰安新村|美喬|１弄圳東|堤外|中興二村|溝邊|長埤|清水|南苑|二橫路|朝安|黃泥塘|建行新村|牛頭|永和山莊";
-    private final String COUNTY = "(?<zipcode>(^\\d{5}|^\\d{3})?)(?<county>"+DYNAMIC_COUNTY_PART+"[臺台]{0,1}[北中南東]{1}([縣市]{0,1})?" + ")?";
+    private final String COUNTY = "(?<zipcode>(^\\d{5}|^\\d{3})?)(?<county>" + DYNAMIC_COUNTY_PART + "[臺台]{0,1}[北中南東]{1}([縣市]{0,1})?" + ")?";
     private final String TOWN = "(?<town>\\D+?(市區|鎮區|鎮市|[鄉鎮市區]))?";
     private final String VILLAGE = "(?<village>\\D+?[村里])?";
     private final String NEIGHBOR = "(?<neighbor>" + ALL_CHAR + "+鄰)?";
@@ -35,11 +35,12 @@ public class AddressParser {
     private final String LANE = "(?<lane>.+巷)?";
     private final String ALLEY = "(?<alley>" + ALL_CHAR + "+弄" + DYNAMIC_ALLEY_PART + ")?";
     private final String SUBALLEY = "(?<subAlley>" + ALL_CHAR + "+[衖衕橫])?";
-    private final String NUMFLR1 = "(?<numFlr1>" + ALL_CHAR + "+[號樓之區棟]|"+BASEMENT_PATTERN+")?";
-    private final String NUMFLR2 = "(?<numFlr2>之" + ALL_CHAR + "+|" + ALL_CHAR + "+[號樓之區棟]|"+BASEMENT_PATTERN+"|" + ALL_CHAR + "+(?!室))?";
-    private final String NUMFLR3 = "(?<numFlr3>之" + ALL_CHAR + "+|" + ALL_CHAR + "+[號樓之區棟]|"+BASEMENT_PATTERN+"|" + ALL_CHAR + "+(?!室))?";
-    private final String NUMFLR4 = "(?<numFlr4>之" + ALL_CHAR + "+|" + ALL_CHAR + "+[號樓之區棟]|"+BASEMENT_PATTERN+"|" + ALL_CHAR + "+(?!室))?";
-    private final String NUMFLR5 = "(?<numFlr5>之" + ALL_CHAR + "+|"+BASEMENT_PATTERN+")?";
+    private final String NUMFLR1 = "(?<numFlr1>" + ALL_CHAR + "+[號樓之區棟]|" + BASEMENT_PATTERN + ")?";
+    private final String NUMFLR2 = "(?<numFlr2>之" + ALL_CHAR + "+(?!.*樓)|" + ALL_CHAR + "+[號樓之區棟]|" + BASEMENT_PATTERN + "|" + ALL_CHAR + "+(?!室))?";
+    private final String NUMFLR3 = "(?<numFlr3>之" + ALL_CHAR + "+(?!.*樓)|" + ALL_CHAR + "+[號樓之區棟]|" + BASEMENT_PATTERN + "|" + ALL_CHAR + "+(?!室))?";
+    private final String NUMFLR4 = "(?<numFlr4>之" + ALL_CHAR + "+(?!.*樓)|" + ALL_CHAR + "+[號樓之區棟]|" + BASEMENT_PATTERN + "|" + ALL_CHAR + "+(?!室))?";
+    private final String NUMFLR5 = "(?<numFlr5>之" + ALL_CHAR + "+(?!.*樓)|" + BASEMENT_PATTERN + ")?";
+    private final String CONTINUOUS_NUM = "(?<continuousNum>之.*樓)?"; //之45一樓
     private final String ROOM = "(?<room>" + ALL_CHAR + "+室)?";
     private final String BASEMENTSTR = "(?<basementStr>地下.*層|地下|地下室|底層|屋頂|頂樓|屋頂突出物|屋頂樓|頂層)?";
     private final String ADDRREMAINS = "(?<addrRemains>.+)?";
@@ -63,13 +64,14 @@ public class AddressParser {
     }
 
     private static String extractNumericPart(String input) {
-        Pattern numericPattern = Pattern.compile("[一二三四五六七八九十百千0-9]+");
-        Matcher numericMatcher = numericPattern.matcher(input);
-        if (numericMatcher.find()) {
-            return numericMatcher.group();
-        } else {
-            return "";
+        if (StringUtils.isNotNullOrEmpty(input)) {
+            Pattern numericPattern = Pattern.compile("[一二三四五六七八九十百千0-9]+");
+            Matcher numericMatcher = numericPattern.matcher(input);
+            if (numericMatcher.find()) {
+                return numericMatcher.group();
+            }
         }
+        return "";
     }
 
     private String findAreaByCountyAndTown(String input, Address address) {
@@ -104,14 +106,14 @@ public class AddressParser {
     }
 
     private String getPattern() {
-        return COUNTY + TOWN + VILLAGE + NEIGHBOR + ROAD + LANE + ALLEY + SUBALLEY + NUMFLR1 + NUMFLR2 + NUMFLR3 + NUMFLR4 + NUMFLR5 + ROOM + BASEMENTSTR + ADDRREMAINS;
+        return COUNTY + TOWN + VILLAGE + NEIGHBOR + ROAD + LANE + ALLEY + SUBALLEY + NUMFLR1 + NUMFLR2 + NUMFLR3 + NUMFLR4 + NUMFLR5 + CONTINUOUS_NUM + ROOM + BASEMENTSTR + ADDRREMAINS;
     }
 
     public Address setAddress(Matcher matcher, Address address, String origninalAddress) {
         address.setParseSuccessed(true);
         String basementString = matcher.group("basementStr");
         // 特殊處理地下一層和地下的情況
-        if (basementString != null && !basementString.equals("")) {
+        if (StringUtils.isNotNullOrEmpty(basementString)) {
             return parseAddress(parseBasement(basementString, origninalAddress, address), address);
         }
         address.setZipcode(matcher.group("zipcode"));
@@ -128,6 +130,7 @@ public class AddressParser {
         address.setNumFlr3(matcher.group("numFlr3"));
         address.setNumFlr4(matcher.group("numFlr4"));
         address.setNumFlr5(matcher.group("numFlr5"));
+        address.setContinuousNum(matcher.group("continuousNum"));
         address.setRoom(matcher.group("room"));
         address.setAddrRemains(matcher.group("addrRemains"));
         return address;
