@@ -142,6 +142,7 @@
 			<artifactId>jackson-datatype-jsr310</artifactId>
 		</dependency>
 
+		<!--UserHolder-->
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-all</artifactId>
@@ -169,6 +170,8 @@
 <!--			<version>0.1.54</version>-->
 <!--		</dependency>-->
 
+
+		<!--SSH-->
 		<dependency>
 			<groupId>com.github.mwiede</groupId>
 			<artifactId>jsch</artifactId>
@@ -202,6 +205,14 @@
 			<artifactId>vertica-jdbc</artifactId>
 			<version>24.1.0-0</version>
 		</dependency>
+
+		<!--CSVReader-->
+		<dependency>
+			<groupId>com.opencsv</groupId>
+			<artifactId>opencsv</artifactId>
+			<version>5.5.1</version>
+		</dependency>
+
 
 	</dependencies>
 

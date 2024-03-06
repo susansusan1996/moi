@@ -2,7 +2,9 @@ package com.example.pentaho.resource;
 
 import com.example.pentaho.component.Address;
 import com.example.pentaho.component.IbdTbIhChangeDoorplateHis;
+import com.example.pentaho.component.SingleBatchQueryParams;
 import com.example.pentaho.component.SingleQueryDTO;
+import com.example.pentaho.exception.MoiException;
 import com.example.pentaho.service.SingleQueryService;
 import com.example.pentaho.utils.AddressParser;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,9 +18,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.async.DeferredResult;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping("/api/singlequery")
@@ -81,28 +89,5 @@ public class SingleQueryResouce {
     }
 
 
-    /***
-     * 單筆查詢軌跡
-     */
-    @Operation(description = "單筆查詢軌跡",
-            parameters = {  @Parameter(in = ParameterIn.HEADER,
-                    name = "Authorization",
-                    description = "驗證jwt token,body附帶userInfo={\"Id\":1,\"departName\":\"A05\"} ,departName需為代號",
-                    required = true,
-                    schema = @Schema(type = "string"))
-            })
-    @PostMapping("/query-track")
-    public ResponseEntity<List<IbdTbIhChangeDoorplateHis>> queryTrack(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "編碼",
-                    required = true,
-                    content = @Content(
-                            schema = @Schema(implementation = String.class),
-                            examples = @ExampleObject(value = "BSZ7538-0")
-                    )
-            )
-            @RequestBody String addressId ){
-        return new ResponseEntity<>(singleQueryService.singleQueryTrack(addressId), HttpStatus.OK);
-    }
 
 }

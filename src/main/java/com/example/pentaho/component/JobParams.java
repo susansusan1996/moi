@@ -69,6 +69,8 @@ public class JobParams implements Serializable {
     /**
      *
      * processedCounts
+     * call_job_fail,update 0筆
+     * sys_sucess,sys_failed read file
      */
     @JsonProperty("processedCounts")
     private Integer processedCounts;
@@ -78,7 +80,8 @@ public class JobParams implements Serializable {
      *
      * status
      */
-    private String status;
+    @JsonProperty("status")
+    private String STATUS;
 
     public JobParams(String FORM_NAME, String BATCH_ID, String BATCHFORM_ORIGINAL_FILE_ID) {
         this.FORM_NAME = FORM_NAME;
@@ -171,11 +174,11 @@ public class JobParams implements Serializable {
     }
 
     public String getStatus() {
-        return status;
+        return STATUS;
     }
 
     public void setStatus(String status) {
-        this.status = status;
+        this.STATUS = status;
     }
 
     @Override
@@ -190,7 +193,7 @@ public class JobParams implements Serializable {
                 ", DATA_SRC='" + DATA_SRC + '\'' +
                 ", DATA_DATE='" + DATA_DATE + '\'' +
                 ", processedCounts=" + processedCounts +
-                ", status='" + status + '\'' +
+                ", status='" + STATUS + '\'' +
                 '}';
     }
 }
