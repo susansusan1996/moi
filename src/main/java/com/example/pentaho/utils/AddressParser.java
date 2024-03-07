@@ -57,7 +57,7 @@ public class AddressParser {
         //先把county、town撈出來，以便核對有沒有area，
         //如果有area，就把area先去掉，
         //把area去掉之後，其餘部分再跑一次正則，把其他部分切割出來
-        origninalAddress = findAreaByCountyAndTown(origninalAddress, address);
+        origninalAddress = findArea(origninalAddress, address);
         String pattern = getPattern(); //組正則表達式
         Pattern regexPattern = Pattern.compile(pattern);
         Matcher matcher = regexPattern.matcher(origninalAddress);
@@ -78,13 +78,13 @@ public class AddressParser {
         return "";
     }
 
-    private String findAreaByCountyAndTown(String input, Address address) {
+    private String findArea(String input, Address address) {
         if (!input.isEmpty()) {
             List<String> areaSet = getArea();
-            String areaPatternString = String.join("|", areaSet) + "(?![里區市鄉衖衕橫路道街]])"; //如果後面帶有這些后綴字，就代表是不area
+            String areaPatternString = String.join("|", areaSet) + "(?!.*[里區市鄉衖衕橫路道街]])"; //如果後面帶有[里區市鄉衖衕橫路道街]這些後綴字，就代表是不area
             Pattern pattern = Pattern.compile(areaPatternString);
             Matcher matcher = pattern.matcher(input);
-            if (!matcher.find()) {
+            if (matcher.find()) {
                 for (String area : areaSet) {
                     if (input.contains(area)) {
                         address.setArea(area);
