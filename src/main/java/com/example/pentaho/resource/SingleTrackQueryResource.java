@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,13 +37,28 @@ public class SingleTrackQueryResource {
     /***
      * 單筆查詢軌跡
      */
-    @Operation(description = "單筆查詢軌跡",
+    @Operation(description = "單筆軌跡",
             parameters = {  @Parameter(in = ParameterIn.HEADER,
                     name = "Authorization",
-                    description = "驗證jwt token,body附帶userInfo={\"Id\":1,\"departName\":\"A05\"} ,departName需為代號",
+                    description = "jwt token,body附帶 userInfo={\"Id\":1,\"orgId\":\"Admin\"}",
                     required = true,
                     schema = @Schema(type = "string"))
-            })
+            },
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "",
+                            content = @Content(schema = @Schema(implementation = List.class), examples= @ExampleObject(value = "[\n" +
+                                    "    {\n" +
+                                    "        \"addressId\": \"BSZ7538-0\",\n" +
+                                    "        \"hisAdr\": \"10010020臺灣省嘉義縣朴子市大葛里027鄰祥和三路西段２３號三樓３９\",\n" +
+                                    "        \"wgsX\": \"120.289578060453740\",\n" +
+                                    "        \"wgsY\": \"23.455075446688465\",\n" +
+                                    "        \"updateType\": \"行政區域調整\",\n" +
+                                    "        \"updateDt\": \"20200701\"\n" +
+                                    "    }\n" +
+                                    "]"))),
+                    @ApiResponse(responseCode = "500", description = "",
+                            content = @Content(schema = @Schema(implementation = String.class), examples= @ExampleObject(value = ""))
+                            )})
     @PostMapping("/query-track")
     public ResponseEntity<List<IbdTbIhChangeDoorplateHis>> queryTrack(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -58,6 +74,17 @@ public class SingleTrackQueryResource {
     }
 
 
+    @Operation(description = "單筆軌跡批次",
+            parameters = {  @Parameter(in = ParameterIn.HEADER,
+                    name = "Authorization",
+                    description = "jwt token,body附帶 userInfo={\"Id\":1,\"orgId\":\"Admin\"}",
+                    required = true,
+                    schema = @Schema(type = "string"))
+            },
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "作業開始執行"),
+                    @ApiResponse(responseCode = "500", description = "檔案為空 或 非CSV檔"
+                    )})
     @PostMapping("/query-batch-track")
     public void queryBatchTrack (@Parameter(
             description ="批次ID" ,

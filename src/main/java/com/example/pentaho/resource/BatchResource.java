@@ -40,7 +40,6 @@ public class BatchResource {
     @Autowired
     private FileOutputService fileOutputService;
 
-
     @Autowired
     private Directory directories;
 
@@ -79,11 +78,12 @@ public class BatchResource {
         FileUtils.saveFile(directories.getMockEtlSaveFileDirPrefix(), multiFile, filename);
     }
 
+
     @Operation(description = "檔案上傳 & 呼叫JOB",
             parameters = {
                     @Parameter(in = ParameterIn.HEADER,
                             name = "Authorization",
-                            description = "驗證jwt token,body附帶userInfo={\"Id\":1,\"departName\":\"A05\"} ,departName需為代號",
+                            description = "jwt token,body附帶userInfo={\"Id\":\"673f7eec-8ae5-4e79-ad3a-42029eedf742\",\"orgId\":\"ADMIN\"}",
                             required = true,
                             schema = @Schema(type = "string"))}
     ,
