@@ -1,6 +1,8 @@
 package com.example.pentaho.utils;
 
 import com.example.pentaho.component.Address;
+import com.example.pentaho.component.AliasDTO;
+import com.example.pentaho.repository.AliasRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,15 +25,17 @@ public class AddressParser {
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
+    @Autowired
+    private AliasRepository aliasRepository;
+
     private final String BASEMENT_PATTERN = "basement:[一二三四五六七八九十百千]+樓"; //經過一次PARSE之後，如果有地下或屋頂，都會被改為basement:開頭
     private final String ALL_CHAR = "[0-9A-ZＡ-Ｚ\\uFF10-\\uFF19零一二三四五六七八九十百千甲乙丙丁戊己庚]";
-    private final String DYNAMIC_COUNTY_PART = "新北(市)?|宜蘭(縣)?|桃園([縣市])?|苗栗(縣)?|彰化(縣)?|雲林(縣)?|花蓮(縣)?|南投縣?|南投?|高雄(市)?|澎湖(縣)?|金門(縣)?|連江(縣)|基隆(市)?|新竹([縣市])?|嘉義([縣市])?|屏東(縣)?|";
     private final String DYNAMIC_ALLEY_PART = "|卓厝|安農新邨|吉祥園|蕭厝|泰安新村|美喬|１弄圳東|堤外|中興二村|溝邊|長埤|清水|南苑|二橫路|朝安|黃泥塘|建行新村|牛頭|永和山莊";
-    private final String COUNTY = "(?<zipcode>(^\\d{5}|^\\d{3})?)(?<county>" + DYNAMIC_COUNTY_PART + "[臺台]{0,1}[北中南東]{1}([縣市]{0,1})?" + ")?";
-    private final String TOWN = "(?<town>\\D+?(市區|鎮區|鎮市|[鄉鎮市區]))?";
-    private final String VILLAGE = "(?<village>\\D+?[村里])?";
+    private final String COUNTY = "(?<zipcode>(^\\d{5}|^\\d{3})?)(?<county>.*縣|.*市|%s)?";
+    private final String TOWN = "(?<town>\\D+?(市區|鎮區|鎮市|[鄉鎮市區])|%s)?";
+    private final String VILLAGE = "(?<village>\\D+?[村里]|%s)?";
     private final String NEIGHBOR = "(?<neighbor>" + ALL_CHAR + "+鄰)?";
-    private final String ROAD = "(?<road>.+段|.+街|.+大道|.+路)?";
+    private final String ROAD = "(?<road>.+段|.+街|.+大道|.+路|%s)?";
     private final String LANE = "(?<lane>.+巷)?";
     private final String ALLEY = "(?<alley>" + ALL_CHAR + "+弄" + DYNAMIC_ALLEY_PART + ")?";
     private final String SUBALLEY = "(?<subAlley>" + ALL_CHAR + "+[衖衕橫])?";
@@ -76,18 +80,16 @@ public class AddressParser {
 
     private String findAreaByCountyAndTown(String input, Address address) {
         if (!input.isEmpty()) {
-            String patternForCountyAndTown = COUNTY + TOWN + ADDRREMAINS;
-            Pattern pattern = Pattern.compile(patternForCountyAndTown);
+            List<String> areaSet = getArea();
+            String areaPatternString = String.join("|", areaSet) + "(?![里區市鄉衖衕橫路道街]])"; //如果後面帶有這些后綴字，就代表是不area
+            Pattern pattern = Pattern.compile(areaPatternString);
             Matcher matcher = pattern.matcher(input);
-            if (matcher.matches()) {
-                address.setCounty(matcher.group("county"));
-                address.setTown(matcher.group("town"));
-                List<String> areaSet = getArea(address);
+            if (!matcher.find()) {
                 for (String area : areaSet) {
                     if (input.contains(area)) {
                         address.setArea(area);
                         log.info("找到area==>:{}", area);
-                        return removeLastMatch(input, area); //從後面數來，第一個匹配的字串刪除(防止從前面刪，會有跟area重名的村里名被刪掉)
+                        return removeLastMatch(input, area);
                     }
                 }
             }
@@ -106,7 +108,19 @@ public class AddressParser {
     }
 
     private String getPattern() {
-        return COUNTY + TOWN + VILLAGE + NEIGHBOR + ROAD + LANE + ALLEY + SUBALLEY + NUMFLR1 + NUMFLR2 + NUMFLR3 + NUMFLR4 + NUMFLR5 + CONTINUOUS_NUM + ROOM + BASEMENTSTR + ADDRREMAINS;
+        List<AliasDTO> aliasList = aliasRepository.queryAllAlias();
+        List<String> countyList = aliasList.stream().filter(aliasDTO -> aliasDTO.getTypeName().equals("COUNTY")).map(AliasDTO::getAlias).toList();
+        List<String> roadList = aliasList.stream().filter(aliasDTO -> aliasDTO.getTypeName().equals("ROAD")).map(AliasDTO::getAlias).toList();
+//        List<String> areaList = aliasList.stream().filter(aliasDTO -> aliasDTO.getTypeName().equals("AREA")).map(AliasDTO::getAlias).toList();
+        List<String> townList = aliasList.stream().filter(aliasDTO -> aliasDTO.getTypeName().equals("TOWN")).map(AliasDTO::getAlias).toList();
+        List<String> villageList = aliasList.stream().filter(aliasDTO -> aliasDTO.getTypeName().equals("VILLAGE")).map(AliasDTO::getAlias).toList();
+        String newCounty = String.format(COUNTY , String.join("|",countyList));
+        String newTown = String.format(TOWN , String.join("|",townList));
+        String newVillage = String.format(VILLAGE , String.join("|",villageList));
+        String newRoad = String.format(ROAD , String.join("|",roadList));
+        String finalPattern = newCounty + newTown + newVillage + NEIGHBOR + newRoad + LANE + ALLEY + SUBALLEY + NUMFLR1 + NUMFLR2 + NUMFLR3 + NUMFLR4 + NUMFLR5 + CONTINUOUS_NUM + ROOM + BASEMENTSTR + ADDRREMAINS;
+        log.info("finalPattern==>{}",finalPattern);
+        return finalPattern;
     }
 
     public Address setAddress(Matcher matcher, Address address, String origninalAddress) {
@@ -136,8 +150,8 @@ public class AddressParser {
         return address;
     }
 
-    private List<String> getArea(Address address) {
-        return findListByKey(address.getCounty() + ":" + address.getTown() + ":地址");
+    private List<String> getArea() {
+        return findListByKey("地名");
     }
 
     private String parseBasement(String basementString, String origninalAddress, Address address) {
