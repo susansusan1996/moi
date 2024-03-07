@@ -63,7 +63,6 @@ public class BigDataResource {
     }
 
     /**
-     *
      * @return
      */
 //    @GetMapping("/testDB")
