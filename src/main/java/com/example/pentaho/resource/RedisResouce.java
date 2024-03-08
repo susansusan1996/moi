@@ -26,7 +26,7 @@ public class RedisResouce {
      */
     @GetMapping("/query-data")
     public ResponseEntity<String> queryData(@RequestBody String key) {
-        return ResponseEntity.ok(redisService.findByKey(key, null));
+        return ResponseEntity.ok(redisService.findByKey(null, key, null));
     }
 
 

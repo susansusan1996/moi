@@ -1,6 +1,8 @@
 package com.example.pentaho.component;
 
 
+import java.util.List;
+
 public class Address {
 
     private String zipcode;
@@ -27,6 +29,8 @@ public class Address {
     private boolean isParseSuccessed;
     private String originalAddress;
     private String mappingId; //64碼
+    private String segmentExistNumber; //紀錄user是否有輸入每個地址片段，有:1，沒有:0
+    private List<String> mappingIdList;
 
 
     public Address() {
@@ -229,6 +233,22 @@ public class Address {
         this.mappingId = mappingId;
     }
 
+    public String getSegmentExistNumber() {
+        return segmentExistNumber;
+    }
+
+    public void setSegmentExistNumber(String segmentExistNumber) {
+        this.segmentExistNumber = segmentExistNumber;
+    }
+
+    public List<String> getMappingIdList() {
+        return mappingIdList;
+    }
+
+    public void setMappingIdList(List<String> mappingIdList) {
+        this.mappingIdList = mappingIdList;
+    }
+
     @Override
     public String toString() {
         return "Address{" +
@@ -256,6 +276,8 @@ public class Address {
                 ", isParseSuccessed=" + isParseSuccessed +
                 ", originalAddress='" + originalAddress + '\'' +
                 ", mappingId='" + mappingId + '\'' +
+                ", segmentExistNumber='" + segmentExistNumber + '\'' +
+                ", mappingIdList=" + mappingIdList +
                 '}';
     }
 }
