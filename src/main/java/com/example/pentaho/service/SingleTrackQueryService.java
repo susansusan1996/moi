@@ -8,6 +8,8 @@ import com.example.pentaho.component.SingleBatchQueryParams;
 import com.example.pentaho.exception.MoiException;
 import com.example.pentaho.repository.IbdTbIhChangeDoorplateHisRepository;
 import com.opencsv.CSVReader;
+import com.opencsv.CSVWriter;
+import com.opencsv.ResultSetHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +25,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.ResultSet;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -70,15 +73,16 @@ public class SingleTrackQueryService {
             String[] newLines = Arrays.copyOfRange(lines, 1, lines.length);
             log.info("newLines:{}",newLines.length);
             if(newLines.length <= 0){
+                /**去掉表頭檔案沒有內容*/
                 singleBatchQueryParams.setStatus("REJECT");
                 postSingleBatchQueryRequest("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
                 return;
             }
 
-            /**表頭除外之筆數，空白行也算**/
+            /**表頭除外之筆數，中有空白也算**/
             singleBatchQueryParams.setProcessedCounts(String.valueOf(newLines.length));
 
-            /**取得地址編碼，記得略過表頭**/
+            /**取得乾淨的地址編碼，記得略過表頭**/
             List<String> addressIdList = CSVReader(file);
             if(addressIdList == null){
                 singleBatchQueryParams.setStatus("SYS_FAILED");
@@ -89,7 +93,7 @@ public class SingleTrackQueryService {
             List<IbdTbIhChangeDoorplateHis> IbdTbIhChangeDoorplateHisList = ibdTbIhChangeDoorplateHisRepository.findByAddressIdList(addressIdList);
             boolean geneFile = getCSVFile(IbdTbIhChangeDoorplateHisList, singleBatchQueryParams.getFile());
             if(geneFile){
-                /**成功建檔*/
+                /**成功建檔，沒有筆數給空檔嗎?*/
                 singleBatchQueryParams.setStatus("DONE");
                 filePath = directories.getLocalTempDir()+singleBatchQueryParams.getFile();
             }
@@ -107,13 +111,12 @@ public class SingleTrackQueryService {
             HashSet<String> addressIdSet = new HashSet<String>();
             CSVReader csvReader = new CSVReader(new InputStreamReader(file.getInputStream()));
             String[] line;
-            /**跳過表投**/
+            /**跳過表頭**/
             csvReader.readNext();
             while ((line = csvReader.readNext()) != null) {
                 /**跳過空行**/
                 if (!isNullOrEmpty(line)) {
                     log.info("line:{}",line[0]);
-                    /**欄位數符合**/
                     addressIdSet.add(line[0]);
                 }
             }
@@ -185,7 +188,6 @@ public class SingleTrackQueryService {
         Path path = Path.of(apServerComponent.getToken());
         String token = Files.readString(path, StandardCharsets.UTF_8);
         con.setRequestProperty("Authorization",token);
-//      con.setRequestProperty("Authorization","Bearer eyJhbGciOiJSUzI1NiJ9.eyJ1c2VyIjoie30iLCJqdGkiOiJNVE0yTmpRMk9HWXRPRGcyWWkwME9UTXhMV0UyWlRRdE9URmlNelE1WlRjek5ETTAiLCJleHAiOjE3Mzc2MDE4MzJ9.3ghp8wCHziA6Az9UpS8ssL1d_JB5apN-3pbIV28BWx3bOK-FjRGA9676-EDpqhXrth_Sqln_TFd4wT0RGJ4V1M0RtKXj3EMpFBBV0otdAsgZLm0JcK7LjUrXmWvyfsBcasnHQ83rMo4hE4GeBgXlrhPUlRxnPcVbk4UrVkaMtxyngDfkGpInPJokUWzrScgo7TDA-aKmodw2eZbxYPjGTw1fzXTYHpJC4VNyAYbeGOTd9uMh-cCAyyYMsw__JmkQOAYPpKLnHdyHSb6C8ezxAZJNrI5Rpg4cG0ousXh694IXmixI_R7Q1nVBMFl7GG946fgTO9twiqhuaB64beUILg");
 
         try (OutputStream out = con.getOutputStream();
              PrintWriter writer = new PrintWriter(new OutputStreamWriter(out, "UTF-8"), true)) {

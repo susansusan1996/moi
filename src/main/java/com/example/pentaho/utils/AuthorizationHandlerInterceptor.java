@@ -24,7 +24,6 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
         this.keyComponent = keyComponent;
     }
 
-
     /***
      *攔截
      * @param request
@@ -35,6 +34,13 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
      */
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        log.info("requestURI:{}",request.getRequestURI());
+
+        /**單筆未登入**/
+        //todo:要改成凰喜api的路徑
+        if("/api/single-track-query/forguest".equals(request.getRequestURI())){
+            return true;
+        }
 
         String authHeader = request.getHeader("Authorization");
         log.info("request header = { Authorization:Bearer accessToken }:{}", authHeader);
@@ -62,10 +68,15 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
          * 完成後return true 會再導向Spring-SecurityFilterChain
          */
         String keyName = keyComponent.getPubkeyName();
-        log.info("requestURI:{}",request.getRequestURI());
-        if("/api/batchForm/finished".equals(request.getRequestURI())){
+        /*****/
+        /**PentahoServer & 單筆APIKey 用資拓pri解密
+         * payload 必須要存在 userInfo !!
+         * **/
+        //todo:單筆要改成凰喜api的路徑
+        if("/api/batchForm/finished".equals(request.getRequestURI()) || "/api/single-track-query/forapikey".equals(request.getRequestURI())){
           keyName =keyComponent.getApPubkeyName();
         }
+
             if(Token.fromRSAJWTToken(RSATokenJwt,keyName)){
                 User user = Token.extractUserFromRSAJWTToken(RSATokenJwt,keyName);
                 log.info("user:{}",user);
@@ -75,7 +86,6 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
         /**其他錯誤；前端補403導回登入頁?**/
         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not allowed");
     }
-
 
 }
 
