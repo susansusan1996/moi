@@ -1,5 +1,7 @@
 package com.example.pentaho.repository;
 
+import java.util.List;
+
 public interface IbdTbAddrCodeOfDataStandardRepository {
-    String findBySeq(Integer seq);
+    List<String> findBySeq(List<Integer> seq);
 }

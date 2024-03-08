@@ -79,7 +79,7 @@ public class SingleQueryResouce {
 
 
     @PostMapping("/query-single-test")
-    public ResponseEntity<String> queryAddress(@RequestBody String originalString) {
+    public ResponseEntity<List<String>> queryAddress(@RequestBody String originalString) {
 //        try {
             return ResponseEntity.ok(singleQueryService.findJson(originalString));
 //        } catch (Exception e) {
