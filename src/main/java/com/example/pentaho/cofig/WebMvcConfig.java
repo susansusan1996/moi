@@ -34,7 +34,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/api/kettle/**",
                         "/api/batchForm/**",
                         "/api/redis/**",
-                        "/api/singlequery/**");
+                        "/api/singlequery/**",
+                        "/api/single-track-query/**",
+                        "/api/bigdata/**",
+                        "/api/api-key/**");
         /**
          * 可以新增別的路徑的攔截
          * AdminAuthorizationHandlerInterceptor

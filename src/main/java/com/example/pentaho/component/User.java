@@ -1,9 +1,13 @@
 package com.example.pentaho.component;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
 
+import java.io.Serializable;
 import java.util.List;
 
 @Component
@@ -58,8 +62,29 @@ public class User  {
     private String password;
 
 
+
     public User() {
     }
+
+    public User(String jsonString) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            User user = objectMapper.readValue(jsonString, User.class);
+            this.remoteAddr = user.remoteAddr;
+            this.xrealIp = user.xrealIp;
+            this.haveToChangePwd = user.haveToChangePwd;
+            this.localizeName = user.localizeName;
+            this.password = user.password;
+            this.roles = user.roles;
+            this.email = user.email;
+            this.id = user.id;
+            this.username = user.username;
+            this.orgId = user.orgId;
+            this.departName = user.departName;
+        } catch (JsonProcessingException e) {
+        }
+    }
+
 
     public String getOrgId() {
         return orgId;
@@ -166,11 +191,21 @@ public class User  {
         this.roles = roles;
     }
 
+
     @Override
     public String toString() {
         return "User{" +
-                "id='" + id + '\'' +
-                ", userName='" + username + '\'' +
+                "token='" + token + '\'' +
+                ", refreshToken='" + refreshToken + '\'' +
+                ", remoteAddr='" + remoteAddr + '\'' +
+                ", xrealIp='" + xrealIp + '\'' +
+                ", haveToChangePwd=" + haveToChangePwd +
+                ", localizeName='" + localizeName + '\'' +
+                ", email='" + email + '\'' +
+                ", roles=" + roles +
+                ", id='" + id + '\'' +
+                ", username='" + username + '\'' +
+                ", orgId='" + orgId + '\'' +
                 ", departName='" + departName + '\'' +
                 ", password='" + password + '\'' +
                 '}';
