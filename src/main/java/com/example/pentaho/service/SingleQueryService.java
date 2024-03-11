@@ -170,7 +170,8 @@ public class SingleQueryService {
             String alley = address.getAlley(); //弄
             String subAlley = address.getSubAlley(); //弄
             String alleyIdSn = findByKey("alleyIdSn", replaceWithHalfWidthNumber(alley) + replaceWithHalfWidthNumber(subAlley), "0000000");
-
+            String numTypeCd = "95";
+            segmentExistNumber+=1; //numType一定找的到，所以直接寫1
             //如果有"之45一樓"，要額外處理
             if (StringUtils.isNotNullOrEmpty(address.getContinuousNum())) {
                 formatCoutinuousFlrNum(address.getContinuousNum(), address);
@@ -189,23 +190,24 @@ public class SingleQueryService {
 
             String numFlr5 = address.getNumFlr5();
             String numFlr5d = findByKey("NUM_FLR_5", "NUM_FLR_5:" + deleteBasementString(numFlr5), "0");
-
-            String numTypeCd = "95";
             String numFlrId = numFlr1Id + numFlr2Id + numFlr3d + numFlr4d + numFlr5d;
-            String room = address.getRoom(); //里
-            String roomIdSn = findByKey("roomIdSn", replaceWithHalfWidthNumber(room), "00000");
+
             String basementStr = address.getBasementStr() == null ? "0" : address.getBasementStr();
+            segmentExistNumber+=1; //TODO: basementStr一定找的到，所以直接寫1
 
             //處理numFlrPos
-            String numFlrPos = getNumFlrPos(address);
+            String numFlrPos = getNumFlrPos(address); //不會列入segmentExistNumber
+            segmentExistNumber+=1; //numFlrPos一定找的到，所以直接寫1
             log.info("numFlrPos為:{}", numFlrPos);
+            String room = address.getRoom(); //里
+            String roomIdSn = findByKey("roomIdSn", replaceWithHalfWidthNumber(room), "00000");
             address.setMappingId(countyCd + townCd + villageCd + neighbor + roadAreaSn + laneCd + alleyIdSn + numTypeCd +
                     numFlrId + basementStr
                     + numFlrPos
                     + roomIdSn
             );
             List<String> mappingIdList = List.of(countyCd, townCd, villageCd, neighbor, roadAreaSn, laneCd, alleyIdSn, numTypeCd,
-                    numFlrId, basementStr
+                    numFlr1Id, numFlr2Id, numFlr3d, numFlr4d, numFlr5d, basementStr
                     , numFlrPos
                     , roomIdSn);
             address.setMappingIdList(mappingIdList);
@@ -283,24 +285,39 @@ public class SingleQueryService {
 
 
     Set<String> finSeqByMappingIdInRedis(Address address) {
+        Set<String> seqSet = new HashSet<>();
         String mappingId = findByKey("mappingId 64碼", address.getMappingId(), null);
         Set<String> mappingIdSet = new HashSet<>();
         if (StringUtils.isNotNullOrEmpty(mappingId)) {
             mappingIdSet.add(mappingId);
         } else {
-            //如果找不到完整代碼，要用整擇模糊搜尋
+            //如果找不到完整代碼，要用正則模糊搜尋
             StringBuilder newMappingId = buildRegexMappingId(address);
             log.info("因為地址不完整，組成新的 mappingId {}，以利模糊搜尋",newMappingId);
             mappingIdSet =  findListByScan(newMappingId.toString());
-        }
-        Iterator<String> iterator = mappingIdSet.iterator();
-        Set<String> seqSet = new HashSet<>();
-        while (iterator.hasNext()) {
-            String newMappingId = iterator.next();
-            // 在这里执行你的操作，例如调用findByKey方法
-            String seq =  findByKey("", newMappingId, null);
-            if(StringUtils.isNotNullOrEmpty(seq)){
-                seqSet.add(seq);
+            //mappingCount陣列代表，COUNTY_CD要5位元，TOWN_CD要3位元，VILLAGE_CD要3位元，以此類推
+            //6,5,4,3,1 分別是NUM_FLR_1~NUM_FLR_5
+            int[] mappingCount = {5, 3, 3, 3, 7, 4, 7, 2, 6, 5, 4, 3, 1, 1, 5, 5};
+            StringBuilder regex = new StringBuilder();
+            for (int i = 0; i < address.getSegmentExistNumber().length(); i++) {
+                if ("1".equals(String.valueOf(address.getSegmentExistNumber().charAt(i)))) {
+                    regex.append(address.getMappingIdList().get(i));
+                } else {
+                    regex.append("\\d{").append(mappingCount[i]).append("}");
+                }
+            }
+            log.info("regex:{}",regex);
+            Pattern regexPattern = Pattern.compile(String.valueOf(regex));
+            for (String newMapping : mappingIdSet) {
+                //因為redis的scan命令，無法搭配正則，限制*的位置只能有多少字元，所以要再用java把不符合的mappinId刪掉
+                Matcher matcher = regexPattern.matcher(newMapping);
+                //有符合再進redis找seq
+                if (matcher.matches()) {
+                    String seq = findByKey("", newMapping, null);
+                    if (StringUtils.isNotNullOrEmpty(seq)) {
+                        seqSet.add(seq);
+                    }
+                }
             }
         }
         return seqSet;
