@@ -8,18 +8,18 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "pentaho")
 public class PentahoComponent {
 
-    private String target;
+    private String webTarget;
 
     private String userName;
 
     private String password;
 
-    public String getTarget() {
-        return target;
+    public String getWebTarget() {
+        return webTarget;
     }
 
-    public void setTarget(String target) {
-        this.target = target;
+    public void setWebTarget(String webTarget) {
+        this.webTarget = webTarget;
     }
 
     public String getUserName() {

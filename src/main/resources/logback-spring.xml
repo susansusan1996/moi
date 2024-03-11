@@ -2,7 +2,7 @@
 <configuration scan="true" scanPeriod="60 seconds">
     <property name="Charset" value="UTF-8" />
     <property name="FileName" value="aplog" />
-    <property name="LogsLocation" value="/home/ec2-user/aplog/" />
+    <property name="LogsLocation" value="/home/ubuntu/app/aplog/" />
     <property name="Format1" value="[%d{yyyy-MM-dd HH:mm:ss}][%p][%t][Line:%L][%c.%M]%m%n" />
     <!-- appender -->
     <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">

@@ -1,5 +1,6 @@
 package com.example.pentaho.resource;
 
+import com.example.pentaho.component.KeyComponent;
 import com.example.pentaho.utils.RSAJWTUtils;
 import com.example.pentaho.utils.RsaUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +17,7 @@ public class TestRSAJWT {
 
     private String RSAToken;
 
+
     @BeforeEach
     public void createTest() throws Exception {
         rsaCreateTest();
@@ -27,10 +29,10 @@ public class TestRSAJWT {
 //            put("account", "jack");
 //            put("auths", Stream.of("a", "b", "c", "d").collect(Collectors.toList()));
         }};
-        String path = ResourceUtils.getFile("classpath:rsa.pri").getPath();
+        String path = ResourceUtils.getFile("D:\\rsa_key\\rsa.pri").getPath();
         PrivateKey privateKey = RsaUtils.getPrivateKey(path);
-        String token = RSAJWTUtils.generateTokenExpireInMinutes(userinfo, privateKey, 20); //20分鐘過期
-        RSAToken ="Bearer "+ RSAJWTUtils.generateTokenExpireInMinutes(userinfo, privateKey, 20); //20分鐘過期
+//        String token = RSAJWTUtils.generateTokenExpireInMinutes(userinfo, privateKey, 100000); //20分鐘過期
+        RSAToken ="Bearer "+ RSAJWTUtils.generateTokenExpireInMinutes(userinfo, privateKey, 525600); //20分鐘過期
         System.out.println("RSAToken: "+RSAToken);
     }
 
@@ -39,7 +41,7 @@ public class TestRSAJWT {
         //解析token，要替換成上面rsaCreateTest產出的token
         //用固定字串測會有過期的錯誤
 //      String token = "Bearer eyJhbGciOiJSUzI1NiJ9.eyJ1c2VyIjoie30iLCJqdGkiOiJaak14TURWaU1qUXROak5rTVMwME1ESTVMVGczTVRFdFpUSXdNams0TmpZNU5tUmgiLCJleHAiOjE3MDQyNjY4OTN9.i2X0gp1q5cntUX36YHrIKZLad4mg307dbIOBn4vfzg_GsURjYkaRwLItYuE1d0ChgHsmBRXzeR5DKYog8llWgxhRfCvIPnOvERidk-hrPMcyoKn1Ke7QVIs5zWdFs6mU4et59BgvQQcK25ppFYIKIbDC8qnk7k7FQTCcSR_EZcIJgHGSEhwjz0E10e_EHdlsSCfHByk4my2tweoofdI6Osd0zkMBPvrLEcTdB9hpVj-TfmVfdXt0s2SDN1VwcTCw9107WP1k07TddHUm6aqlkNEteTGQ3PaqG2ao2pWTjWj8z1EP-VpNrryzEaQmE2Bp8lzs4DSEXX1pZqSVwJ_pQA";
-        String path1 = ResourceUtils.getFile("classpath:rsa.pub").getPath();
+        String path1 = ResourceUtils.getFile("D:\\rsa_key\\rsa.pub").getPath();
         PublicKey publicKey = RsaUtils.getPublicKey(path1);
         Map infoFromToken = (Map) RSAJWTUtils.getInfoFromToken(RSAToken, publicKey, Map.class);
         System.out.println(infoFromToken.get("account"));
