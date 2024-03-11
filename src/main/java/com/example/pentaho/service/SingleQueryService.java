@@ -286,10 +286,10 @@ public class SingleQueryService {
 
     Set<String> finSeqByMappingIdInRedis(Address address) {
         Set<String> seqSet = new HashSet<>();
-        String mappingId = findByKey("mappingId 64碼", address.getMappingId(), null);
-        Set<String> mappingIdSet = new HashSet<>();
-        if (StringUtils.isNotNullOrEmpty(mappingId)) {
-            mappingIdSet.add(mappingId);
+        String seq = findByKey("mappingId 64碼", address.getMappingId(), null);
+        Set<String> mappingIdSet;
+        if (!StringUtils.isNullOrEmpty(seq)) {
+            seqSet.add(seq);
         } else {
             //如果找不到完整代碼，要用正則模糊搜尋
             StringBuilder newMappingId = buildRegexMappingId(address);
@@ -313,9 +313,9 @@ public class SingleQueryService {
                 Matcher matcher = regexPattern.matcher(newMapping);
                 //有符合再進redis找seq
                 if (matcher.matches()) {
-                    String seq = findByKey("", newMapping, null);
-                    if (StringUtils.isNotNullOrEmpty(seq)) {
-                        seqSet.add(seq);
+                    String newSeq = findByKey("", newMapping, null);
+                    if (StringUtils.isNotNullOrEmpty(newSeq)) {
+                        seqSet.add(newSeq);
                     }
                 }
             }
