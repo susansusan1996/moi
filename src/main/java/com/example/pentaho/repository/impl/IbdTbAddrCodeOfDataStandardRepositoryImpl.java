@@ -21,9 +21,11 @@ public class IbdTbAddrCodeOfDataStandardRepositoryImpl implements IbdTbAddrCodeO
     }
     @Override
     public List<String> findBySeq(List<Integer> seq) {
+        List<Integer> seqWhenEmpty = new ArrayList<>();
+        seqWhenEmpty.add(1);
         Query query = Query.builder()
                 .append("SELECT TO_JSON(ADDR_ODS.IBD_TB_ADDR_CODE_OF_DATA_STANDARD.*) AS JSON_RESULT ")
-                .append("FROM ADDR_ODS.IBD_TB_ADDR_CODE_OF_DATA_STANDARD WHERE SEQ IN (:SEQ)", seq == null ? new ArrayList<>() : seq)
+                .append("FROM ADDR_ODS.IBD_TB_ADDR_CODE_OF_DATA_STANDARD WHERE SEQ IN (:SEQ)", seq.isEmpty() ? seqWhenEmpty: seq)
                 .build();
         log.info("query:{}", query);
         log.info("params:{}", query.getParameters());

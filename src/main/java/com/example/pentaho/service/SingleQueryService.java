@@ -170,7 +170,8 @@ public class SingleQueryService {
             String alley = address.getAlley(); //弄
             String subAlley = address.getSubAlley(); //弄
             String alleyIdSn = findByKey("alleyIdSn", replaceWithHalfWidthNumber(alley) + replaceWithHalfWidthNumber(subAlley), "0000000");
-
+            String numTypeCd = "95";
+            segmentExistNumber += 1; //numTypeCd一定找的到，所以直接寫1
             //如果有"之45一樓"，要額外處理
             if (StringUtils.isNotNullOrEmpty(address.getContinuousNum())) {
                 formatCoutinuousFlrNum(address.getContinuousNum(), address);
@@ -189,23 +190,23 @@ public class SingleQueryService {
 
             String numFlr5 = address.getNumFlr5();
             String numFlr5d = findByKey("NUM_FLR_5", "NUM_FLR_5:" + deleteBasementString(numFlr5), "0");
-
-            String numTypeCd = "95";
             String numFlrId = numFlr1Id + numFlr2Id + numFlr3d + numFlr4d + numFlr5d;
-            String room = address.getRoom(); //里
-            String roomIdSn = findByKey("roomIdSn", replaceWithHalfWidthNumber(room), "00000");
+
             String basementStr = address.getBasementStr() == null ? "0" : address.getBasementStr();
+            segmentExistNumber += 0; //basementStr一律當作找不到，去模糊比對
 
             //處理numFlrPos
-            String numFlrPos = getNumFlrPos(address);
+            String numFlrPos = getNumFlrPos(address); //不會列入segmentExistNumber
             log.info("numFlrPos為:{}", numFlrPos);
+            String room = address.getRoom(); //里
+            String roomIdSn = findByKey("roomIdSn", replaceWithHalfWidthNumber(room), "00000");
             address.setMappingId(countyCd + townCd + villageCd + neighbor + roadAreaSn + laneCd + alleyIdSn + numTypeCd +
                     numFlrId + basementStr
                     + numFlrPos
                     + roomIdSn
             );
             List<String> mappingIdList = List.of(countyCd, townCd, villageCd, neighbor, roadAreaSn, laneCd, alleyIdSn, numTypeCd,
-                    numFlrId, basementStr
+                    numFlr1Id, numFlr2Id, numFlr3d, numFlr4d, numFlr5d, basementStr
                     , numFlrPos
                     , roomIdSn);
             address.setMappingIdList(mappingIdList);
@@ -235,6 +236,7 @@ public class SingleQueryService {
                 // 往前補零，補到三位數
                 String paddedNumber = String.format("%03d", Integer.parseInt(neighborResult));
                 log.info("提取的數字部分為：{}", paddedNumber);
+                segmentExistNumber += "1";
                 return paddedNumber;
             }
         } else {
@@ -260,6 +262,7 @@ public class SingleQueryService {
         String[] patternFlr3 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
         String[] patternFlr4 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
         String[] patternFlr5 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
+        segmentExistNumber += 0 ;//numFlrPos一律當作找不到，去模糊比對
         return getNum(address.getNumFlr1(), patternFlr1) + getNum(address.getNumFlr2(), patternFlr2) +
                 getNum(address.getNumFlr3(), patternFlr3) + getNum(address.getNumFlr4(), patternFlr4) +
                 getNum(address.getNumFlr5(), patternFlr5);
@@ -283,24 +286,29 @@ public class SingleQueryService {
 
 
     Set<String> finSeqByMappingIdInRedis(Address address) {
-        String mappingId = findByKey("mappingId 64碼", address.getMappingId(), null);
-        Set<String> mappingIdSet = new HashSet<>();
-        if (StringUtils.isNotNullOrEmpty(mappingId)) {
-            mappingIdSet.add(mappingId);
-        } else {
-            //如果找不到完整代碼，要用整擇模糊搜尋
-            StringBuilder newMappingId = buildRegexMappingId(address);
-            log.info("因為地址不完整，組成新的 mappingId {}，以利模糊搜尋",newMappingId);
-            mappingIdSet =  findListByScan(newMappingId.toString());
-        }
-        Iterator<String> iterator = mappingIdSet.iterator();
         Set<String> seqSet = new HashSet<>();
-        while (iterator.hasNext()) {
-            String newMappingId = iterator.next();
-            // 在这里执行你的操作，例如调用findByKey方法
-            String seq =  findByKey("", newMappingId, null);
-            if(StringUtils.isNotNullOrEmpty(seq)){
-                seqSet.add(seq);
+        String seq = findByKey("mappingId 64碼", address.getMappingId(), null);
+        if (!StringUtils.isNullOrEmpty(seq)) {
+            seqSet.add(seq);
+        } else {
+            //如果找不到完整代碼，要用正則模糊搜尋
+            Map<String,String> map = buildRegexMappingId(address);
+            String newMappingId =  map.get("newMappingId");
+            String regex =  map.get("regex");
+            log.info("因為地址不完整，組成新的 mappingId {}，以利模糊搜尋",newMappingId);
+            log.info("模糊搜尋正則表達式為:{}",regex);
+            Set<String> mappingIdSet =  findListByScan(newMappingId);
+            Pattern regexPattern = Pattern.compile(String.valueOf(regex));
+            for (String newMapping : mappingIdSet) {
+                //因為redis的scan命令，無法搭配正則，限制*的位置只能有多少字元，所以要再用java把不符合的mappinId刪掉
+                Matcher matcher = regexPattern.matcher(newMapping);
+                //有符合再進redis找seq
+                if (matcher.matches()) {
+                    String newSeq = findByKey("newMappingId", newMapping, null);
+                    if (StringUtils.isNotNullOrEmpty(newSeq)) {
+                        seqSet.add(newSeq);
+                    }
+                }
             }
         }
         return seqSet;
@@ -357,16 +365,72 @@ public class SingleQueryService {
         }
     }
 
-    private StringBuilder buildRegexMappingId(Address address) {
+    private Map<String, String> buildRegexMappingId(Address address) {
+        String segNum = address.getSegmentExistNumber();
         StringBuilder newMappingId = new StringBuilder();
-        for (int i = 0; i < address.getSegmentExistNumber().length(); i++) {
-            if ("1".equals(String.valueOf(address.getSegmentExistNumber().charAt(i)))) {
+        StringBuilder regex = new StringBuilder();
+        //mappingCount陣列代表，COUNTY_CD要5位元，TOWN_CD要3位元，VILLAGE_CD要3位元，以此類推
+        //6,5,4,3,1 分別是NUM_FLR_1~NUM_FLR_5
+        int[] mappingCount = {5, 3, 3, 3, 7, 4, 7, 2, 6, 5, 4, 3, 1, 1, 5, 5};
+        int sum = 0;
+        for (int i = 0; i < segNum.length(); i++) {
+            if ("1".equals(String.valueOf(segNum.charAt(i)))) {
                 newMappingId.append(address.getMappingIdList().get(i));
+                regex.append(address.getMappingIdList().get(i));
+                sum = 0; //歸零
             } else {
+                //第一碼
+                if(i == 0){
+                    String segAfter = String.valueOf(segNum.charAt(i+1));
+                    //如果前後碼也是0的話，表示要相加
+                    if("0".equals(segAfter)){
+                        sum += mappingCount[i];
+                    }
+                    //後面那碼是1，表示不用相加了
+                    else if("1".equals(segAfter)) {
+                        sum += mappingCount[i];
+                        regex.append("\\d{").append(sum).append("}");
+                        sum = 0; //歸零
+                    }
+                }
+                //不是最後一個
+                else if (i != segNum.length() - 1) {
+                    String segAfter = String.valueOf(segNum.charAt(i+1));
+                    //如果前後都是是1的話，不用相加
+                    if ("1".equals(String.valueOf(segNum.charAt(i - 1))) && "1".equals(segAfter)) {
+                        sum = 0; //歸零
+                        regex.append("\\d{").append(mappingCount[i]).append("}");
+                    }
+                    //如果前後碼也是0的話，表示要相加
+                    else if("0".equals(segAfter)){
+                        sum += mappingCount[i];
+                    }
+                    //後面那碼是1，表示不用相加了
+                    else if("1".equals(segAfter)) {
+                        sum += mappingCount[i];
+                        regex.append("\\d{").append(sum).append("}");
+                        sum = 0; //歸零
+                    }
+                }
+                //是最後一個
+                else {
+                    String segBefore = String.valueOf(segNum.charAt(i-1));
+                    //如果前面是0表示最後一碼也要加上去
+                    if("0".equals(segBefore)){
+                        sum += mappingCount[i];
+                        regex.append("\\d{").append(sum).append("}");
+                    }else{
+                        regex.append("\\d{").append(mappingCount[i]).append("}");
+                    }
+                    sum = 0; //歸零
+                }
                 newMappingId.append("*");
             }
         }
-        return newMappingId;
+        Map<String, String> map = new HashMap<>();
+        map.put("newMappingId", newMappingId.toString());
+        map.put("regex", regex.toString());
+        return map;
     }
 
 }
