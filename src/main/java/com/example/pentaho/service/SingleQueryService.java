@@ -367,21 +367,25 @@ public class SingleQueryService {
 
     private Map<String, String> buildRegexMappingId(Address address) {
         String segNum = address.getSegmentExistNumber();
-        StringBuilder newMappingId = new StringBuilder();
-        StringBuilder regex = new StringBuilder();
+        StringBuilder newMappingId = new StringBuilder(); //組給redis的模糊搜尋mappingId ex.10010***9213552**95********
+        StringBuilder regex = new StringBuilder();   //組給java的模糊搜尋mappingId ex.10010020017029\d{18}95\d{19}000000\d{5}
         //mappingCount陣列代表，COUNTY_CD要5位元，TOWN_CD要3位元，VILLAGE_CD要3位元，以此類推
         //6,5,4,3,1 分別是NUM_FLR_1~NUM_FLR_5
         int[] mappingCount = {5, 3, 3, 3, 7, 4, 7, 2, 6, 5, 4, 3, 1, 1, 5, 5};
         int sum = 0;
         for (int i = 0; i < segNum.length(); i++) {
+            //該欄位是1的情況(找的到的情況)
             if ("1".equals(String.valueOf(segNum.charAt(i)))) {
                 newMappingId.append(address.getMappingIdList().get(i));
                 regex.append(address.getMappingIdList().get(i));
                 sum = 0; //歸零
+            //該欄位是0的情況(找不到的情況)
             } else {
+                String segAfter = "";
+                String segBefore = "";
                 //第一碼
                 if(i == 0){
-                    String segAfter = String.valueOf(segNum.charAt(i+1));
+                    segAfter = String.valueOf(segNum.charAt(i+1));
                     //如果前後碼也是0的話，表示要相加
                     if("0".equals(segAfter)){
                         sum += mappingCount[i];
@@ -395,9 +399,10 @@ public class SingleQueryService {
                 }
                 //不是最後一個
                 else if (i != segNum.length() - 1) {
-                    String segAfter = String.valueOf(segNum.charAt(i+1));
+                    segAfter = String.valueOf(segNum.charAt(i + 1));
+                    segBefore = String.valueOf(segNum.charAt(i - 1));
                     //如果前後都是是1的話，不用相加
-                    if ("1".equals(String.valueOf(segNum.charAt(i - 1))) && "1".equals(segAfter)) {
+                    if ("1".equals(segBefore) && "1".equals(segAfter)) {
                         sum = 0; //歸零
                         regex.append("\\d{").append(mappingCount[i]).append("}");
                     }
@@ -414,7 +419,7 @@ public class SingleQueryService {
                 }
                 //是最後一個
                 else {
-                    String segBefore = String.valueOf(segNum.charAt(i-1));
+                    segBefore = String.valueOf(segNum.charAt(i-1));
                     //如果前面是0表示最後一碼也要加上去
                     if("0".equals(segBefore)){
                         sum += mappingCount[i];
