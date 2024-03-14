@@ -183,7 +183,8 @@ public class FileOutputService {
             sftpUtils.disconnect();
         }
         jobParams.setStatus(status);
-        BatchFormParams batchFormParams = new BatchFormParams(jobParams.getBATCH_ID(), jobParams.getBATCHFORM_ORIGINAL_FILE_ID(), "0", jobParams.getStatus(), null);
+        BatchFormParams batchFormParams = new BatchFormParams(jobParams.getBATCH_ID(), jobParams.getBATCHFORM_ORIGINAL_FILE_ID(), String.valueOf(jobParams.getProcessedCounts()), jobParams.getStatus(), null);
+        log.info("給聖森更新狀態的參數:{}",batchFormParams );
         postBatchFormRequest("/batchForm/systemUpdate",batchFormParams,sourceFilePath);
 //      postBatchFormRequest(sourceFilePath,"/batchForm/systemUpdate",jobParams);
     }

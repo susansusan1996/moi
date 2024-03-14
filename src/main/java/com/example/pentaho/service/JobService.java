@@ -8,6 +8,7 @@ import com.example.pentaho.exception.MoiException;
 import com.example.pentaho.utils.UserContextUtils;
 import com.example.pentaho.utils.WebServiceUtils;
 import com.google.gson.Gson;
+import com.opencsv.CSVReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,8 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
-import java.util.Base64;
-import java.util.Date;
+import java.util.*;
 
 
 @Service
@@ -355,7 +355,7 @@ public class JobService {
         return responseCode;
     }
     /**
-     * 檔名規格:origrinalFileName_batchId_yyyyMMdd_HHmmss
+     * 檔名規格:batchId.csv
      * @param origrinalFileName
      * @return
      */
@@ -383,11 +383,32 @@ public class JobService {
     }
 
 
-    public String checkData(MultipartFile file){
-        return "";
+    public Integer CSVReader(MultipartFile file) throws IOException {
+        try{
+            Integer dataCnt = 0;
+            CSVReader csvReader = new CSVReader(new InputStreamReader(file.getInputStream()));
+            String[] line;
+            /**跳過表頭**/
+            csvReader.readNext();
+            while ((line = csvReader.readNext()) != null) {
+                /**空行也算一筆**/
+                    dataCnt+=1;
+            }
+            log.info("dataCnt:{}",dataCnt);
+            return dataCnt;
+        }catch (Exception e){
+            log.info("e:{}",e.toString());
+           throw new MoiException("READ_FILE_ERROR");
+        }
     }
 
-    public String sftpUploadAndExecuteTrans(MultipartFile file,JobParams jobParams){
+
+
+    public String sftpUploadAndExecuteTrans(MultipartFile file,JobParams jobParams) throws IOException {
+        /**檔案筆數**/
+        /**給Pentaho Server & Shengsen 的參數*/
+        jobParams.setProcessedCounts(CSVReader(file));
+
         /**以'批次ID'為檔名**/
         String fileName = getFileName(file.getOriginalFilename(), jobParams.getFORM_NAME());
         /**建立目錄**/
