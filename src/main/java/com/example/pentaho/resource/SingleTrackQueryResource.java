@@ -48,16 +48,7 @@ public class SingleTrackQueryResource {
             },
             responses = {
                     @ApiResponse(responseCode = "200", description = "",
-                            content = @Content(schema = @Schema(implementation = List.class), examples = @ExampleObject(value = "[\n" +
-                                    "    {\n" +
-                                    "        \"addressId\": \"BSZ7538-0\",\n" +
-                                    "        \"hisAdr\": \"10010020臺灣省嘉義縣朴子市大葛里027鄰祥和三路西段２３號三樓３９\",\n" +
-                                    "        \"wgsX\": \"120.289578060453740\",\n" +
-                                    "        \"wgsY\": \"23.455075446688465\",\n" +
-                                    "        \"updateType\": \"行政區域調整\",\n" +
-                                    "        \"updateDt\": \"20200701\"\n" +
-                                    "    }\n" +
-                                    "]"))),
+                            content = @Content(schema = @Schema(implementation = IbdTbIhChangeDoorplateHis.class))),
                     @ApiResponse(responseCode = "500", description = "",
                             content = @Content(schema = @Schema(implementation = String.class), examples = @ExampleObject(value = ""))
                     )})
