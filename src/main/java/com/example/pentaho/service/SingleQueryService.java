@@ -1,8 +1,6 @@
 package com.example.pentaho.service;
 
-import com.example.pentaho.component.Address;
-import com.example.pentaho.component.IbdTbIhChangeDoorplateHis;
-import com.example.pentaho.component.SingleQueryDTO;
+import com.example.pentaho.component.*;
 import com.example.pentaho.repository.IbdTbAddrCodeOfDataStandardRepository;
 import com.example.pentaho.repository.IbdTbAddrDataNewRepository;
 import com.example.pentaho.repository.IbdTbIhChangeDoorplateHisRepository;
@@ -132,12 +130,15 @@ public class SingleQueryService {
         return findByKey(null, "1066693", null);
     }
 
-    public List<String> findJson(String originalString) {
+    public List<IbdTbAddrCodeOfDataStandardDTO> findJson(String originalString) {
         Address address = findMappingId(originalString);
         log.info("mappingId:{}", address.getMappingId());
         Set<String> seqSet = finSeqByMappingIdInRedis(address);
         log.info("seq:{}", seqSet);
-        return ibdTbAddrCodeOfDataStandardRepository.findBySeq(seqSet.stream().map(Integer::parseInt).collect(Collectors.toList()));
+        List<IbdTbAddrCodeOfDataStandardDTO> list = ibdTbAddrCodeOfDataStandardRepository.findBySeq(seqSet.stream().map(Integer::parseInt).collect(Collectors.toList()));
+        //放地址比對代碼
+        list.forEach(IbdTbAddrDataRepositoryNewdto -> IbdTbAddrDataRepositoryNewdto.setJoinStep(address.getJoinStep()));
+        return list;
     }
 
     public Address findMappingId(String originalString) {
@@ -149,27 +150,28 @@ public class SingleQueryService {
             String county = address.getCounty();
             //如果是別名，要找到正確的名稱
 
-            String countyCd = findByKey("countyCd", county, "00000");
+            address.setCountyCd(findByKey("countyCd", county, "00000"));
 
             String town = address.getTown();
-            String townCd = findByKey("townCd", county + ":" + town, "000");
+            address.setTownCd(findByKey("townCd", county + ":" + town, "000"));//鄉鎮市區
 
             String village = address.getVillage(); //里
-            String villageCd = findByKey("villageCd", town + ":" + village, "000");
+            address.setVillageCd(findByKey("villageCd", town + ":" + village, "000"));//里
 
-            String neighbor = findNeighborCd(address.getNeighbor()); //鄰
+            address.setNeighborCd(findNeighborCd(address.getNeighbor()));//鄰
 
             String road = address.getRoad();
             String area = address.getArea();
 
-            String roadAreaSn = findByKey("roadAreaSn", replaceWithHalfWidthNumber(road) + (area == null ? "" : area), "0000000");
+            address.setRoadAreaSn(findByKey("roadAreaSn", replaceWithHalfWidthNumber(road) + (area == null ? "" : area), "0000000"));
 
             String lane = address.getLane(); //巷
-            String laneCd = findByKey("laneCd", replaceWithHalfWidthNumber(lane), "0000");
+            address.setLaneCd(findByKey("laneCd", replaceWithHalfWidthNumber(lane), "0000"));//巷
 
             String alley = address.getAlley(); //弄
             String subAlley = address.getSubAlley(); //弄
-            String alleyIdSn = findByKey("alleyIdSn", replaceWithHalfWidthNumber(alley) + replaceWithHalfWidthNumber(subAlley), "0000000");
+            address.setAlleyIdSn(findByKey("alleyIdSn", replaceWithHalfWidthNumber(alley) + replaceWithHalfWidthNumber(subAlley), "0000000"));
+
             String numTypeCd = "95";
             segmentExistNumber += 1; //numTypeCd一定找的到，所以直接寫1
             //如果有"之45一樓"，要額外處理
@@ -177,20 +179,21 @@ public class SingleQueryService {
                 formatCoutinuousFlrNum(address.getContinuousNum(), address);
             }
             String numFlr1 = address.getNumFlr1();
-            String numFlr1Id = findByKey("NUM_FLR_1", "NUM_FLR_1:" + deleteBasementString(numFlr1), "000000");
+            address.setNumFlr1Id(findByKey("NUM_FLR_1", "NUM_FLR_1:" + deleteBasementString(numFlr1), "000000"));
 
             String numFlr2 = address.getNumFlr2();
-            String numFlr2Id = findByKey("NUM_FLR_2", "NUM_FLR_2:" + deleteBasementString(numFlr2), "00000");
+            address.setNumFlr2Id(findByKey("NUM_FLR_2", "NUM_FLR_2:" + deleteBasementString(numFlr2), "00000"));
 
             String numFlr3 = address.getNumFlr3();
-            String numFlr3d = findByKey("NUM_FLR_3", "NUM_FLR_3:" + deleteBasementString(numFlr3), "0000");
+            address.setNumFlr3Id(findByKey("NUM_FLR_3", "NUM_FLR_3:" + deleteBasementString(numFlr3), "0000"));
 
             String numFlr4 = address.getNumFlr4();
-            String numFlr4d = findByKey("NUM_FLR_4", "NUM_FLR_4:" + deleteBasementString(numFlr4), "000");
+            address.setNumFlr4Id(findByKey("NUM_FLR_4", "NUM_FLR_4:" + deleteBasementString(numFlr4), "000"));
 
             String numFlr5 = address.getNumFlr5();
-            String numFlr5d = findByKey("NUM_FLR_5", "NUM_FLR_5:" + deleteBasementString(numFlr5), "0");
-            String numFlrId = numFlr1Id + numFlr2Id + numFlr3d + numFlr4d + numFlr5d;
+            address.setNumFlr5Id(findByKey("NUM_FLR_5", "NUM_FLR_5:" + deleteBasementString(numFlr5), "0"));
+
+            String numFlrId = address.getNumFlr1Id() + address.getNumFlr2Id() + address.getNumFlr3Id() + address.getNumFlr4Id() + address.getNumFlr5Id();
 
             String basementStr = address.getBasementStr() == null ? "0" : address.getBasementStr();
             segmentExistNumber += 0; //basementStr一律當作找不到，去模糊比對
@@ -200,13 +203,13 @@ public class SingleQueryService {
             log.info("numFlrPos為:{}", numFlrPos);
             String room = address.getRoom(); //里
             String roomIdSn = findByKey("roomIdSn", replaceWithHalfWidthNumber(room), "00000");
-            address.setMappingId(countyCd + townCd + villageCd + neighbor + roadAreaSn + laneCd + alleyIdSn + numTypeCd +
+            address.setMappingId(address.getCountyCd() + address.getTownCd() + address.getVillageCd() + address.getNeighborCd() + address.getRoadAreaSn() + address.getLaneCd() + address.getAlleyIdSn() + numTypeCd +
                     numFlrId + basementStr
                     + numFlrPos
                     + roomIdSn
             );
-            List<String> mappingIdList = List.of(countyCd, townCd, villageCd, neighbor, roadAreaSn, laneCd, alleyIdSn, numTypeCd,
-                    numFlr1Id, numFlr2Id, numFlr3d, numFlr4d, numFlr5d, basementStr
+            List<String> mappingIdList = List.of(address.getCountyCd(), address.getTownCd(), address.getVillageCd(), address.getNeighborCd(), address.getRoadAreaSn(), address.getLaneCd(), address.getAlleyIdSn(), numTypeCd,
+                    address.getNumFlr1Id(), address.getNumFlr2Id(), address.getNumFlr3Id(), address.getNumFlr4Id(), address.getNumFlr5Id(), basementStr
                     , numFlrPos
                     , roomIdSn);
             address.setMappingIdList(mappingIdList);
@@ -218,6 +221,7 @@ public class SingleQueryService {
             }
             address.setSegmentExistNumber(segmentExistNumber);
         }
+        findCompareNumber(address);
         return address;
     }
 
@@ -436,6 +440,25 @@ public class SingleQueryService {
         map.put("newMappingId", newMappingId.toString());
         map.put("regex", regex.toString());
         return map;
+    }
+
+    private void findCompareNumber(Address address){
+        //排除鄰比對
+        if ("000".equals(address.getNeighborCd())) {
+            if (!"000".equals(address.getTownCd())) {
+                address.setJoinStep("JA211"); //含有鄉鎮市區
+            } else {
+                address.setJoinStep("JA212"); //未含鄉鎮市區
+            }
+        }
+        //排除村里比對
+        if ("000".equals(address.getVillageCd())) {
+            if (!"000".equals(address.getTownCd())) {
+                address.setJoinStep("JA311"); //含有鄉鎮市區
+            } else {
+                address.setJoinStep("JA312"); //未含鄉鎮市區
+            }
+        }
     }
 
 }
