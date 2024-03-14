@@ -171,7 +171,7 @@ public class SingleQueryService {
             String subAlley = address.getSubAlley(); //弄
             String alleyIdSn = findByKey("alleyIdSn", replaceWithHalfWidthNumber(alley) + replaceWithHalfWidthNumber(subAlley), "0000000");
             String numTypeCd = "95";
-            segmentExistNumber += 1; //numType一定找的到，所以直接寫1
+            segmentExistNumber += 1; //numTypeCd一定找的到，所以直接寫1
             //如果有"之45一樓"，要額外處理
             if (StringUtils.isNotNullOrEmpty(address.getContinuousNum())) {
                 formatCoutinuousFlrNum(address.getContinuousNum(), address);
@@ -193,7 +193,7 @@ public class SingleQueryService {
             String numFlrId = numFlr1Id + numFlr2Id + numFlr3d + numFlr4d + numFlr5d;
 
             String basementStr = address.getBasementStr() == null ? "0" : address.getBasementStr();
-            segmentExistNumber += 1; //TODO: basementStr一定找的到，所以直接寫1
+            segmentExistNumber += 0; //basementStr一律當作找不到，去模糊比對
 
             //處理numFlrPos
             String numFlrPos = getNumFlrPos(address); //不會列入segmentExistNumber
@@ -262,7 +262,7 @@ public class SingleQueryService {
         String[] patternFlr3 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
         String[] patternFlr4 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
         String[] patternFlr5 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
-        segmentExistNumber += 1; //numFlrPos一定找的到，所以直接寫1
+        segmentExistNumber += 0 ;//numFlrPos一律當作找不到，去模糊比對
         return getNum(address.getNumFlr1(), patternFlr1) + getNum(address.getNumFlr2(), patternFlr2) +
                 getNum(address.getNumFlr3(), patternFlr3) + getNum(address.getNumFlr4(), patternFlr4) +
                 getNum(address.getNumFlr5(), patternFlr5);
