@@ -1,8 +1,6 @@
 package com.example.pentaho.service;
 
-import com.example.pentaho.component.Address;
-import com.example.pentaho.component.IbdTbIhChangeDoorplateHis;
-import com.example.pentaho.component.SingleQueryDTO;
+import com.example.pentaho.component.*;
 import com.example.pentaho.repository.IbdTbAddrCodeOfDataStandardRepository;
 import com.example.pentaho.repository.IbdTbAddrDataNewRepository;
 import com.example.pentaho.repository.IbdTbIhChangeDoorplateHisRepository;
@@ -19,6 +17,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.example.pentaho.utils.NumberParser.replaceWithHalfWidthNumber;
 
@@ -63,6 +62,26 @@ public class SingleQueryService {
         }
         segmentExistNumber += "0";
         return defaultValue;
+    }
+
+    public Map<String, String> findByKeys(Map<String, String> keyMap) {
+        Map<String, String> resultMap = new HashMap<>();
+        List<String> redisKeys = new ArrayList<>(keyMap.keySet());
+        List<String> redisValues = stringRedisTemplate.opsForValue().multiGet(redisKeys);
+        for (int i = 0; i < redisKeys.size(); i++) {
+            String key = redisKeys.get(i);
+            String redisValue = redisValues.get(i);
+            if (redisValue != null && !redisValue.isEmpty()) {
+                log.info("redisKey: {} , redisValue: {}", key, redisValue);
+                resultMap.put(key, redisValue);
+                segmentExistNumber += "1";
+            } else {
+                log.info("redisKey: {} , 找不到redisValue: {}", key, redisValue);
+                resultMap.put(key, keyMap.get(key)); //如果找不到對應的value的話，就要放default value
+                segmentExistNumber += "0";
+            }
+        }
+        return resultMap;
     }
 
 
@@ -132,94 +151,130 @@ public class SingleQueryService {
         return findByKey(null, "1066693", null);
     }
 
-    public List<String> findJson(String originalString) {
+    public List<IbdTbAddrCodeOfDataStandardDTO> findJson(String originalString) {
         Address address = findMappingId(originalString);
         log.info("mappingId:{}", address.getMappingId());
         Set<String> seqSet = finSeqByMappingIdInRedis(address);
         log.info("seq:{}", seqSet);
-        return ibdTbAddrCodeOfDataStandardRepository.findBySeq(seqSet.stream().map(Integer::parseInt).collect(Collectors.toList()));
+        List<IbdTbAddrCodeOfDataStandardDTO> list = ibdTbAddrCodeOfDataStandardRepository.findBySeq(seqSet.stream().map(Integer::parseInt).collect(Collectors.toList()));
+        //放地址比對代碼
+        list.forEach(IbdTbAddrDataRepositoryNewdto -> IbdTbAddrDataRepositoryNewdto.setJoinStep(address.getJoinStep()));
+        return list;
     }
 
     public Address findMappingId(String originalString) {
         //切地址
         Address address = addressParser.parseAddress(originalString, null);
+        Map<String,String> keyMap = new LinkedHashMap<>();
         if (address != null) {
             log.info("address:{}", address);
             segmentExistNumber = ""; //先清空
+            //===========取各地址片段===========================
             String county = address.getCounty();
-            //如果是別名，要找到正確的名稱
-
-            String countyCd = findByKey("countyCd", county, "00000");
-
             String town = address.getTown();
-            String townCd = findByKey("townCd", county + ":" + town, "000");
-
             String village = address.getVillage(); //里
-            String villageCd = findByKey("villageCd", town + ":" + village, "000");
-
-            String neighbor = findNeighborCd(address.getNeighbor()); //鄰
-
             String road = address.getRoad();
             String area = address.getArea();
-
-            String roadAreaSn = findByKey("roadAreaSn", replaceWithHalfWidthNumber(road) + (area == null ? "" : area), "0000000");
-
+            String roadAreaKey = replaceWithHalfWidthNumber(road) + (area == null ? "" : area);
             String lane = address.getLane(); //巷
-            String laneCd = findByKey("laneCd", replaceWithHalfWidthNumber(lane), "0000");
-
             String alley = address.getAlley(); //弄
             String subAlley = address.getSubAlley(); //弄
-            String alleyIdSn = findByKey("alleyIdSn", replaceWithHalfWidthNumber(alley) + replaceWithHalfWidthNumber(subAlley), "0000000");
-            String numTypeCd = "95";
-            segmentExistNumber += 1; //numTypeCd一定找的到，所以直接寫1
+            String alleyIdSnKey = replaceWithHalfWidthNumber(alley) + replaceWithHalfWidthNumber(subAlley);
             //如果有"之45一樓"，要額外處理
             if (StringUtils.isNotNullOrEmpty(address.getContinuousNum())) {
                 formatCoutinuousFlrNum(address.getContinuousNum(), address);
             }
+            //處理完"之45一樓"，才能拿到正確的各部分地址
             String numFlr1 = address.getNumFlr1();
-            String numFlr1Id = findByKey("NUM_FLR_1", "NUM_FLR_1:" + deleteBasementString(numFlr1), "000000");
-
             String numFlr2 = address.getNumFlr2();
-            String numFlr2Id = findByKey("NUM_FLR_2", "NUM_FLR_2:" + deleteBasementString(numFlr2), "00000");
-
             String numFlr3 = address.getNumFlr3();
-            String numFlr3d = findByKey("NUM_FLR_3", "NUM_FLR_3:" + deleteBasementString(numFlr3), "0000");
-
             String numFlr4 = address.getNumFlr4();
-            String numFlr4d = findByKey("NUM_FLR_4", "NUM_FLR_4:" + deleteBasementString(numFlr4), "000");
-
             String numFlr5 = address.getNumFlr5();
-            String numFlr5d = findByKey("NUM_FLR_5", "NUM_FLR_5:" + deleteBasementString(numFlr5), "0");
-            String numFlrId = numFlr1Id + numFlr2Id + numFlr3d + numFlr4d + numFlr5d;
-
+            String room = address.getRoom();//室
+            //===========將各地址片段放進map===========================
+            keyMap.put("COUNTY:" + county, "00000");
+            keyMap.put("TOWN:" + county + ":" + town, "000");//鄉鎮市區
+            keyMap.put("VILLAGE:" + town + ":" + village, "000");//里
+            keyMap.put("ROADAREA:"+ roadAreaKey, "0000000");
+            keyMap.put("LANE:" + replaceWithHalfWidthNumber(lane), "0000");//巷
+            keyMap.put("ALLEY:" + alleyIdSnKey, "0000000");//弄
+            keyMap.put("NUM_FLR_1:" + deleteBasementString(numFlr1), "000000");
+            keyMap.put("NUM_FLR_2:" + deleteBasementString(numFlr2), "00000");
+            keyMap.put("NUM_FLR_3:" + deleteBasementString(numFlr3), "0000");
+            keyMap.put("NUM_FLR_4:" + deleteBasementString(numFlr4), "000");
+            keyMap.put("NUM_FLR_5:" + deleteBasementString(numFlr5), "0");
+            keyMap.put("ROOM:" + replaceWithHalfWidthNumber(address.getRoom()), "00000");
+            //===========把存有各地址片段的map丟到redis找cd碼===========================
+            Map<String, String> resultMap = findByKeys(keyMap);
+            log.info("000 segmentExistNumber length :{}",segmentExistNumber);
+            //===========把找到的各地址片段cd碼組裝好===========================
+            address.setCountyCd(resultMap.get("COUNTY:" + county));
+            address.setTownCd(resultMap.get("TOWN:" +county + ":" + town));
+            address.setVillageCd(resultMap.get("VILLAGE:" + town + ":" + village));
+            address.setNeighborCd(findNeighborCd(address.getNeighbor()));//鄰
+            address.setRoadAreaSn(resultMap.get("ROADAREA:"+ roadAreaKey));
+            address.setLaneCd(resultMap.get("LANE:" + replaceWithHalfWidthNumber(lane)));
+            address.setAlleyIdSn(resultMap.get("ALLEY:" + alleyIdSnKey));
+            String numTypeCd = "95";
+            address.setNumFlr1Id(resultMap.get("NUM_FLR_1:" + deleteBasementString(numFlr1)));
+            address.setNumFlr2Id(resultMap.get("NUM_FLR_2:" + deleteBasementString(numFlr2)));
+            address.setNumFlr3Id(resultMap.get("NUM_FLR_3:" + deleteBasementString(numFlr3)));
+            address.setNumFlr4Id(resultMap.get("NUM_FLR_4:" + deleteBasementString(numFlr4)));
+            address.setNumFlr5Id(resultMap.get("NUM_FLR_5:" + deleteBasementString(numFlr5)));
             String basementStr = address.getBasementStr() == null ? "0" : address.getBasementStr();
-            segmentExistNumber += 0; //basementStr一律當作找不到，去模糊比對
-
-            //處理numFlrPos
-            String numFlrPos = getNumFlrPos(address); //不會列入segmentExistNumber
-            log.info("numFlrPos為:{}", numFlrPos);
-            String room = address.getRoom(); //里
-            String roomIdSn = findByKey("roomIdSn", replaceWithHalfWidthNumber(room), "00000");
-            address.setMappingId(countyCd + townCd + villageCd + neighbor + roadAreaSn + laneCd + alleyIdSn + numTypeCd +
-                    numFlrId + basementStr
-                    + numFlrPos
-                    + roomIdSn
-            );
-            List<String> mappingIdList = List.of(countyCd, townCd, villageCd, neighbor, roadAreaSn, laneCd, alleyIdSn, numTypeCd,
-                    numFlr1Id, numFlr2Id, numFlr3d, numFlr4d, numFlr5d, basementStr
-                    , numFlrPos
-                    , roomIdSn);
+            //===========處理numFlrPos===========================
+            String numFlrPos = getNumFlrPos(address);
+            address.setRoomIdSn(resultMap.get("ROOM:" + replaceWithHalfWidthNumber(room)));
+            log.info("=== getCountyCd:{}",address.getCountyCd());
+            log.info("=== getTownCd:{}",address.getTownCd());
+            log.info("=== getVillageCd:{}", address.getVillageCd());
+            log.info("=== getNeighborCd:{}" ,address.getNeighborCd());
+            log.info("=== getRoadAreaSn:{}",address.getRoadAreaSn());
+            log.info("=== getLaneCd:{}",address.getLaneCd());
+            log.info("=== getAlleyIdSn:{}",address.getAlleyIdSn());
+            log.info("=== numTypeCd:{}",numTypeCd);
+            log.info("=== getNumFlr1Id:{}",address.getNumFlr1Id());
+            log.info("=== getNumFlr2Id:{}",address.getNumFlr2Id());
+            log.info("=== getNumFlr3Id:{}",address.getNumFlr3Id());
+            log.info("=== getNumFlr4Id:{}",address.getNumFlr4Id());
+            log.info("=== getNumFlr5Id:{}",address.getNumFlr5Id());
+            log.info("=== basementStr:{}",basementStr);
+            log.info("=== numFlrPos:{}",numFlrPos);
+            log.info("=== getRoomIdSn:{}",address.getRoomIdSn());
+            List<String> mappingIdList = Stream.of(
+                            address.getCountyCd(), address.getTownCd(), address.getVillageCd(), address.getNeighborCd(),
+                            address.getRoadAreaSn(), address.getLaneCd(), address.getAlleyIdSn(), numTypeCd,
+                            address.getNumFlr1Id(), address.getNumFlr2Id(), address.getNumFlr3Id(), address.getNumFlr4Id(),
+                            address.getNumFlr5Id(), basementStr, numFlrPos, address.getRoomIdSn())
+                    .map(Object::toString)
+                    .collect(Collectors.toList());
             address.setMappingIdList(mappingIdList);
-            log.info("segmentExistNumber:{}", segmentExistNumber);
-            //刪除最後逗號
-            int lastIndex = segmentExistNumber.lastIndexOf(",");
-            if (lastIndex != -1) {
-                segmentExistNumber = segmentExistNumber.substring(0, lastIndex);
-            }
-            address.setSegmentExistNumber(segmentExistNumber);
+            address.setMappingId(String.join("", mappingIdList));
+            address.setSegmentExistNumber(insertCharAtIndex(segmentExistNumber, address));
         }
+        //===========找地址比對代碼===========================
+        findJoinStep(address);
         return address;
     }
+
+    private String insertCharAtIndex(String segmentExistNumber, Address address) {
+        StringBuilder stringBuilder = new StringBuilder(segmentExistNumber);
+        //鄰
+        if ("000".equals(address.getNeighborCd())) {
+            stringBuilder.insert(3, '0');  //鄰找不到
+        } else {
+            stringBuilder.insert(3, '1');  //鄰找的到
+        }
+        log.info("111 segmentExistNumber length :{}", segmentExistNumber.length());
+        stringBuilder.insert(7, '1');  //numTypeCd一定找的到，所以直接寫1
+        log.info("222 segmentExistNumber length :{}", stringBuilder.length());
+        stringBuilder.insert(13, '0'); //basementStr一律當作找不到，去模糊比對
+        stringBuilder.insert(14, '0'); //numFlrPos一律當作找不到，去模糊比對
+        String result = stringBuilder.toString();
+        log.info("segmentExistNumber: {}", result);
+        return result;
+    }
+
 
     public List<IbdTbIhChangeDoorplateHis> singleQueryTrack(String addressId) {
         log.info("addressId:{}", addressId);
@@ -236,15 +291,12 @@ public class SingleQueryService {
                 // 往前補零，補到三位數
                 String paddedNumber = String.format("%03d", Integer.parseInt(neighborResult));
                 log.info("提取的數字部分為：{}", paddedNumber);
-                segmentExistNumber += "1";
                 return paddedNumber;
             }
         } else {
             log.info("沒有數字部分");
-            segmentExistNumber += "0";
             return "000";
         }
-        segmentExistNumber += "0";
         return "000";
     }
 
@@ -262,7 +314,6 @@ public class SingleQueryService {
         String[] patternFlr3 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
         String[] patternFlr4 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
         String[] patternFlr5 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
-        segmentExistNumber += 0 ;//numFlrPos一律當作找不到，去模糊比對
         return getNum(address.getNumFlr1(), patternFlr1) + getNum(address.getNumFlr2(), patternFlr2) +
                 getNum(address.getNumFlr3(), patternFlr3) + getNum(address.getNumFlr4(), patternFlr4) +
                 getNum(address.getNumFlr5(), patternFlr5);
@@ -367,21 +418,25 @@ public class SingleQueryService {
 
     private Map<String, String> buildRegexMappingId(Address address) {
         String segNum = address.getSegmentExistNumber();
-        StringBuilder newMappingId = new StringBuilder();
-        StringBuilder regex = new StringBuilder();
+        StringBuilder newMappingId = new StringBuilder(); //組給redis的模糊搜尋mappingId ex.10010***9213552**95********
+        StringBuilder regex = new StringBuilder();   //組給java的模糊搜尋mappingId ex.10010020017029\d{18}95\d{19}000000\d{5}
         //mappingCount陣列代表，COUNTY_CD要5位元，TOWN_CD要3位元，VILLAGE_CD要3位元，以此類推
         //6,5,4,3,1 分別是NUM_FLR_1~NUM_FLR_5
         int[] mappingCount = {5, 3, 3, 3, 7, 4, 7, 2, 6, 5, 4, 3, 1, 1, 5, 5};
         int sum = 0;
         for (int i = 0; i < segNum.length(); i++) {
+            //該欄位是1的情況(找的到的情況)
             if ("1".equals(String.valueOf(segNum.charAt(i)))) {
                 newMappingId.append(address.getMappingIdList().get(i));
                 regex.append(address.getMappingIdList().get(i));
                 sum = 0; //歸零
+            //該欄位是0的情況(找不到的情況)
             } else {
+                String segAfter = "";
+                String segBefore = "";
                 //第一碼
                 if(i == 0){
-                    String segAfter = String.valueOf(segNum.charAt(i+1));
+                    segAfter = String.valueOf(segNum.charAt(i+1));
                     //如果前後碼也是0的話，表示要相加
                     if("0".equals(segAfter)){
                         sum += mappingCount[i];
@@ -395,9 +450,10 @@ public class SingleQueryService {
                 }
                 //不是最後一個
                 else if (i != segNum.length() - 1) {
-                    String segAfter = String.valueOf(segNum.charAt(i+1));
+                    segAfter = String.valueOf(segNum.charAt(i + 1));
+                    segBefore = String.valueOf(segNum.charAt(i - 1));
                     //如果前後都是是1的話，不用相加
-                    if ("1".equals(String.valueOf(segNum.charAt(i - 1))) && "1".equals(segAfter)) {
+                    if ("1".equals(segBefore) && "1".equals(segAfter)) {
                         sum = 0; //歸零
                         regex.append("\\d{").append(mappingCount[i]).append("}");
                     }
@@ -414,7 +470,7 @@ public class SingleQueryService {
                 }
                 //是最後一個
                 else {
-                    String segBefore = String.valueOf(segNum.charAt(i-1));
+                    segBefore = String.valueOf(segNum.charAt(i-1));
                     //如果前面是0表示最後一碼也要加上去
                     if("0".equals(segBefore)){
                         sum += mappingCount[i];
@@ -431,6 +487,25 @@ public class SingleQueryService {
         map.put("newMappingId", newMappingId.toString());
         map.put("regex", regex.toString());
         return map;
+    }
+
+    private void findJoinStep(Address address){
+        //排除鄰比對
+        if ("000".equals(address.getNeighborCd())) {
+            if (!"000".equals(address.getTownCd())) {
+                address.setJoinStep("JA211"); //含有鄉鎮市區
+            } else {
+                address.setJoinStep("JA212"); //未含鄉鎮市區
+            }
+        }
+        //排除村里比對
+        if ("000".equals(address.getVillageCd())) {
+            if (!"000".equals(address.getTownCd())) {
+                address.setJoinStep("JA311"); //含有鄉鎮市區
+            } else {
+                address.setJoinStep("JA312"); //未含鄉鎮市區
+            }
+        }
     }
 
 }

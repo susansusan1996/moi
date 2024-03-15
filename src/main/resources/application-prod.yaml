@@ -1,7 +1,7 @@
 spring:
   data:
     redis:
-      database: 0
+      database: 1
       host: 34.211.215.66
       port: 8005
       password:
