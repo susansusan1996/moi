@@ -81,10 +81,10 @@ public class AddressParser {
     private String findArea(String input, Address address) {
         if (!input.isEmpty()) {
             List<String> areaSet = getArea();
-            String areaPatternString = String.join("|", areaSet) + "(?!.*[里區市鄉衖衕橫路道街]])"; //如果後面帶有[里區市鄉衖衕橫路道街]這些後綴字，就代表是不area
+            String areaPatternString = String.join("|", areaSet) + "[里區市鄉衖衕橫路道街]"; //如果後面帶有[里區市鄉衖衕橫路道街]這些後綴字，就代表是不area
             Pattern pattern = Pattern.compile(areaPatternString);
             Matcher matcher = pattern.matcher(input);
-            if (matcher.find()) {
+            if (!matcher.find()) {
                 for (String area : areaSet) {
                     if (input.contains(area)) {
                         address.setArea(area);
