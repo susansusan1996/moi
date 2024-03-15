@@ -43,14 +43,14 @@ public class JobParams implements Serializable {
     private String BATCHFORM_ORIGINAL_FILE_ID;
 
     /**
-     * 使用者ID
+     * 表單建立者ID
      */
     @JsonProperty("userId")
     private String USER_ID;
 
 
     /**
-     *  使用者單位
+     *  表單建立者單位
      *  用於建立指定目錄
      *  pentaho的param，使job到指定目錄下
      */
@@ -65,6 +65,8 @@ public class JobParams implements Serializable {
      */
     @JsonProperty("dataDate")
     private String DATA_DATE;
+    
+    
 
     /**
      *
@@ -74,7 +76,6 @@ public class JobParams implements Serializable {
      */
     @JsonProperty("processedCounts")
     private Integer processedCounts;
-
 
     /**
      *
@@ -87,6 +88,15 @@ public class JobParams implements Serializable {
         this.FORM_NAME = FORM_NAME;
         this.BATCH_ID = BATCH_ID;
         this.BATCHFORM_ORIGINAL_FILE_ID = BATCHFORM_ORIGINAL_FILE_ID;
+    }
+
+
+    public JobParams(String FORM_NAME, String BATCH_ID, String BATCHFORM_ORIGINAL_FILE_ID, String USER_ID, String DATA_SRC) {
+        this.FORM_NAME = FORM_NAME;
+        this.BATCH_ID = BATCH_ID;
+        this.BATCHFORM_ORIGINAL_FILE_ID = BATCHFORM_ORIGINAL_FILE_ID;
+        this.USER_ID = USER_ID;
+        this.DATA_SRC = DATA_SRC;
     }
 
     public String getDATA_SRC() {

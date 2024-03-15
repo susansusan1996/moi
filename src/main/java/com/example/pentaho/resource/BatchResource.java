@@ -112,6 +112,16 @@ public class BatchResource {
                 schema = @Schema(type = "string"))
         @RequestParam("formName") String formName,
         @Parameter(
+                description ="表單申請者Id" ,
+                required = true,
+                schema = @Schema(type = "string"))
+        @RequestParam("formBuilderId") String formBuilderId,
+        @Parameter(
+                description ="表單申請者部門Id" ,
+                required = true,
+                schema = @Schema(type = "string"))
+        @RequestParam("formBuilderOrgId") String formBuilderOrgId,
+        @Parameter(
                 description = "使用者上傳的CSV檔",
                 required = true
         )
@@ -119,7 +129,7 @@ public class BatchResource {
         if(file == null){
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"UPLOAD_ERROR");
         }
-        JobParams jobParams = new JobParams(formName,Id,originalFileId);
+        JobParams jobParams = new JobParams(formName, Id, originalFileId, formBuilderId, formBuilderOrgId);
         log.info("jobParams:{}",jobParams);
         String status = jobService.sftpUploadAndExecuteTrans(file, jobParams);
         if(!"CALL_JOB_SUCESS".equals(status)){
