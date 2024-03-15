@@ -338,6 +338,8 @@ public class SingleQueryService {
         String seq = findByKey("mappingId 64碼", address.getMappingId(), null);
         if (!StringUtils.isNullOrEmpty(seq)) {
             seqSet.add(seq);
+            //如果一次就找到seq，表示地址很完整，比對代碼為JA111
+            address.setJoinStep("JA111");
         } else {
             //如果找不到完整代碼，要用正則模糊搜尋
             Map<String,String> map = buildRegexMappingId(address);
