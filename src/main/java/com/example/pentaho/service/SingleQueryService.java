@@ -206,7 +206,6 @@ public class SingleQueryService {
             keyMap.put("ROOM:" + replaceWithHalfWidthNumber(address.getRoom()), "00000");
             //===========把存有各地址片段的map丟到redis找cd碼===========================
             Map<String, String> resultMap = findByKeys(keyMap);
-            log.info("000 segmentExistNumber length :{}",segmentExistNumber);
             //===========把找到的各地址片段cd碼組裝好===========================
             address.setCountyCd(resultMap.get("COUNTY:" + county));
             address.setTownCd(resultMap.get("TOWN:" +county + ":" + town));
@@ -265,9 +264,7 @@ public class SingleQueryService {
         } else {
             stringBuilder.insert(3, '1');  //鄰找的到
         }
-        log.info("111 segmentExistNumber length :{}", segmentExistNumber.length());
         stringBuilder.insert(7, '1');  //numTypeCd一定找的到，所以直接寫1
-        log.info("222 segmentExistNumber length :{}", stringBuilder.length());
         stringBuilder.insert(13, '0'); //basementStr一律當作找不到，去模糊比對
         stringBuilder.insert(14, '0'); //numFlrPos一律當作找不到，去模糊比對
         String result = stringBuilder.toString();
