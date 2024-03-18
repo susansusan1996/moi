@@ -2,6 +2,7 @@ package com.example.pentaho.component;
 
 
 import java.util.List;
+import java.util.Set;
 
 public class Address {
 
@@ -45,6 +46,7 @@ public class Address {
     private String segmentExistNumber; //紀錄user是否有輸入每個地址片段，有:1，沒有:0
     private List<String> mappingIdList;
     private String joinStep; //地址比對代碼
+    private Set<String> seqSet;
 
 
     public Address() {
@@ -375,6 +377,14 @@ public class Address {
         this.neighborCd = neighborCd;
     }
 
+    public Set<String> getSeqSet() {
+        return seqSet;
+    }
+
+    public void setSeqSet(Set<String> seqSet) {
+        this.seqSet = seqSet;
+    }
+
     @Override
     public String toString() {
         return "Address{" +
@@ -418,6 +428,7 @@ public class Address {
                 ", segmentExistNumber='" + segmentExistNumber + '\'' +
                 ", mappingIdList=" + mappingIdList +
                 ", joinStep='" + joinStep + '\'' +
+                ", seqSet=" + seqSet +
                 '}';
     }
 }
