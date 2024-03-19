@@ -196,7 +196,7 @@ public class SingleQueryService {
             //===========將各地址片段放進map===========================
             keyMap.put("COUNTY:" + county, "00000");//5
             keyMap.put("TOWN:" + county + ":" + town, "000");//鄉鎮市區 //3
-            keyMap.put("VILLAGE:" + town + ":" + village, "000");//里 //3
+            keyMap.put("VILLAGE:" + village, "000");//里 //3
             keyMap.put("ROADAREA:"+ roadAreaKey, "0000000"); //7
             keyMap.put("LANE:" + replaceWithHalfWidthNumber(lane), "0000");//巷 //4
             keyMap.put("ALLEY:" + alleyIdSnKey, "0000000");//弄 //7
@@ -211,9 +211,13 @@ public class SingleQueryService {
             //===========把找到的各地址片段cd碼組裝好===========================
             address.setCountyCd(resultMap.get("COUNTY:" + county));
             address.setTownCd(resultMap.get("TOWN:" +county + ":" + town));
-            address.setVillageCd(resultMap.get("VILLAGE:" + town + ":" + village));
+            address.setVillageCd(resultMap.get("VILLAGE:" + village));
             address.setNeighborCd(findNeighborCd(address.getNeighbor()));//鄰
-            address.setRoadAreaSn(resultMap.get("ROADAREA:"+ roadAreaKey));
+            if(StringUtils.isNullOrEmpty(roadAreaKey)){
+                address.setRoadAreaSn("0000000");
+            }else {
+                address.setRoadAreaSn(resultMap.get("ROADAREA:"+ roadAreaKey));
+            }
             address.setLaneCd(resultMap.get("LANE:" + replaceWithHalfWidthNumber(lane)));
             address.setAlleyIdSn(resultMap.get("ALLEY:" + alleyIdSnKey));
             String numTypeCd = "95";
@@ -490,23 +494,39 @@ public class SingleQueryService {
         return map;
     }
 
-    private Set<String> findJoinStep(Address address, Set<String> newMappingIdSet, Set<String> seqSet){
+    private static final int TOWN_START_INDEX = 5;
+    private static final int TOWN_END_INDEX = 8;
+    private static final int NEIGHBOR_START_INDEX = 10;
+    private static final int NEIGHBOR_END_INDEX = 14;
+    private static final int VILLAGE_START_INDEX = 8; //里~鄰的INDEX
+    private static final int VILLAGE_END_INDEX = 14;  //里~鄰的INDEX
+
+    private Set<String> findJoinStep(Address address, Set<String> newMappingIdSet, Set<String> seqSet) {
+        String mappingId = address.getMappingId();
         //最嚴謹，未含鄉鎮市區
-        String JA112 = removeMiddleChars(address.getMappingId(),5 ,7); //未鄉鎮市區
+        String JA112 = removeMiddleChars(mappingId, TOWN_START_INDEX, TOWN_END_INDEX); //未含鄉鎮市區
         //退鄰(鄰 挖掉，看比不比得到)
-        String JA211 = removeMiddleChars(address.getMappingId(),10 ,14); //含鄉鎮市區
-        String JA212 = removeMiddleChars(removeMiddleChars(address.getMappingId(),10 ,14),5,7); //未含鄉鎮市區
+        String JA211 = removeMiddleChars(mappingId, NEIGHBOR_START_INDEX, NEIGHBOR_END_INDEX); //含鄉鎮市區
+        String JA212 = removeMiddleChars(removeMiddleChars(mappingId, NEIGHBOR_START_INDEX, NEIGHBOR_END_INDEX), TOWN_START_INDEX, TOWN_END_INDEX); //未含鄉鎮市區
         //退里(鄰、里挖掉，看比不比得到)
-        String JA311 = removeMiddleChars(address.getMappingId(), 8, 13); //含鄉鎮市區
-        String JA312 = removeMiddleChars(removeMiddleChars(address.getMappingId(), 8, 13), 5, 7); //未含鄉鎮市區
+        String JA311 = removeMiddleChars(mappingId, VILLAGE_START_INDEX, VILLAGE_END_INDEX); //含鄉鎮市區
+        String JA312 = removeMiddleChars(removeMiddleChars(mappingId, VILLAGE_START_INDEX, VILLAGE_END_INDEX), TOWN_START_INDEX, TOWN_END_INDEX); //未含鄉鎮市區
         //退室(鄰、里、室挖掉，看比不比得到)
-        String JB111 = removeLastFiveChars(removeMiddleChars(address.getMappingId(), 8, 13)); //含鄉鎮市區
-        String JB112 = removeLastFiveChars(removeMiddleChars(removeMiddleChars(address.getMappingId(), 8, 13), 5, 7)); //未含鄉鎮市區
+        String JB111 = removeLastFiveChars(removeMiddleChars(mappingId, VILLAGE_START_INDEX, VILLAGE_END_INDEX)); //含鄉鎮市區
+        String JB112 = removeLastFiveChars(removeMiddleChars(removeMiddleChars(mappingId, VILLAGE_START_INDEX, VILLAGE_END_INDEX), TOWN_START_INDEX, TOWN_END_INDEX)); //未含鄉鎮市區
         newMappingIdSet.forEach(id -> {
-            String newJA211 = removeMiddleChars(id,10 ,14); //含鄉鎮市區
-            String newJA212 = removeMiddleChars(removeMiddleChars(id,10 ,14),5,7); //未含鄉鎮市區
-            log.info("newJA211:{}",newJA211);
-            if (JA112.equals(id)) {
+            //最嚴謹，未含鄉鎮市區
+            String newJA112 = removeMiddleChars(id, TOWN_START_INDEX, TOWN_END_INDEX); //最嚴謹比對(未含鄉鎮市區)
+            //退鄰(鄰 挖掉，看比不比得到)
+            String newJA211 = removeMiddleChars(id, NEIGHBOR_START_INDEX, NEIGHBOR_END_INDEX); //含鄉鎮市區
+            String newJA212 = removeMiddleChars(removeMiddleChars(id, NEIGHBOR_START_INDEX, NEIGHBOR_END_INDEX), TOWN_START_INDEX, TOWN_END_INDEX);
+            //退里(鄰、里挖掉，看比不比得到)
+            String newJA311 = removeMiddleChars(id, VILLAGE_START_INDEX, VILLAGE_END_INDEX);
+            String newJA312 = removeMiddleChars(removeMiddleChars(id, VILLAGE_START_INDEX, VILLAGE_END_INDEX), TOWN_START_INDEX, TOWN_END_INDEX);
+            //退室(鄰、里、室挖掉，看比不比得到)
+            String newJB111 = removeLastFiveChars(removeMiddleChars(id, VILLAGE_START_INDEX, VILLAGE_END_INDEX));
+            String newJB112 = removeLastFiveChars(removeMiddleChars(removeMiddleChars(id, VILLAGE_START_INDEX, VILLAGE_END_INDEX), TOWN_START_INDEX, TOWN_END_INDEX));
+            if (JA112.equals(newJA112)) {
                 address.setJoinStep("JA112");
                 seqSet.add(findByKey("最嚴謹，未含鄉鎮市區", id, null));
             } else if (JA211.equals(newJA211)) {
@@ -515,19 +535,19 @@ public class SingleQueryService {
             } else if (JA212.equals(newJA212)) {
                 address.setJoinStep("JA212");
                 seqSet.add(findByKey("退鄰，不含鄉鎮市區", id, null));
-            } else if (JA311.equals(id)) {
+            } else if (JA311.equals(newJA311)) {
                 address.setJoinStep("JA311");
                 seqSet.add(findByKey("退里，含鄉鎮市區", id, null));
-            } else if (JA312.equals(id)) {
+            } else if (JA312.equals(newJA312)) {
                 address.setJoinStep("JA312");
                 seqSet.add(findByKey("退里，不含鄉鎮市區", id, null));
-            } else if (JB111.equals(id)) {
+            } else if (JB111.equals(newJB111)) {
                 address.setJoinStep("JB111");
                 seqSet.add(findByKey("退室，含鄉鎮市區", id, null));
-            } else if (JB112.equals(id)) {
+            } else if (JB112.equals(newJB112)) {
                 address.setJoinStep("JB112");
                 seqSet.add(findByKey("退室，不含鄉鎮市區", id, null));
-            }else{
+            } else {
                 log.info("甚麼都沒有比到!!");
             }
         });

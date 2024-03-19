@@ -81,7 +81,7 @@ public class AddressParser {
     private String findArea(String input, Address address) {
         if (!input.isEmpty()) {
             List<String> areaSet = getArea();
-            String areaPatternString = String.join("|", areaSet) + "[里區市鄉衖衕橫路道街]"; //如果後面帶有[里區市鄉衖衕橫路道街]這些後綴字，就代表是不area
+            String areaPatternString = "["+String.join("|", areaSet) + "]+[里區市鄉衖衕橫路道街]"; //如果後面帶有[里區市鄉衖衕橫路道街]這些後綴字，就代表是不area
             Pattern pattern = Pattern.compile(areaPatternString);
             Matcher matcher = pattern.matcher(input);
             if (!matcher.find()) {
@@ -112,8 +112,13 @@ public class AddressParser {
         List<String> countyList = aliasList.stream().filter(aliasDTO -> aliasDTO.getTypeName().equals("COUNTY")).map(AliasDTO::getAlias).toList();
         List<String> roadList = aliasList.stream().filter(aliasDTO -> aliasDTO.getTypeName().equals("ROAD")).map(AliasDTO::getAlias).toList();
 //        List<String> areaList = aliasList.stream().filter(aliasDTO -> aliasDTO.getTypeName().equals("AREA")).map(AliasDTO::getAlias).toList();
-        List<String> townList = aliasList.stream().filter(aliasDTO -> aliasDTO.getTypeName().equals("TOWN")).map(AliasDTO::getAlias).toList();
-        List<String> villageList = aliasList.stream().filter(aliasDTO -> aliasDTO.getTypeName().equals("VILLAGE")).map(AliasDTO::getAlias).toList();
+        List<String> townList = aliasList.stream()
+                .filter(aliasDTO -> aliasDTO.getTypeName().equals("TOWN"))
+                .map(aliasDTO -> aliasDTO.getAlias() + "(?!.*路)")
+                .toList();
+        List<String> villageList = aliasList.stream().filter(aliasDTO -> aliasDTO.getTypeName().equals("VILLAGE"))
+                .map(aliasDTO -> aliasDTO.getTypeName() + "(?!.*路)")
+                .toList();
         String newCounty = String.format(COUNTY , String.join("|",countyList));
         String newTown = String.format(TOWN , String.join("|",townList));
         String newVillage = String.format(VILLAGE , String.join("|",villageList));
