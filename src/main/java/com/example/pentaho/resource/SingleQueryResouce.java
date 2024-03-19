@@ -1,9 +1,6 @@
 package com.example.pentaho.resource;
 
-import com.example.pentaho.component.Address;
-import com.example.pentaho.component.IbdTbIhChangeDoorplateHis;
-import com.example.pentaho.component.SingleBatchQueryParams;
-import com.example.pentaho.component.SingleQueryDTO;
+import com.example.pentaho.component.*;
 import com.example.pentaho.exception.MoiException;
 import com.example.pentaho.service.SingleQueryService;
 import com.example.pentaho.utils.AddressParser;
@@ -79,7 +76,7 @@ public class SingleQueryResouce {
 
 
     @PostMapping("/query-single-test")
-    public ResponseEntity<String> queryAddress(@RequestBody String originalString) {
+    public ResponseEntity<List<IbdTbAddrCodeOfDataStandardDTO>> queryAddress(@RequestBody String originalString) {
 //        try {
             return ResponseEntity.ok(singleQueryService.findJson(originalString));
 //        } catch (Exception e) {

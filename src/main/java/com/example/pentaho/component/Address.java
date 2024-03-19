@@ -1,31 +1,50 @@
 package com.example.pentaho.component;
 
 
+import java.util.List;
+
 public class Address {
 
     private String zipcode;
     private String county;
+    private String countyCd;
     private String town;
+    private String townCd;
     private String village;
+    private String villageCd;
     private String neighbor;
+    private String neighborCd;
     private String road;
     private String area;
+    private String roadAreaSn;
     private String lane;
+    private String laneCd;
     private String alley;
     private String subAlley;
+    private String alleyIdSn;
     private String numFlr1;
+    private String numFlr1Id;
     private String numFlr2;
+    private String numFlr2Id;
     private String numFlr3;
+    private String numFlr3Id;
     private String numFlr4;
+    private String numFlr4Id;
     private String numFlr5;
+    private String numFlr5Id;
+    private String continuousNum;//之45一樓 (像這種連續的號碼，就會被歸在這裡)
     private String basementStr;
     private String numFlrPos;
     private String room; //室
+    private String roomIdSn;
     private String seq;
     private String addrRemains;
     private boolean isParseSuccessed;
     private String originalAddress;
     private String mappingId; //64碼
+    private String segmentExistNumber; //紀錄user是否有輸入每個地址片段，有:1，沒有:0
+    private List<String> mappingIdList;
+    private String joinStep; //地址比對代碼
 
 
     public Address() {
@@ -155,6 +174,14 @@ public class Address {
         this.numFlr5 = numFlr5;
     }
 
+    public String getContinuousNum() {
+        return continuousNum;
+    }
+
+    public void setContinuousNum(String continuousNum) {
+        this.continuousNum = continuousNum;
+    }
+
     public String getSeq() {
         return seq;
     }
@@ -220,32 +247,177 @@ public class Address {
         this.mappingId = mappingId;
     }
 
+    public String getSegmentExistNumber() {
+        return segmentExistNumber;
+    }
+
+    public void setSegmentExistNumber(String segmentExistNumber) {
+        this.segmentExistNumber = segmentExistNumber;
+    }
+
+    public List<String> getMappingIdList() {
+        return mappingIdList;
+    }
+
+    public void setMappingIdList(List<String> mappingIdList) {
+        this.mappingIdList = mappingIdList;
+    }
+
+    public String getJoinStep() {
+        return joinStep;
+    }
+
+    public void setJoinStep(String joinStep) {
+        this.joinStep = joinStep;
+    }
+
+    public String getCountyCd() {
+        return countyCd;
+    }
+
+    public void setCountyCd(String countyCd) {
+        this.countyCd = countyCd;
+    }
+
+    public String getTownCd() {
+        return townCd;
+    }
+
+    public void setTownCd(String townCd) {
+        this.townCd = townCd;
+    }
+
+    public String getVillageCd() {
+        return villageCd;
+    }
+
+    public void setVillageCd(String villageCd) {
+        this.villageCd = villageCd;
+    }
+
+    public String getRoadAreaSn() {
+        return roadAreaSn;
+    }
+
+    public void setRoadAreaSn(String roadAreaSn) {
+        this.roadAreaSn = roadAreaSn;
+    }
+
+    public String getLaneCd() {
+        return laneCd;
+    }
+
+    public void setLaneCd(String laneCd) {
+        this.laneCd = laneCd;
+    }
+
+    public String getAlleyIdSn() {
+        return alleyIdSn;
+    }
+
+    public void setAlleyIdSn(String alleyIdSn) {
+        this.alleyIdSn = alleyIdSn;
+    }
+
+    public String getNumFlr1Id() {
+        return numFlr1Id;
+    }
+
+    public void setNumFlr1Id(String numFlr1Id) {
+        this.numFlr1Id = numFlr1Id;
+    }
+
+    public String getNumFlr2Id() {
+        return numFlr2Id;
+    }
+
+    public void setNumFlr2Id(String numFlr2Id) {
+        this.numFlr2Id = numFlr2Id;
+    }
+
+    public String getNumFlr3Id() {
+        return numFlr3Id;
+    }
+
+    public void setNumFlr3Id(String numFlr3Id) {
+        this.numFlr3Id = numFlr3Id;
+    }
+
+    public String getNumFlr4Id() {
+        return numFlr4Id;
+    }
+
+    public void setNumFlr4Id(String numFlr4Id) {
+        this.numFlr4Id = numFlr4Id;
+    }
+
+    public String getNumFlr5Id() {
+        return numFlr5Id;
+    }
+
+    public void setNumFlr5Id(String numFlr5Id) {
+        this.numFlr5Id = numFlr5Id;
+    }
+
+    public String getRoomIdSn() {
+        return roomIdSn;
+    }
+
+    public void setRoomIdSn(String roomIdSn) {
+        this.roomIdSn = roomIdSn;
+    }
+
+    public String getNeighborCd() {
+        return neighborCd;
+    }
+
+    public void setNeighborCd(String neighborCd) {
+        this.neighborCd = neighborCd;
+    }
+
     @Override
     public String toString() {
         return "Address{" +
                 "zipcode='" + zipcode + '\'' +
                 ", county='" + county + '\'' +
+                ", countyCd='" + countyCd + '\'' +
                 ", town='" + town + '\'' +
+                ", townCd='" + townCd + '\'' +
                 ", village='" + village + '\'' +
+                ", villageCd='" + villageCd + '\'' +
                 ", neighbor='" + neighbor + '\'' +
+                ", neighborCd='" + neighborCd + '\'' +
                 ", road='" + road + '\'' +
                 ", area='" + area + '\'' +
+                ", roadAreaSn='" + roadAreaSn + '\'' +
                 ", lane='" + lane + '\'' +
+                ", laneCd='" + laneCd + '\'' +
                 ", alley='" + alley + '\'' +
                 ", subAlley='" + subAlley + '\'' +
+                ", alleyIdSn='" + alleyIdSn + '\'' +
                 ", numFlr1='" + numFlr1 + '\'' +
+                ", numFlr1Id='" + numFlr1Id + '\'' +
                 ", numFlr2='" + numFlr2 + '\'' +
+                ", numFlr2Id='" + numFlr2Id + '\'' +
                 ", numFlr3='" + numFlr3 + '\'' +
+                ", numFlr3Id='" + numFlr3Id + '\'' +
                 ", numFlr4='" + numFlr4 + '\'' +
+                ", numFlr4Id='" + numFlr4Id + '\'' +
                 ", numFlr5='" + numFlr5 + '\'' +
+                ", numFlr5Id='" + numFlr5Id + '\'' +
+                ", continuousNum='" + continuousNum + '\'' +
                 ", basementStr='" + basementStr + '\'' +
                 ", numFlrPos='" + numFlrPos + '\'' +
                 ", room='" + room + '\'' +
+                ", roomIdSn='" + roomIdSn + '\'' +
                 ", seq='" + seq + '\'' +
                 ", addrRemains='" + addrRemains + '\'' +
                 ", isParseSuccessed=" + isParseSuccessed +
                 ", originalAddress='" + originalAddress + '\'' +
                 ", mappingId='" + mappingId + '\'' +
+                ", segmentExistNumber='" + segmentExistNumber + '\'' +
+                ", mappingIdList=" + mappingIdList +
+                ", joinStep='" + joinStep + '\'' +
                 '}';
     }
 }

@@ -1,5 +1,9 @@
 package com.example.pentaho.repository;
 
+import com.example.pentaho.component.IbdTbAddrCodeOfDataStandardDTO;
+
+import java.util.List;
+
 public interface IbdTbAddrCodeOfDataStandardRepository {
-    String findBySeq(Integer seq);
+    List<IbdTbAddrCodeOfDataStandardDTO> findBySeq(List<Integer> seq);
 }
