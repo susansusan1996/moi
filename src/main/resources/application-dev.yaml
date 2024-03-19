@@ -10,11 +10,11 @@ directory:
   path: C:\test2
   target: C:\
   #原始csv存放目錄
-  receive-file-dir: /home/addr/batch_data/receive/
+  receive-file-dir: /home/ubuntu/addr/batch_data/receive/
   #批次zip檔存放目錄
-  send-file-dir: /home/addr/batch_data/send/
-  big-data-receive-file-dir: /home/addr/big_data/receive/
-  big-data-send-file-dir: /home/addr/big_data/send/
+  send-file-dir: /home/ubuntu/addr/batch_data/send/
+  big-data-receive-file-dir: /home/ubuntu/addr/big_data/receive/
+  big-data-send-file-dir: /home/ubuntu/addr/big_data/send/
   local-temp-dir: D:\temp\
   #  etl作業產出的檔案位置前綴
   etl-output-file-dir-prefix: D:\home\ec2-user\test222\

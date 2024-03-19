@@ -33,13 +33,13 @@ directory:
   #pentaho server IP
   target: http://52.33.116.195
   #批次 原始csv存放目錄
-  receive-file-dir: /home/addr/batch_data/receive/
+  receive-file-dir: /home/ubuntu/addr/batch_data/receive/
   #批次 zip檔存放目錄
-  send-file-dir: /home/addr/batch_data/send/
+  send-file-dir: /home/ubuntu/addr/batch_data/send/
   #大量 原始csv存放目錄
-  big-data-receive-file-dir: /home/addr/big_data/receive/
+  big-data-receive-file-dir: /home/ubuntu/addr/big_data/receive/
   #大量 zip檔存放目錄
-  big-data-send-file-dir: /home/addr/big_data/send/
+  big-data-send-file-dir: /home/ubuntu/addr/big_data/send/
   #AP檔案落地暫存目錄
   local-temp-dir: /home/ubuntu/app/temp/
   #  etl作業產出的檔案位置前綴
