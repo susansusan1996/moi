@@ -4,6 +4,7 @@ package com.example.pentaho.resource;
 import com.example.pentaho.component.Login;
 import com.example.pentaho.component.User;
 import com.example.pentaho.service.UserService;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api")
+@Hidden
 public class UserResource {
 
     private final static Logger log = LoggerFactory.getLogger(UserResource.class);
@@ -49,7 +51,6 @@ public class UserResource {
             @RequestBody User user) {
         log.info("user:{}", user);
         Login login = userService.findUserByUserName(user);
-//        log.info("login:{}", login);
         return new ResponseEntity<>(login.getAcessToken().getToken(), HttpStatus.OK);
     }
 

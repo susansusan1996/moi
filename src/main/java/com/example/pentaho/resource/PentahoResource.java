@@ -6,6 +6,7 @@ import com.example.pentaho.component.User;
 import com.example.pentaho.service.FileOutputService;
 import com.example.pentaho.service.JobService;
 import com.example.pentaho.utils.UserContextUtils;
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +20,7 @@ import java.io.IOException;
 
 @RequestMapping("/api/kettle")
 @RestController
+@Hidden
 public class PentahoResource {
 
     private static Logger log = LoggerFactory.getLogger(PentahoResource.class);

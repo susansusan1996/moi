@@ -46,7 +46,7 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
 
         /**單筆未登入**/
         //todo:要改成凰喜api的路徑
-        if("/api/single-track-query/forguest".equals(request.getRequestURI())){
+        if("/api/api-key/forguest".equals(request.getRequestURI())){
             /**限流每分鐘20個請求**/
             if(!FOR_GUEST_BUCKET.tryConsume(1)){
                 throw new ResponseStatusException(HttpStatus.BANDWIDTH_LIMIT_EXCEEDED);
@@ -87,7 +87,7 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
          * payload 必須要存在 userInfo !!
          * **/
         //todo:單筆要改成凰喜api的路徑
-        if("/api/batchForm/finished".equals(request.getRequestURI()) || "/api/single-track-query/forapikey".equals(request.getRequestURI())){
+        if("/api/batchForm/finished".equals(request.getRequestURI()) || "/api/api-key/forapikey".equals(request.getRequestURI())){
           keyName =keyComponent.getApPubkeyName();
         }
 

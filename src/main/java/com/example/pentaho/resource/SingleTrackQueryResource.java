@@ -7,6 +7,7 @@ import com.example.pentaho.component.User;
 import com.example.pentaho.exception.MoiException;
 import com.example.pentaho.service.SingleTrackQueryService;
 import com.example.pentaho.utils.UserContextUtils;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -79,6 +80,7 @@ public class SingleTrackQueryResource {
                     @ApiResponse(responseCode = "500", description = "檔案為空 或 非CSV檔"
                     )})
     @PostMapping("/query-batch-track")
+    @Hidden
     public void queryBatchTrack(@Parameter(
             description = "批次ID",
             required = true,
@@ -114,34 +116,6 @@ public class SingleTrackQueryResource {
     }
 
 
-    /**
-     * 單筆未登入測試
-     */
-    @Operation(description = "單筆未登入測試")
-    @PostMapping("/forguest")
-    public ResponseEntity<String> forGuestUser(){
-    return new ResponseEntity<>("用戶未登入",HttpStatus.OK);
-    }
 
-    /**
-     * 單筆APIKEY測試
-     */
-    @Operation(description = "單筆APIKEY測試",
-            parameters = {@Parameter(in = ParameterIn.HEADER,
-                    name = "Authorization",
-                    description = "資拓私鑰加密的jwt token",
-                    required = true,
-                    schema = @Schema(type = "string"))
-            },
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "userId",
-                            content = @Content(schema = @Schema(implementation = String.class))),
-                    @ApiResponse(responseCode = "500", description = ""),
-            })
-    @PostMapping("/forapikey")
-    public ResponseEntity<String> forAPIKeyUser(){
-        User user = UserContextUtils.getUserHolder();
-        logger.info("user:{}",user);
-        return new ResponseEntity<>(user.getId(),HttpStatus.OK);
-    }
+
 }

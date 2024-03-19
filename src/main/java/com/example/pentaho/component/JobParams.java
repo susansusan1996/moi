@@ -91,12 +91,13 @@ public class JobParams implements Serializable {
     }
 
 
-    public JobParams(String FORM_NAME, String BATCH_ID, String BATCHFORM_ORIGINAL_FILE_ID, String USER_ID, String DATA_SRC) {
+    public JobParams(String FORM_NAME, String BATCH_ID, String BATCHFORM_ORIGINAL_FILE_ID, String USER_ID, String DATA_SRC,String DATA_DATE) {
         this.FORM_NAME = FORM_NAME;
         this.BATCH_ID = BATCH_ID;
         this.BATCHFORM_ORIGINAL_FILE_ID = BATCHFORM_ORIGINAL_FILE_ID;
         this.USER_ID = USER_ID;
         this.DATA_SRC = DATA_SRC;
+        this.DATA_DATE =DATA_DATE;
     }
 
     public String getDATA_SRC() {
