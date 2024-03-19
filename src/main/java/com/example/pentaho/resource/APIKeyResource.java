@@ -25,12 +25,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.security.PrivateKey;
 
+/***
+ * 產生APIKey & 使用APIKey驗證的API
+ */
 @RestController
 @RequestMapping("/api/api-key")
 public class APIKeyResource {
     private static Logger log = LoggerFactory.getLogger(APIKeyResource.class);
 
-    /**先設定1天**/
+    /**API效期先設定1天**/
     private static final int VALID_TIME = 1440;
 
     private KeyComponent keyComponent;
@@ -66,4 +69,35 @@ public class APIKeyResource {
         }
     }
 
+    /**
+     * 單筆APIKEY測試
+     */
+    @Operation(description = "單筆APIKEY測試",
+            parameters = {@Parameter(in = ParameterIn.HEADER,
+                    name = "Authorization",
+                    description = "資拓私鑰加密的jwt token",
+                    required = true,
+                    schema = @Schema(type = "string"))
+            },
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "userId",
+                            content = @Content(schema = @Schema(implementation = String.class))),
+                    @ApiResponse(responseCode = "500", description = ""),
+            })
+    @PostMapping("/forapikey")
+    public ResponseEntity<String> forAPIKeyUser(){
+        User user = UserContextUtils.getUserHolder();
+        log.info("user:{}",user);
+        return new ResponseEntity<>(user.getId(),HttpStatus.OK);
+    }
+
+
+    /**
+     * 單筆未登入測試
+     */
+    @Operation(description = "單筆未登入測試")
+    @PostMapping("/forguest")
+    public ResponseEntity<String> forGuestUser(){
+        return new ResponseEntity<>("用戶未登入", HttpStatus.OK);
+    }
 }

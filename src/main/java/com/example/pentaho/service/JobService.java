@@ -368,13 +368,16 @@ public class JobService {
         return batchId+".csv";
     }
 
-    public String[] targetDirs(String dateStamp) {
-        /**
-         * /home/addr/batch_data/receive/orgId/yyyyMMdd
-         * /home/addr/batch_data/send/orgId/yyyyMMdd
-         */
-        String receiveDir = directories.getReceiveFileDir() + UserContextUtils.getUserHolder().getOrgId() + "/" + dateStamp + "/";
-        String sendDir = directories.getSendFileDir() + UserContextUtils.getUserHolder().getOrgId() + "/" + dateStamp + "/";
+    /***
+     * 建立上傳 & 抓檔目錄
+     * /home/addr/batch_data/receive/formBuilderOrgId(申請者單位ID)/yyyyMMdd/
+     * /home/addr/batch_data/send/formBuilderOrgId(申請者單位ID)/yyyyMMdd/
+     * @param jobParams
+     * @return
+     */
+    public String[] targetDirs(JobParams jobParams) {
+        String receiveDir = directories.getReceiveFileDir() + jobParams.getDATA_SRC()+ "/" + jobParams.getDATA_DATE() + "/";
+        String sendDir = directories.getSendFileDir() + jobParams.getDATA_SRC() + "/" + jobParams.getDATA_DATE() + "/";
 
         log.info("receiveDir:{}", receiveDir);
         log.info("sendDir:{}", sendDir);
@@ -409,12 +412,10 @@ public class JobService {
         /**給Pentaho Server & Shengsen 的參數*/
         jobParams.setProcessedCounts(CSVReader(file));
 
-        /**以'批次ID'為檔名**/
+        /**以 formName(申請單號) 為檔名**/
         String fileName = getFileName(file.getOriginalFilename(), jobParams.getFORM_NAME());
-        /**建立目錄**/
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
-        String dateStamp = dateFormat.format(new Date());
-        String[] targetDirs = targetDirs(dateStamp);
+
+        String[] targetDirs = targetDirs(jobParams);
         /**SFTP**/
         boolean sftpUpload = fileUploadService.sftpUpload(file,targetDirs,fileName);
         /**上傳失敗**/
@@ -424,11 +425,6 @@ public class JobService {
             return status;
         }
         /**準備要給 pentaho params*/
-        String Id = String.valueOf(UserContextUtils.getUserHolder().getId());
-        String orgId = UserContextUtils.getUserHolder().getOrgId();
-        jobParams.setDATA_DATE(dateStamp);
-        jobParams.setDATA_SRC(orgId);
-        jobParams.setUSER_ID(Id);
         return webServiceUtils.getConnection(PentahoWebService.executeJobs,jobParams);
     }
 

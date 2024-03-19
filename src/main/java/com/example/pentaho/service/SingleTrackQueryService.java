@@ -30,6 +30,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @Service
 public class SingleTrackQueryService {
@@ -91,11 +93,11 @@ public class SingleTrackQueryService {
             }
 
             List<IbdTbIhChangeDoorplateHis> IbdTbIhChangeDoorplateHisList = ibdTbIhChangeDoorplateHisRepository.findByAddressIdList(addressIdList);
-            boolean geneFile = getCSVFile(IbdTbIhChangeDoorplateHisList, singleBatchQueryParams.getFile());
-            if(geneFile){
+            boolean geneZip = getCSVFileZip(IbdTbIhChangeDoorplateHisList, singleBatchQueryParams.getFile());
+            if(geneZip){
                 /**成功建檔，沒有筆數給空檔嗎?*/
                 singleBatchQueryParams.setStatus("DONE");
-                filePath = directories.getLocalTempDir()+singleBatchQueryParams.getFile();
+                filePath = directories.getLocalTempDir()+singleBatchQueryParams.getFile()+".zip";
             }
             postSingleBatchQueryRequest("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
         }catch (Exception e){
@@ -141,7 +143,8 @@ public class SingleTrackQueryService {
     }
 
 
-    private boolean getCSVFile(List<IbdTbIhChangeDoorplateHis> IbdTbIhChangeDoorplateHisList,String fileName) {
+    private boolean getCSVFileZip(List<IbdTbIhChangeDoorplateHis> IbdTbIhChangeDoorplateHisList,String fileName) {
+        log.info("fileName:{}",fileName);
         StringBuilder newContent = new StringBuilder();
         try{
             for (IbdTbIhChangeDoorplateHis line : IbdTbIhChangeDoorplateHisList) {
@@ -150,17 +153,42 @@ public class SingleTrackQueryService {
                 newContent.append(line.getWgsX()).append(",");
                 newContent.append(line.getWgsY()).append(",");
                 newContent.append(line.getUpdateDt()).append(",");
-                newContent.append(line.getUpdateType()).append(",").append("\n");
+                newContent.append(line.getUpdateType()).append("\n");
             }
             log.info("newContent:{}",newContent);
-            String filePath =  directories.getLocalTempDir()+ fileName;
+            String filePath =  directories.getLocalTempDir()+ fileName+".csv";
             saveByteArrayToFile(newContent.toString().getBytes(),filePath);
-            return true;
+            return FileZipper(filePath,fileName);
         } catch (Exception e) {
             log.info("e:{}",e.toString());
             return false;
         }
     }
+
+        public boolean FileZipper(String sourceFilePath,String fileName) {
+            String zipFilePath = directories.getLocalTempDir()+ fileName +".zip";
+            log.info("zipFilePath:{}",zipFilePath);
+            try {
+                FileOutputStream fos = new FileOutputStream(zipFilePath);
+                ZipOutputStream zos = new ZipOutputStream(fos);
+                FileInputStream fis = new FileInputStream(sourceFilePath);
+                zos.putNextEntry(new ZipEntry(fileName+".csv"));
+
+                byte[] buffer = new byte[1024];
+                int length;
+                while ((length = fis.read(buffer)) > 0) {
+                    zos.write(buffer, 0, length);
+                }
+
+                fis.close();
+                zos.closeEntry();
+                zos.close();
+                return true;
+            } catch (IOException e) {
+              log.info("e:{}",e.toString());
+              return false;
+            }
+        }
 
     public int postSingleBatchQueryRequest(String action, Object params, String filePath) throws IOException {
         String targerUrl = apServerComponent.getTargetUrl() + action;
