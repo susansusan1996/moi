@@ -4,6 +4,7 @@ import com.example.pentaho.component.*;
 import com.example.pentaho.exception.MoiException;
 import com.example.pentaho.service.SingleQueryService;
 import com.example.pentaho.utils.AddressParser;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -42,6 +43,7 @@ public class SingleQueryResouce {
      * 拆分地址
      */
     @GetMapping("/query-address")
+    @Hidden
     public ResponseEntity<Address> queryData(@RequestBody SingleQueryDTO singleQueryDTO) {
 //        return ResponseEntity.ok(new Address(singleQueryDTO.getOriginalAddress()));
         return ResponseEntity.ok(addressParser.parseAddress(singleQueryDTO.getOriginalAddress(),null));
@@ -76,6 +78,7 @@ public class SingleQueryResouce {
 
 
     @PostMapping("/query-single-test")
+    @Hidden
     public ResponseEntity<List<IbdTbAddrCodeOfDataStandardDTO>> queryAddress(@RequestBody String originalString) {
 //        try {
             return ResponseEntity.ok(singleQueryService.findJson(originalString));
