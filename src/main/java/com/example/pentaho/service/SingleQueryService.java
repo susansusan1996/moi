@@ -154,11 +154,13 @@ public class SingleQueryService {
     public List<IbdTbAddrCodeOfDataStandardDTO> findJson(String originalString) {
         Address address = findMappingId(originalString);
         log.info("mappingId:{}", address.getMappingId());
-        Set<String> seqSet = finSeqByMappingIdInRedis(address);
+        address = findSeqByMappingIdAndJoinStep(address);
+        Set<String> seqSet = address.getSeqSet();
         log.info("seq:{}", seqSet);
         List<IbdTbAddrCodeOfDataStandardDTO> list = ibdTbAddrCodeOfDataStandardRepository.findBySeq(seqSet.stream().map(Integer::parseInt).collect(Collectors.toList()));
         //放地址比對代碼
-        list.forEach(IbdTbAddrDataRepositoryNewdto -> IbdTbAddrDataRepositoryNewdto.setJoinStep(address.getJoinStep()));
+        Address finalAddress = address;
+        list.forEach(IbdTbAddrDataRepositoryNewdto -> IbdTbAddrDataRepositoryNewdto.setJoinStep(finalAddress.getJoinStep()));
         return list;
     }
 
@@ -192,27 +194,30 @@ public class SingleQueryService {
             String numFlr5 = address.getNumFlr5();
             String room = address.getRoom();//室
             //===========將各地址片段放進map===========================
-            keyMap.put("COUNTY:" + county, "00000");
-            keyMap.put("TOWN:" + county + ":" + town, "000");//鄉鎮市區
-            keyMap.put("VILLAGE:" + town + ":" + village, "000");//里
-            keyMap.put("ROADAREA:"+ roadAreaKey, "0000000");
-            keyMap.put("LANE:" + replaceWithHalfWidthNumber(lane), "0000");//巷
-            keyMap.put("ALLEY:" + alleyIdSnKey, "0000000");//弄
-            keyMap.put("NUM_FLR_1:" + deleteBasementString(numFlr1), "000000");
-            keyMap.put("NUM_FLR_2:" + deleteBasementString(numFlr2), "00000");
-            keyMap.put("NUM_FLR_3:" + deleteBasementString(numFlr3), "0000");
-            keyMap.put("NUM_FLR_4:" + deleteBasementString(numFlr4), "000");
-            keyMap.put("NUM_FLR_5:" + deleteBasementString(numFlr5), "0");
-            keyMap.put("ROOM:" + replaceWithHalfWidthNumber(address.getRoom()), "00000");
+            keyMap.put("COUNTY:" + county, "00000");//5
+            keyMap.put("TOWN:" + town, "000");//鄉鎮市區 //3
+            keyMap.put("VILLAGE:" + village, "000");//里 //3
+            keyMap.put("ROADAREA:"+ roadAreaKey, "0000000"); //7
+            keyMap.put("LANE:" + replaceWithHalfWidthNumber(lane), "0000");//巷 //4
+            keyMap.put("ALLEY:" + alleyIdSnKey, "0000000");//弄 //7
+            keyMap.put("NUM_FLR_1:" + deleteBasementString(numFlr1), "000000"); //6
+            keyMap.put("NUM_FLR_2:" + deleteBasementString(numFlr2), "00000"); //5
+            keyMap.put("NUM_FLR_3:" + deleteBasementString(numFlr3), "0000"); //4
+            keyMap.put("NUM_FLR_4:" + deleteBasementString(numFlr4), "000"); //3
+            keyMap.put("NUM_FLR_5:" + deleteBasementString(numFlr5), "0"); //1
+            keyMap.put("ROOM:" + replaceWithHalfWidthNumber(address.getRoom()), "00000"); //5
             //===========把存有各地址片段的map丟到redis找cd碼===========================
             Map<String, String> resultMap = findByKeys(keyMap);
-            log.info("000 segmentExistNumber length :{}",segmentExistNumber);
             //===========把找到的各地址片段cd碼組裝好===========================
             address.setCountyCd(resultMap.get("COUNTY:" + county));
-            address.setTownCd(resultMap.get("TOWN:" +county + ":" + town));
-            address.setVillageCd(resultMap.get("VILLAGE:" + town + ":" + village));
+            address.setTownCd(resultMap.get("TOWN:" + town));
+            address.setVillageCd(resultMap.get("VILLAGE:" + village));
             address.setNeighborCd(findNeighborCd(address.getNeighbor()));//鄰
-            address.setRoadAreaSn(resultMap.get("ROADAREA:"+ roadAreaKey));
+            if(StringUtils.isNullOrEmpty(roadAreaKey)){
+                address.setRoadAreaSn("0000000");
+            }else {
+                address.setRoadAreaSn(resultMap.get("ROADAREA:"+ roadAreaKey));
+            }
             address.setLaneCd(resultMap.get("LANE:" + replaceWithHalfWidthNumber(lane)));
             address.setAlleyIdSn(resultMap.get("ALLEY:" + alleyIdSnKey));
             String numTypeCd = "95";
@@ -252,8 +257,6 @@ public class SingleQueryService {
             address.setMappingId(String.join("", mappingIdList));
             address.setSegmentExistNumber(insertCharAtIndex(segmentExistNumber, address));
         }
-        //===========找地址比對代碼===========================
-        findJoinStep(address);
         return address;
     }
 
@@ -265,9 +268,7 @@ public class SingleQueryService {
         } else {
             stringBuilder.insert(3, '1');  //鄰找的到
         }
-        log.info("111 segmentExistNumber length :{}", segmentExistNumber.length());
         stringBuilder.insert(7, '1');  //numTypeCd一定找的到，所以直接寫1
-        log.info("222 segmentExistNumber length :{}", stringBuilder.length());
         stringBuilder.insert(13, '0'); //basementStr一律當作找不到，去模糊比對
         stringBuilder.insert(14, '0'); //numFlrPos一律當作找不到，去模糊比對
         String result = stringBuilder.toString();
@@ -336,11 +337,13 @@ public class SingleQueryService {
     }
 
 
-    Set<String> finSeqByMappingIdInRedis(Address address) {
+    Address findSeqByMappingIdAndJoinStep(Address address) {
         Set<String> seqSet = new HashSet<>();
         String seq = findByKey("mappingId 64碼", address.getMappingId(), null);
         if (!StringUtils.isNullOrEmpty(seq)) {
             seqSet.add(seq);
+            //如果一次就找到seq，表示地址很完整，比對代碼為JA111
+            address.setJoinStep("JA111");
         } else {
             //如果找不到完整代碼，要用正則模糊搜尋
             Map<String,String> map = buildRegexMappingId(address);
@@ -350,19 +353,21 @@ public class SingleQueryService {
             log.info("模糊搜尋正則表達式為:{}",regex);
             Set<String> mappingIdSet =  findListByScan(newMappingId);
             Pattern regexPattern = Pattern.compile(String.valueOf(regex));
+            Set<String> newMappingIdSet = new HashSet<>();
             for (String newMapping : mappingIdSet) {
-                //因為redis的scan命令，無法搭配正則，限制*的位置只能有多少字元，所以要再用java把不符合的mappinId刪掉
+                //因為redis的scan命令，無法搭配正則，限制*的位置只能有多少字元，所以要再用java把不符合的mappingId刪掉
                 Matcher matcher = regexPattern.matcher(newMapping);
-                //有符合再進redis找seq
+                //有符合的mappingId，才是真正要拿來處理比對代碼的mappingId
                 if (matcher.matches()) {
-                    String newSeq = findByKey("newMappingId", newMapping, null);
-                    if (StringUtils.isNotNullOrEmpty(newSeq)) {
-                        seqSet.add(newSeq);
-                    }
+                    newMappingIdSet.add(newMapping);
                 }
             }
+            log.info("最終可比對的mappingId:{}", newMappingIdSet);
+            //=========比對代碼====================
+            seqSet.addAll(findJoinStep(address, newMappingIdSet, seqSet));
         }
-        return seqSet;
+        address.setSeqSet(seqSet);
+        return address;
     }
 
     //處理: 之45一樓 (像這種連續的號碼，就會被歸在這裡)
@@ -489,23 +494,113 @@ public class SingleQueryService {
         return map;
     }
 
-    private void findJoinStep(Address address){
-        //排除鄰比對
-        if ("000".equals(address.getNeighborCd())) {
-            if (!"000".equals(address.getTownCd())) {
-                address.setJoinStep("JA211"); //含有鄉鎮市區
-            } else {
-                address.setJoinStep("JA212"); //未含鄉鎮市區
+    private static final int COUNTY_START_INDEX = 0;
+    private static final int COUNTY_END_INDEX = 5;
+    private static final int TOWN_START_INDEX = 5;
+    private static final int TOWN_END_INDEX = 8;
+    private static final int NEIGHBOR_START_INDEX = 10;
+    private static final int NEIGHBOR_END_INDEX = 14;
+    private static final int VILLAGE_START_INDEX = 8; //里~鄰的INDEX
+    private static final int VILLAGE_END_INDEX = 14;  //里~鄰的INDEX
+
+    private Set<String> findJoinStep(Address address, Set<String> newMappingIdSet, Set<String> seqSet) {
+        String mappingId = address.getMappingId();
+        //最嚴謹
+        String JA112_NO_COUNTY = removeMiddleChars(mappingId, COUNTY_START_INDEX, COUNTY_END_INDEX); //未含"縣市"，先歸在"JA112"
+        String JA112 = removeMiddleChars(mappingId, TOWN_START_INDEX, TOWN_END_INDEX); //未含鄉鎮市區
+        //退鄰(鄰 挖掉，看比不比得到)
+        String JA211 = removeMiddleChars(mappingId, NEIGHBOR_START_INDEX, NEIGHBOR_END_INDEX); //含鄉鎮市區
+        String JA212 = removeMiddleChars(removeMiddleChars(mappingId, NEIGHBOR_START_INDEX, NEIGHBOR_END_INDEX), TOWN_START_INDEX, TOWN_END_INDEX); //未含鄉鎮市區
+        //退里(鄰、里挖掉，看比不比得到)
+        String JA311 = removeMiddleChars(mappingId, VILLAGE_START_INDEX, VILLAGE_END_INDEX); //含鄉鎮市區
+        String JA312 = removeMiddleChars(removeMiddleChars(mappingId, VILLAGE_START_INDEX, VILLAGE_END_INDEX), TOWN_START_INDEX, TOWN_END_INDEX); //未含鄉鎮市區
+        //退室(鄰、里、室挖掉，看比不比得到)
+        String JB111 = removeLastFiveChars(removeMiddleChars(mappingId, VILLAGE_START_INDEX, VILLAGE_END_INDEX)); //含鄉鎮市區
+        String JB112 = removeLastFiveChars(removeMiddleChars(removeMiddleChars(mappingId, VILLAGE_START_INDEX, VILLAGE_END_INDEX), TOWN_START_INDEX, TOWN_END_INDEX)); //未含鄉鎮市區
+        newMappingIdSet.forEach(id -> {
+            //最嚴謹
+            String newJA112NoCounty = removeMiddleChars(id, COUNTY_START_INDEX, COUNTY_END_INDEX); //最嚴謹比對(未含"縣市"，先歸在"JA112")
+            //最嚴謹，未含鄉鎮市區
+            String newJA112 = removeMiddleChars(id, TOWN_START_INDEX, TOWN_END_INDEX); //最嚴謹比對(未含鄉鎮市區)
+            //退鄰(鄰 挖掉，看比不比得到)
+            String newJA211 = removeMiddleChars(id, NEIGHBOR_START_INDEX, NEIGHBOR_END_INDEX); //含鄉鎮市區
+            String newJA212 = removeMiddleChars(removeMiddleChars(id, NEIGHBOR_START_INDEX, NEIGHBOR_END_INDEX), TOWN_START_INDEX, TOWN_END_INDEX);
+            //退里(鄰、里挖掉，看比不比得到)
+            String newJA311 = removeMiddleChars(id, VILLAGE_START_INDEX, VILLAGE_END_INDEX);
+            String newJA312 = removeMiddleChars(removeMiddleChars(id, VILLAGE_START_INDEX, VILLAGE_END_INDEX), TOWN_START_INDEX, TOWN_END_INDEX);
+            //退室(鄰、里、室挖掉，看比不比得到)
+            String newJB111 = removeLastFiveChars(removeMiddleChars(id, VILLAGE_START_INDEX, VILLAGE_END_INDEX));
+            String newJB112 = removeLastFiveChars(removeMiddleChars(removeMiddleChars(id, VILLAGE_START_INDEX, VILLAGE_END_INDEX), TOWN_START_INDEX, TOWN_END_INDEX));
+            if (JA112_NO_COUNTY.equals(newJA112NoCounty)) {
+                address.setJoinStep("JA112");
+                seqSet.add(findByKey("最嚴謹比對(未含\"縣市\"，先歸在\"JA112\")", id, null));
             }
-        }
-        //排除村里比對
-        if ("000".equals(address.getVillageCd())) {
-            if (!"000".equals(address.getTownCd())) {
-                address.setJoinStep("JA311"); //含有鄉鎮市區
+            else if (JA112.equals(newJA112)) {
+                address.setJoinStep("JA112");
+                seqSet.add(findByKey("最嚴謹，未含鄉鎮市區", id, null));
+            } else if (JA211.equals(newJA211)) {
+                address.setJoinStep("JA211");
+                seqSet.add(findByKey("退鄰，含鄉鎮市區", id, null));
+            } else if (JA212.equals(newJA212)) {
+                address.setJoinStep("JA212");
+                seqSet.add(findByKey("退鄰，不含鄉鎮市區", id, null));
+            } else if (JA311.equals(newJA311)) {
+                address.setJoinStep("JA311");
+                seqSet.add(findByKey("退里，含鄉鎮市區", id, null));
+            } else if (JA312.equals(newJA312)) {
+                address.setJoinStep("JA312");
+                seqSet.add(findByKey("退里，不含鄉鎮市區", id, null));
+            } else if (JB111.equals(newJB111)) {
+                address.setJoinStep("JB111");
+                seqSet.add(findByKey("退室，含鄉鎮市區", id, null));
+            } else if (JB112.equals(newJB112)) {
+                address.setJoinStep("JB112");
+                seqSet.add(findByKey("退室，不含鄉鎮市區", id, null));
             } else {
-                address.setJoinStep("JA312"); //未含鄉鎮市區
+                log.info("甚麼都沒有比到!!");
+                seqSet.add(findByKey("甚麼都沒有比到，不退，找找看", id, null));
             }
-        }
+        });
+        return seqSet;
     }
+
+    public static String removeMiddleChars(String str, int start, int end) {
+        if (start < 0 || end > str.length() || start >= end) {
+            // 如果起始所有小於0，結束索引大於字符串長度，或起始索引大於等於結束索引，則返回原始字串
+            return str;
+        }
+        String leftPart = str.substring(0, start);
+        String rightPart = str.substring(end);
+        return leftPart + rightPart;
+    }
+
+    public static String removeLastFiveChars(String str) {
+        if (str.length() <= 5) {
+            return "";
+        }
+        return str.substring(0, str.length() - 5);
+    }
+
+//    public static void main(String[] args) {
+//        log.info("aaaaa");
+//        Pattern regexPattern = Pattern.compile(String.valueOf("66000090\\d{13}023600660009500001200004\\d{14}00002"));
+//        Matcher matcher = regexPattern.matcher("6600009002101991055400236006600095000012000040000000001200000002");
+//        //有符合的mappingId，才是真正要拿來處理比對代碼的mappingId
+//        if (matcher.matches()) {
+//            log.info("ddddddd");
+//        }
+//    }
+
+
+        public static void main(String[] args) {
+            String originalString = "Hello World";
+            int start = 5; // 從索引3開始
+            int end = 6; // 到索引8結束
+
+            String result = removeMiddleChars(originalString, start, end);
+            System.out.println("原始字符串: " + originalString);
+            System.out.println("移除中間字符後: " + result);
+        }
+
 
 }
