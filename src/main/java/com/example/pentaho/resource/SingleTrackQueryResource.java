@@ -3,10 +3,8 @@ package com.example.pentaho.resource;
 
 import com.example.pentaho.component.IbdTbIhChangeDoorplateHis;
 import com.example.pentaho.component.SingleBatchQueryParams;
-import com.example.pentaho.component.User;
 import com.example.pentaho.exception.MoiException;
 import com.example.pentaho.service.SingleTrackQueryService;
-import com.example.pentaho.utils.UserContextUtils;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -28,6 +26,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/single-track-query")
+@Hidden
 public class SingleTrackQueryResource {
 
     private Logger logger = LoggerFactory.getLogger(SingleTrackQueryResource.class);
@@ -36,36 +35,6 @@ public class SingleTrackQueryResource {
     @Autowired
     private SingleTrackQueryService singleQueryTrackService;
 
-
-    /***
-     * 單筆查詢軌跡
-     */
-    @Operation(description = "單筆軌跡",
-            parameters = {@Parameter(in = ParameterIn.HEADER,
-                    name = "Authorization",
-                    description = "jwt token,body附帶 userInfo={\"Id\":1,\"orgId\":\"Admin\"}",
-                    required = true,
-                    schema = @Schema(type = "string"))
-            },
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "",
-                            content = @Content(schema = @Schema(implementation = IbdTbIhChangeDoorplateHis.class))),
-                    @ApiResponse(responseCode = "500", description = "",
-                            content = @Content(schema = @Schema(implementation = String.class), examples = @ExampleObject(value = ""))
-                    )})
-    @PostMapping("/query-track")
-    public ResponseEntity<List<IbdTbIhChangeDoorplateHis>> queryTrack(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "編碼",
-                    required = true,
-                    content = @Content(
-                            schema = @Schema(implementation = String.class),
-                            examples = @ExampleObject(value = "BSZ7538-0")
-                    )
-            )
-            @RequestBody String addressId) {
-        return new ResponseEntity<>(singleQueryTrackService.querySingleTrack(addressId), HttpStatus.OK);
-    }
 
 
     @Operation(description = "單筆軌跡批次",
@@ -80,7 +49,6 @@ public class SingleTrackQueryResource {
                     @ApiResponse(responseCode = "500", description = "檔案為空 或 非CSV檔"
                     )})
     @PostMapping("/query-batch-track")
-    @Hidden
     public void queryBatchTrack(@Parameter(
             description = "批次ID",
             required = true,
@@ -112,7 +80,7 @@ public class SingleTrackQueryResource {
         }
         logger.info("start processing");
         SingleBatchQueryParams singleBatchQueryParams = new SingleBatchQueryParams(Id, originalFileId, "0", "SYS_FAILED", formName + ".csv");
-        singleQueryTrackService.queryBatchTrack(file, singleBatchQueryParams);
+        singleQueryTrackService.queryBatchTrack(file.getInputStream(), singleBatchQueryParams);
     }
 
 
