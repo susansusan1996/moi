@@ -19,6 +19,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.example.pentaho.utils.NumberParser.replaceFWithFloor;
 import static com.example.pentaho.utils.NumberParser.replaceWithHalfWidthNumber;
 
 @Service
@@ -200,11 +201,11 @@ public class SingleQueryService {
             keyMap.put("ROADAREA:"+ roadAreaKey, "0000000"); //7
             keyMap.put("LANE:" + replaceWithHalfWidthNumber(lane), "0000");//巷 //4
             keyMap.put("ALLEY:" + alleyIdSnKey, "0000000");//弄 //7
-            keyMap.put("NUM_FLR_1:" + deleteBasementString(numFlr1), "000000"); //6
-            keyMap.put("NUM_FLR_2:" + deleteBasementString(numFlr2), "00000"); //5
-            keyMap.put("NUM_FLR_3:" + deleteBasementString(numFlr3), "0000"); //4
-            keyMap.put("NUM_FLR_4:" + deleteBasementString(numFlr4), "000"); //3
-            keyMap.put("NUM_FLR_5:" + deleteBasementString(numFlr5), "0"); //1
+            keyMap.put("NUM_FLR_1:" + removeBasementAndChangeFtoFloor(numFlr1,address,"NUM_FLR_1"), "000000"); //6
+            keyMap.put("NUM_FLR_2:" + removeBasementAndChangeFtoFloor(numFlr2,address,"NUM_FLR_2"), "00000"); //5
+            keyMap.put("NUM_FLR_3:" + removeBasementAndChangeFtoFloor(numFlr3,address,"NUM_FLR_3"), "0000"); //4
+            keyMap.put("NUM_FLR_4:" + removeBasementAndChangeFtoFloor(numFlr4,address,"NUM_FLR_4"), "000"); //3
+            keyMap.put("NUM_FLR_5:" + removeBasementAndChangeFtoFloor(numFlr5,address,"NUM_FLR_5"), "0"); //1
             keyMap.put("ROOM:" + replaceWithHalfWidthNumber(address.getRoom()), "00000"); //5
             //===========把存有各地址片段的map丟到redis找cd碼===========================
             Map<String, String> resultMap = findByKeys(keyMap);
@@ -221,11 +222,11 @@ public class SingleQueryService {
             address.setLaneCd(resultMap.get("LANE:" + replaceWithHalfWidthNumber(lane)));
             address.setAlleyIdSn(resultMap.get("ALLEY:" + alleyIdSnKey));
             String numTypeCd = "95";
-            address.setNumFlr1Id(resultMap.get("NUM_FLR_1:" + deleteBasementString(numFlr1)));
-            address.setNumFlr2Id(resultMap.get("NUM_FLR_2:" + deleteBasementString(numFlr2)));
-            address.setNumFlr3Id(resultMap.get("NUM_FLR_3:" + deleteBasementString(numFlr3)));
-            address.setNumFlr4Id(resultMap.get("NUM_FLR_4:" + deleteBasementString(numFlr4)));
-            address.setNumFlr5Id(resultMap.get("NUM_FLR_5:" + deleteBasementString(numFlr5)));
+            address.setNumFlr1Id(resultMap.get("NUM_FLR_1:" + removeBasementAndChangeFtoFloor(numFlr1,address,"NUM_FLR_1")));
+            address.setNumFlr2Id(resultMap.get("NUM_FLR_2:" + removeBasementAndChangeFtoFloor(numFlr2,address,"NUM_FLR_2")));
+            address.setNumFlr3Id(resultMap.get("NUM_FLR_3:" + removeBasementAndChangeFtoFloor(numFlr3,address,"NUM_FLR_3")));
+            address.setNumFlr4Id(resultMap.get("NUM_FLR_4:" + removeBasementAndChangeFtoFloor(numFlr4,address,"NUM_FLR_4")));
+            address.setNumFlr5Id(resultMap.get("NUM_FLR_5:" + removeBasementAndChangeFtoFloor(numFlr5,address,"NUM_FLR_5")));
             String basementStr = address.getBasementStr() == null ? "0" : address.getBasementStr();
             //===========處理numFlrPos===========================
             String numFlrPos = getNumFlrPos(address);
@@ -300,10 +301,18 @@ public class SingleQueryService {
         }
         return "000";
     }
-
-    public String deleteBasementString(String rawString) {
+    //把為了識別是basement的字眼拿掉、將F轉換成樓
+    public String removeBasementAndChangeFtoFloor(String rawString, Address address, String flrType) {
         if (rawString != null) {
-            return replaceWithHalfWidthNumber(rawString).replace("basement:", "");
+            String result = replaceFWithFloor(replaceWithHalfWidthNumber(rawString).replace("basement:", ""));
+            switch (flrType) {
+                case "NUM_FLR_1" -> address.setNumFlr1(result);
+                case "NUM_FLR_2" -> address.setNumFlr2(result);
+                case "NUM_FLR_3" -> address.setNumFlr3(result);
+                case "NUM_FLR_4" -> address.setNumFlr4(result);
+                case "NUM_FLR_5" -> address.setNumFlr5(result);
+            }
+            return result;
         }
         return "";
     }
@@ -333,7 +342,7 @@ public class SingleQueryService {
         } else {
             return "0"; //如果沒有該片段地址，就補0
         }
-        return "x";
+        return "0";
     }
 
 

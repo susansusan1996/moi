@@ -39,12 +39,12 @@ public class AddressParser {
     private final String LANE = "(?<lane>.+巷)?";
     private final String ALLEY = "(?<alley>" + ALL_CHAR + "+弄" + DYNAMIC_ALLEY_PART + ")?";
     private final String SUBALLEY = "(?<subAlley>" + ALL_CHAR + "+[衖衕橫])?";
-    private final String NUMFLR1 = "(?<numFlr1>" + ALL_CHAR + "+[號樓之區棟]|" + BASEMENT_PATTERN + ")?";
-    private final String NUMFLR2 = "(?<numFlr2>之" + ALL_CHAR + "+(?!.*樓)|" + ALL_CHAR + "+[號樓之區棟]|" + BASEMENT_PATTERN + "|" + ALL_CHAR + "+(?!室))?";
-    private final String NUMFLR3 = "(?<numFlr3>之" + ALL_CHAR + "+(?!.*樓)|" + ALL_CHAR + "+[號樓之區棟]|" + BASEMENT_PATTERN + "|" + ALL_CHAR + "+(?!室))?";
-    private final String NUMFLR4 = "(?<numFlr4>之" + ALL_CHAR + "+(?!.*樓)|" + ALL_CHAR + "+[號樓之區棟]|" + BASEMENT_PATTERN + "|" + ALL_CHAR + "+(?!室))?";
-    private final String NUMFLR5 = "(?<numFlr5>之" + ALL_CHAR + "+(?!.*樓)|" + BASEMENT_PATTERN + ")?";
-    private final String CONTINUOUS_NUM = "(?<continuousNum>之.*樓)?"; //之45一樓
+    private final String NUMFLR1 = "(?<numFlr1>" + ALL_CHAR + "+[號Ff樓之區棟]|" + BASEMENT_PATTERN + ")?";
+    private final String NUMFLR2 = "(?<numFlr2>之" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + ALL_CHAR+"+[FｆＦf]|"+ ALL_CHAR + "+[號樓FｆＦf之區棟]|" + BASEMENT_PATTERN + "|" + ALL_CHAR + "+(?!室))?";
+    private final String NUMFLR3 = "(?<numFlr3>之" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + ALL_CHAR+"+[FｆＦf]|"+ ALL_CHAR + "+[號樓FｆＦf之區棟]|" + BASEMENT_PATTERN + "|" + ALL_CHAR + "+(?!室))?";
+    private final String NUMFLR4 = "(?<numFlr4>之" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + ALL_CHAR+"+[FｆＦf]|"+ ALL_CHAR + "+[號樓FｆＦf之區棟]|" + BASEMENT_PATTERN + "|" + ALL_CHAR + "+(?!室))?";
+    private final String NUMFLR5 = "(?<numFlr5>之" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + BASEMENT_PATTERN + ")?";
+    private final String CONTINUOUS_NUM = "(?<continuousNum>之.*[樓FｆＦf])?"; //之45一樓
     private final String ROOM = "(?<room>" + ALL_CHAR + "+室)?";
     private final String BASEMENTSTR = "(?<basementStr>地下.*層|地下|地下室|底層|屋頂|頂樓|屋頂突出物|屋頂樓|頂層)?";
     private final String ADDRREMAINS = "(?<addrRemains>.+)?";
@@ -114,10 +114,10 @@ public class AddressParser {
 //        List<String> areaList = aliasList.stream().filter(aliasDTO -> aliasDTO.getTypeName().equals("AREA")).map(AliasDTO::getAlias).toList();
         List<String> townList = aliasList.stream()
                 .filter(aliasDTO -> aliasDTO.getTypeName().equals("TOWN"))
-                .map(aliasDTO -> aliasDTO.getAlias() + "(?!.*路)")
+                .map(aliasDTO -> aliasDTO.getAlias() + "(?!.*[里段街道路巷弄號樓之區棟])")
                 .toList();
         List<String> villageList = aliasList.stream().filter(aliasDTO -> aliasDTO.getTypeName().equals("VILLAGE"))
-                .map(aliasDTO -> aliasDTO.getTypeName() + "(?!.*路)")
+                .map(aliasDTO -> aliasDTO.getTypeName() + "(?!.*[里段街道路巷弄號樓之區棟])")
                 .toList();
         String newCounty = String.format(COUNTY , String.join("|",countyList));
         String newTown = String.format(TOWN , String.join("|",townList));

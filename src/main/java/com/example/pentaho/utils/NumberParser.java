@@ -114,4 +114,14 @@ public class NumberParser {
         }
         return "";
     }
+
+    //將F轉換成樓
+    public static String replaceFWithFloor(String input) {
+        if (input.endsWith("F") || input.endsWith("ｆ") || input.endsWith("Ｆ") || input.endsWith("f")) {
+            String result =  input.substring(0, input.length() - 1) + "樓";
+            return result;
+        }else{
+            return input;
+        }
+    }
 }
