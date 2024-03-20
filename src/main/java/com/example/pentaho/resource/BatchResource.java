@@ -30,10 +30,14 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+
+import static io.lettuce.core.internal.Futures.await;
 
 @RestController
 @RequestMapping("/api/batchForm")
@@ -153,7 +157,8 @@ public class BatchResource {
         if(formName.startsWith("BC")){
             CompletableFuture.runAsync(() -> {
                 try {
-                    queryBatchTrackAsync(Id, originalFileId, formName, file);
+//                  Thread.sleep(10000); //可以測試是否同步
+                    queryBatchTrackAsync(Id, originalFileId, formName, file.getInputStream());
                 } catch (IOException e) {
                     log.info("e:{}",e.toString());
                     throw new MoiException("異動批次查詢失敗");
@@ -177,14 +182,14 @@ public class BatchResource {
 
 
     @Async
-    public CompletableFuture<Void> queryBatchTrackAsync(String Id, String originalFileId, String formName, MultipartFile file) throws IOException {
-        queryBatchTrack(Id, originalFileId, formName, file);
+    public CompletableFuture<Void> queryBatchTrackAsync(String Id, String originalFileId, String formName, InputStream inputStream) throws IOException {
+        queryBatchTrack(Id, originalFileId, formName, inputStream);
         return CompletableFuture.completedFuture(null);
     }
 
-    public void queryBatchTrack(String Id,String originalFileId,String formName, MultipartFile file) throws IOException {
+    public void queryBatchTrack(String Id,String originalFileId,String formName, InputStream inputStream) throws IOException {
         SingleBatchQueryParams singleBatchQueryParams = new SingleBatchQueryParams(Id, originalFileId, "0", "SYS_FAILED", formName);
-        singleQueryTrackService.queryBatchTrack(file, singleBatchQueryParams);
+        singleQueryTrackService.queryBatchTrack(inputStream, singleBatchQueryParams);
     }
 
     @PostMapping(path = "/finished")

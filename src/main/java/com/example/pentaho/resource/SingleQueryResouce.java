@@ -3,6 +3,7 @@ package com.example.pentaho.resource;
 import com.example.pentaho.component.*;
 import com.example.pentaho.exception.MoiException;
 import com.example.pentaho.service.SingleQueryService;
+import com.example.pentaho.service.SingleTrackQueryService;
 import com.example.pentaho.utils.AddressParser;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +36,11 @@ public class SingleQueryResouce {
 
     @Autowired
     private SingleQueryService singleQueryService;
+
+
+    @Autowired
+    private SingleTrackQueryService singleQueryTrackService;
+
 
     @Autowired
     private AddressParser addressParser;
@@ -86,6 +93,36 @@ public class SingleQueryResouce {
 //            log.info("無法解析地址:{}", e.getMessage());
 //            return ResponseEntity.ok("無法解析地址");
 //        }
+    }
+
+    /***
+     * 單筆查詢軌跡
+     */
+    @Operation(description = "單筆軌跡",
+            parameters = {@Parameter(in = ParameterIn.HEADER,
+                    name = "Authorization",
+                    description = "jwt token,body附帶 userInfo={\"Id\":1,\"orgId\":\"Admin\"}",
+                    required = true,
+                    schema = @Schema(type = "string"))
+            },
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "",
+                            content = @Content(schema = @Schema(implementation = IbdTbIhChangeDoorplateHis.class))),
+                    @ApiResponse(responseCode = "500", description = "",
+                            content = @Content(schema = @Schema(implementation = String.class), examples = @ExampleObject(value = ""))
+                    )})
+    @PostMapping("/query-track")
+    public ResponseEntity<List<IbdTbIhChangeDoorplateHis>> queryTrack(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "編碼",
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = String.class),
+                            examples = @ExampleObject(value = "BSZ7538-0")
+                    )
+            )
+            @RequestBody String addressId) {
+        return new ResponseEntity<>(singleQueryTrackService.querySingleTrack(addressId), HttpStatus.OK);
     }
 
 

@@ -8,15 +8,12 @@ import com.example.pentaho.component.SingleBatchQueryParams;
 import com.example.pentaho.exception.MoiException;
 import com.example.pentaho.repository.IbdTbIhChangeDoorplateHisRepository;
 import com.opencsv.CSVReader;
-import com.opencsv.CSVWriter;
-import com.opencsv.ResultSetHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.lang.reflect.Method;
@@ -57,11 +54,11 @@ public class SingleTrackQueryService {
 
 
     @Async
-    public void queryBatchTrack(MultipartFile file, SingleBatchQueryParams singleBatchQueryParams) throws IOException {
+    public void queryBatchTrack(InputStream inputStream, SingleBatchQueryParams singleBatchQueryParams) throws IOException {
         log.info("singleBatchQueryParams:{}",singleBatchQueryParams.toString());
         try {
             String filePath="";
-            String fileContent = new String(file.getBytes(), StandardCharsets.UTF_8);
+            String fileContent = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
             int lastIndexOf = fileContent.lastIndexOf("\n");
             fileContent = fileContent.substring(0,lastIndexOf-1);
             log.info("fileContent:{}",fileContent);
@@ -85,7 +82,7 @@ public class SingleTrackQueryService {
             singleBatchQueryParams.setProcessedCounts(String.valueOf(newLines.length));
 
             /**取得乾淨的地址編碼，記得略過表頭**/
-            List<String> addressIdList = CSVReader(file);
+            List<String> addressIdList = CSVReader(inputStream);
             if(addressIdList == null){
                 singleBatchQueryParams.setStatus("SYS_FAILED");
                 postSingleBatchQueryRequest("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
@@ -108,10 +105,10 @@ public class SingleTrackQueryService {
     }
 
 
-    public List<String> CSVReader(MultipartFile file) throws IOException {
+    public List<String> CSVReader(InputStream inputStream) throws IOException {
         try{
             HashSet<String> addressIdSet = new HashSet<String>();
-            CSVReader csvReader = new CSVReader(new InputStreamReader(file.getInputStream()));
+            CSVReader csvReader = new CSVReader(new InputStreamReader(inputStream));
             String[] line;
             /**跳過表頭**/
             csvReader.readNext();
