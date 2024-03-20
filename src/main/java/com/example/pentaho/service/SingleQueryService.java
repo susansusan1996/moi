@@ -383,8 +383,8 @@ public class SingleQueryService {
     //處理: 之45一樓 (像這種連續的號碼，就會被歸在這裡)
     public void formatCoutinuousFlrNum(String input, Address address) {
         if (StringUtils.isNotNullOrEmpty(input)) {
-            String firstPattern = "(?<coutinuousNum1>之[\\d\\uFF10-\\uFF19]+)(?<coutinuousNum2>\\D+樓)?"; //之45一樓
-            String secondPattern = "(?<coutinuousNum1>之\\D+)(?<coutinuousNum2>[\\d\\uFF10-\\uFF19]+樓)?"; //之四五1樓
+            String firstPattern = "(?<coutinuousNum1>[之-]+[\\d\\uFF10-\\uFF19]+)(?<coutinuousNum2>\\D+[樓FｆＦf])?"; //之45一樓
+            String secondPattern = "(?<coutinuousNum1>[之-]\\D+)(?<coutinuousNum2>[\\d\\uFF10-\\uFF19]+[樓FｆＦf])?"; //之四五1樓
             Matcher matcherFirst = Pattern.compile(firstPattern).matcher(input);
             Matcher matcherSecond = Pattern.compile(secondPattern).matcher(input);
             String[] flrArray = {address.getNumFlr1(), address.getNumFlr2(), address.getNumFlr3(), address.getNumFlr4(), address.getNumFlr5()};
