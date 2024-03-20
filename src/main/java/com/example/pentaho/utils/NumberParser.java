@@ -115,13 +115,13 @@ public class NumberParser {
         return "";
     }
 
-    //將F轉換成樓
-    public static String replaceFWithFloor(String input) {
+    //將F轉換成樓，-轉成之
+    public static String convertFToFloorAndHyphenToZhi(String input) {
         if (input.endsWith("F") || input.endsWith("ｆ") || input.endsWith("Ｆ") || input.endsWith("f")) {
             String result =  input.substring(0, input.length() - 1) + "樓";
-            return result;
+            return result.replace("-","之");
         }else{
-            return input;
+            return input.replace("-","之");
         }
     }
 }

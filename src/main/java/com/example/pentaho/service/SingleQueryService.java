@@ -19,8 +19,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.example.pentaho.utils.NumberParser.replaceFWithFloor;
-import static com.example.pentaho.utils.NumberParser.replaceWithHalfWidthNumber;
+import static com.example.pentaho.utils.NumberParser.*;
 
 @Service
 public class SingleQueryService {
@@ -301,10 +300,12 @@ public class SingleQueryService {
         }
         return "000";
     }
-    //把為了識別是basement的字眼拿掉、將F轉換成樓
+    //把為了識別是basement的字眼拿掉、將F轉換成樓、-轉成之
     public String removeBasementAndChangeFtoFloor(String rawString, Address address, String flrType) {
         if (rawString != null) {
-            String result = replaceFWithFloor(replaceWithHalfWidthNumber(rawString).replace("basement:", ""));
+            //convertFToFloorAndHyphenToZhi: 將F轉換成樓，-轉成之
+            //replaceWithHalfWidthNumber: 把basement拿掉
+            String result = convertFToFloorAndHyphenToZhi(replaceWithHalfWidthNumber(rawString).replace("basement:", ""));
             switch (flrType) {
                 case "NUM_FLR_1" -> address.setNumFlr1(result);
                 case "NUM_FLR_2" -> address.setNumFlr2(result);
