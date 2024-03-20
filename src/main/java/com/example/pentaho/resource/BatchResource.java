@@ -32,6 +32,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.CompletableFuture;
@@ -153,10 +154,13 @@ public class BatchResource {
         /**依據申請單號進行分流**/
         /****************************************異動軌跡批次****************************************/
         if(formName.startsWith("BC")){
+            String fileContent = new String(file.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            log.info("fileContent:{}",fileContent);
+
             CompletableFuture.runAsync(() -> {
                 try {
 //                  Thread.sleep(10000); //可以測試是否同步
-                    queryBatchTrackAsync(Id, originalFileId, formName, file.getInputStream());
+                    queryBatchTrackAsync(Id, originalFileId, formName,fileContent);
                 } catch (IOException e) {
                     log.info("e:{}",e.toString());
                     throw new MoiException("異動批次查詢失敗");
@@ -180,14 +184,14 @@ public class BatchResource {
 
 
     @Async
-    public CompletableFuture<Void> queryBatchTrackAsync(String Id, String originalFileId, String formName, InputStream inputStream) throws IOException {
-        queryBatchTrack(Id, originalFileId, formName, inputStream);
+    public CompletableFuture<Void> queryBatchTrackAsync(String Id, String originalFileId, String formName, String fileContent) throws IOException {
+        queryBatchTrack(Id, originalFileId, formName, fileContent);
         return CompletableFuture.completedFuture(null);
     }
 
-    public void queryBatchTrack(String Id,String originalFileId,String formName, InputStream inputStream) throws IOException {
+    public void queryBatchTrack(String Id,String originalFileId,String formName,String fileContent) throws IOException {
         SingleBatchQueryParams singleBatchQueryParams = new SingleBatchQueryParams(Id, originalFileId, "0", "SYS_FAILED", formName);
-        singleQueryTrackService.queryBatchTrack(inputStream, singleBatchQueryParams);
+        singleQueryTrackService.queryBatchTrack(fileContent, singleBatchQueryParams);
     }
 
     @PostMapping(path = "/finished")

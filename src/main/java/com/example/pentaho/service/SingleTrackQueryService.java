@@ -52,12 +52,12 @@ public class SingleTrackQueryService {
 
 
     @Async
-    public void queryBatchTrack(InputStream inputStream, SingleBatchQueryParams singleBatchQueryParams) throws IOException {
+    public void queryBatchTrack(String fileContent, SingleBatchQueryParams singleBatchQueryParams) throws IOException {
         log.info("singleBatchQueryParams:{}",singleBatchQueryParams.toString());
         try {
+            log.info("start processing ,fileContent:{}",fileContent);
+
             String filePath="";
-            String fileContent = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-            log.info("fileContent:{}",fileContent);
 
             String[] lines = fileContent.split("\n");
             if(lines.length <= 0){

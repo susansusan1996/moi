@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @RestController
@@ -80,7 +81,8 @@ public class SingleTrackQueryResource {
         }
         logger.info("start processing");
         SingleBatchQueryParams singleBatchQueryParams = new SingleBatchQueryParams(Id, originalFileId, "0", "SYS_FAILED", formName + ".csv");
-        singleQueryTrackService.queryBatchTrack(file.getInputStream(), singleBatchQueryParams);
+        String fileContent = new String(file.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+        singleQueryTrackService.queryBatchTrack(fileContent, singleBatchQueryParams);
     }
 
 
