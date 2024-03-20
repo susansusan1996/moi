@@ -9,9 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 @Repository
 public class IbdTbIhChangeDoorplateHisRepositoryImpl implements IbdTbIhChangeDoorplateHisRepository {
@@ -23,7 +21,6 @@ public class IbdTbIhChangeDoorplateHisRepositoryImpl implements IbdTbIhChangeDoo
     public IbdTbIhChangeDoorplateHisRepositoryImpl(SqlExecutor sqlExecutor) {
         this.sqlExecutor = sqlExecutor;
     }
-
 
     /**
      * @param addressId
@@ -60,25 +57,31 @@ public class IbdTbIhChangeDoorplateHisRepositoryImpl implements IbdTbIhChangeDoo
 
     @Override
     public List<IbdTbIhChangeDoorplateHis> findByAddressIdList(List<String> addressIdList) {
-        Query query = Query.builder()
-                .append("select \n" +
-                        "HIS.ADDRESS_ID, \n" +
-                        "HIS.HIS_ADR, \n" +
-                        "STD.WGS_X, \n" +
-                        "STD.WGS_Y, \n" +
-                        "HIS.UPDATE_DT, \n" +
-                        "UPD.UPDATE_TYPE \n" +
-                        "from addr_ods.IBD_TB_IH_CHANGE_DOORPLATE_HIS HIS \n" +
-                        "left join addr_ods.IBD_TB_ADDR_CODE_OF_DATA_STANDARD STD \n" +
-                        "on HIS.ADDRESS_ID = STD.ADDRESS_ID \n" +
-                        "left join addr_stage.IBD_TB_HISTORY_CODE_UPDATE UPD \n" +
-                        "on HIS.UPDATE_CODE = UPD.UPDATE_CODE \n" +
-                        "where 1 = 1 \n")
-                .appendWhen((addressIdList.size()>0),"and HIS.ADDRESS_ID in (:addressIdList)",addressIdList)
-                .build();
+        try {
+            Query query = Query.builder()
+                    .append("select \n" +
+                            "HIS.ADDRESS_ID, \n" +
+                            "HIS.HIS_ADR, \n" +
+                            "STD.WGS_X, \n" +
+                            "STD.WGS_Y, \n" +
+                            "HIS.UPDATE_DT, \n" +
+                            "UPD.UPDATE_TYPE \n" +
+                            "from addr_ods.IBD_TB_IH_CHANGE_DOORPLATE_HIS HIS \n" +
+                            "left join addr_ods.IBD_TB_ADDR_CODE_OF_DATA_STANDARD STD \n" +
+                            "on HIS.ADDRESS_ID = STD.ADDRESS_ID \n" +
+                            "left join addr_stage.IBD_TB_HISTORY_CODE_UPDATE UPD \n" +
+                            "on HIS.UPDATE_CODE = UPD.UPDATE_CODE \n" +
+                            "where 1 = 1 \n")
+                    .appendWhen((addressIdList != null || !addressIdList.isEmpty()), "and HIS.ADDRESS_ID in (:addressIdList)", addressIdList)
+                    .build();
 
-        log.info("query:{}",query.toString());
-        log.info("params:{}",query.getParameters());
-        return sqlExecutor.queryForList(query,IbdTbIhChangeDoorplateHis.class);
+            String queryString = query.getString();
+            log.info("queryString:{}", queryString);
+            log.info("params:{}", query.getParameters());
+            return sqlExecutor.queryForList(query, IbdTbIhChangeDoorplateHis.class);
+        }catch (Exception e){
+            log.info("e:{}",e);
+            return null;
+        }
     }
 }

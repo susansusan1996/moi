@@ -35,9 +35,7 @@ import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
-import static io.lettuce.core.internal.Futures.await;
 
 @RestController
 @RequestMapping("/api/batchForm")

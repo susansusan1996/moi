@@ -7,7 +7,9 @@ import com.example.pentaho.component.IbdTbIhChangeDoorplateHis;
 import com.example.pentaho.component.SingleBatchQueryParams;
 import com.example.pentaho.exception.MoiException;
 import com.example.pentaho.repository.IbdTbIhChangeDoorplateHisRepository;
+import com.example.pentaho.utils.StringUtils;
 import com.opencsv.CSVReader;
+import io.netty.util.internal.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,11 +24,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.ResultSet;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -59,41 +57,66 @@ public class SingleTrackQueryService {
         try {
             String filePath="";
             String fileContent = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-            int lastIndexOf = fileContent.lastIndexOf("\n");
-            fileContent = fileContent.substring(0,lastIndexOf-1);
             log.info("fileContent:{}",fileContent);
+
             String[] lines = fileContent.split("\n");
             if(lines.length <= 0){
                 /**檔案沒有內容*/
+                log.info("Empty File");
                 singleBatchQueryParams.setStatus("REJECT");
                 postSingleBatchQueryRequest("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
                 return;
             }
+
             String[] newLines = Arrays.copyOfRange(lines, 1, lines.length);
             log.info("newLines:{}",newLines.length);
-            if(newLines.length <= 0){
+            if(newLines.length <= 0 ){
                 /**去掉表頭檔案沒有內容*/
+                log.info("Empty File Content");
                 singleBatchQueryParams.setStatus("REJECT");
                 postSingleBatchQueryRequest("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
                 return;
             }
 
-            /**表頭除外之筆數，中有空白也算**/
-            singleBatchQueryParams.setProcessedCounts(String.valueOf(newLines.length));
 
             /**取得乾淨的地址編碼，記得略過表頭**/
-            List<String> addressIdList = CSVReader(inputStream);
+            List<String> addressIdList = getAddressList(newLines);
+            /**Exception**/
             if(addressIdList == null){
+                log.info("Reading Exception");
+                singleBatchQueryParams.setStatus("SYS_FAILED");
+                postSingleBatchQueryRequest("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
+                return;
+            }
+            /**Empty List**/
+            if(addressIdList.isEmpty()){
+                log.info("Empty Address");
+                singleBatchQueryParams.setStatus("REJECT");
+                postSingleBatchQueryRequest("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
+                return;
+            }
+
+
+            List<IbdTbIhChangeDoorplateHis> IbdTbIhChangeDoorplateHisList = ibdTbIhChangeDoorplateHisRepository.findByAddressIdList(addressIdList);
+            if(IbdTbIhChangeDoorplateHisList==null){
+                log.info("Reading Exception");
                 singleBatchQueryParams.setStatus("SYS_FAILED");
                 postSingleBatchQueryRequest("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
                 return;
             }
 
-            List<IbdTbIhChangeDoorplateHis> IbdTbIhChangeDoorplateHisList = ibdTbIhChangeDoorplateHisRepository.findByAddressIdList(addressIdList);
+            if(IbdTbIhChangeDoorplateHisList.isEmpty()){
+                log.info("no data was found");
+                singleBatchQueryParams.setStatus("DONE");
+                postSingleBatchQueryRequest("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
+                return;
+            }
+
             boolean geneZip = getCSVFileZip(IbdTbIhChangeDoorplateHisList, singleBatchQueryParams.getFile());
             if(geneZip){
-                /**成功建檔，沒有筆數給空檔嗎?*/
+                /**成功建檔*/
                 singleBatchQueryParams.setStatus("DONE");
+                singleBatchQueryParams.setProcessedCounts(String.valueOf(newLines.length));
                 filePath = directories.getLocalTempDir()+singleBatchQueryParams.getFile()+".zip";
             }
             postSingleBatchQueryRequest("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
@@ -104,6 +127,24 @@ public class SingleTrackQueryService {
         }
     }
 
+    public List<String> getAddressList(String[] rowsWithoutColNm){
+        try{
+            HashSet<String> addressIdSet = new HashSet<String>();
+            for(String row :rowsWithoutColNm){
+                if(StringUtils.isNotNullOrEmpty(row.trim())){
+                        String[] split = row.split(",");
+                        if(!StringUtil.isNullOrEmpty(split[0])){
+                            addressIdSet.add(split[0].trim());
+                    }
+                }
+            }
+            return addressIdSet.stream().toList();
+        }catch (Exception e){
+            log.info("e:{}",e.toString());
+            return null;
+        }
+
+    }
 
     public List<String> CSVReader(InputStream inputStream) throws IOException {
         try{
@@ -115,8 +156,11 @@ public class SingleTrackQueryService {
             while ((line = csvReader.readNext()) != null) {
                 /**跳過空行**/
                 if (!isNullOrEmpty(line)) {
-                    log.info("line:{}",line[0]);
-                    addressIdSet.add(line[0]);
+                    /**格式相符*/
+                    if(line.length == 1){
+                        log.info("line:{}",line[0]);
+                        addressIdSet.add(line[0]);
+                    }
                 }
             }
             return addressIdSet.stream().toList();
@@ -129,6 +173,7 @@ public class SingleTrackQueryService {
 
     /**判断陣列是否為空或元素都為空字串**/
     private boolean isNullOrEmpty(String[] array) {
+        log.info("array.length:{}",array.length);
         return array == null || Arrays.stream(array).allMatch(String::isEmpty);
     }
 
@@ -140,6 +185,12 @@ public class SingleTrackQueryService {
     }
 
 
+    /**
+     * generate CSV File
+     * @param IbdTbIhChangeDoorplateHisList
+     * @param fileName
+     * @return
+     */
     private boolean getCSVFileZip(List<IbdTbIhChangeDoorplateHis> IbdTbIhChangeDoorplateHisList,String fileName) {
         log.info("fileName:{}",fileName);
         StringBuilder newContent = new StringBuilder();
@@ -162,7 +213,13 @@ public class SingleTrackQueryService {
         }
     }
 
-        public boolean FileZipper(String sourceFilePath,String fileName) {
+    /**
+     * 壓縮檔案
+     * @param sourceFilePath
+     * @param fileName
+     * @return
+     */
+    public boolean FileZipper(String sourceFilePath,String fileName) {
             String zipFilePath = directories.getLocalTempDir()+ fileName +".zip";
             log.info("zipFilePath:{}",zipFilePath);
             try {
@@ -187,6 +244,14 @@ public class SingleTrackQueryService {
             }
         }
 
+    /**
+     * send Request
+     * @param action
+     * @param params
+     * @param filePath
+     * @return
+     * @throws IOException
+     */
     public int postSingleBatchQueryRequest(String action, Object params, String filePath) throws IOException {
         String targerUrl = apServerComponent.getTargetUrl() + action;
         log.info("targetUrl:{}",targerUrl);
@@ -216,21 +281,6 @@ public class SingleTrackQueryService {
 
         try (OutputStream out = con.getOutputStream();
              PrintWriter writer = new PrintWriter(new OutputStreamWriter(out, "UTF-8"), true)) {
-//            writer.append("--").append(boundary).append("\r\n");
-//            writer.append("Content-Disposition: form-data; name=\"id\"\r\n\r\n");
-//            writer.append(params.getBATCH_ID()).append("\r\n");
-
-//            writer.append("--").append(boundary).append("\r\n");
-//            writer.append("Content-Disposition: form-data; name=\"originalFileId\"\r\n\r\n");
-//            writer.append(params.getBATCHFORM_ORIGINAL_FILE_ID()).append("\r\n");
-
-//            writer.append("--").append(boundary).append("\r\n");
-//            writer.append("Content-Disposition: form-data; name=\"processedCounts\"\r\n\r\n");
-//            writer.append("0").append("\r\n");
-
-//            writer.append("--").append(boundary).append("\r\n");
-//            writer.append("Content-Disposition: form-data; name=\"status\"\r\n\r\n");
-//            writer.append(params.getStatus()).append("\r\n");
             String content = getContent(boundary, params);
             writer.append(content);
 
@@ -259,6 +309,12 @@ public class SingleTrackQueryService {
         return responseCode;
     }
 
+    /**
+     * getPostContent
+     * @param boundary
+     * @param params
+     * @return
+     */
     public String getContent(String boundary,Object params) {
         StringBuilder content = new StringBuilder();
         if (params != null) {
