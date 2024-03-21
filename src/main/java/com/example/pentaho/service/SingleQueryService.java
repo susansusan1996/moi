@@ -221,11 +221,11 @@ public class SingleQueryService {
             address.setLaneCd(resultMap.get("LANE:" + replaceWithHalfWidthNumber(lane)));
             address.setAlleyIdSn(resultMap.get("ALLEY:" + alleyIdSnKey));
             String numTypeCd = "95";
-            address.setNumFlr1Id(resultMap.get("NUM_FLR_1:" + removeBasementAndChangeFtoFloor(numFlr1,address,"NUM_FLR_1")));
-            address.setNumFlr2Id(resultMap.get("NUM_FLR_2:" + removeBasementAndChangeFtoFloor(numFlr2,address,"NUM_FLR_2")));
-            address.setNumFlr3Id(resultMap.get("NUM_FLR_3:" + removeBasementAndChangeFtoFloor(numFlr3,address,"NUM_FLR_3")));
-            address.setNumFlr4Id(resultMap.get("NUM_FLR_4:" + removeBasementAndChangeFtoFloor(numFlr4,address,"NUM_FLR_4")));
-            address.setNumFlr5Id(resultMap.get("NUM_FLR_5:" + removeBasementAndChangeFtoFloor(numFlr5,address,"NUM_FLR_5")));
+            address.setNumFlr1Id(setNumFlrId(resultMap, address, "NUM_FLR_1"));
+            address.setNumFlr2Id(setNumFlrId(resultMap, address, "NUM_FLR_2"));
+            address.setNumFlr3Id(setNumFlrId(resultMap, address, "NUM_FLR_3"));
+            address.setNumFlr4Id(setNumFlrId(resultMap, address, "NUM_FLR_4"));
+            address.setNumFlr5Id(setNumFlrId(resultMap, address, "NUM_FLR_5"));
             String basementStr = address.getBasementStr() == null ? "0" : address.getBasementStr();
             //===========處理numFlrPos===========================
             String numFlrPos = getNumFlrPos(address);
@@ -383,8 +383,8 @@ public class SingleQueryService {
     //處理: 之45一樓 (像這種連續的號碼，就會被歸在這裡)
     public void formatCoutinuousFlrNum(String input, Address address) {
         if (StringUtils.isNotNullOrEmpty(input)) {
-            String firstPattern = "(?<coutinuousNum1>[之-]+[\\d\\uFF10-\\uFF19]+)(?<coutinuousNum2>\\D+[樓FｆＦf])?"; //之45一樓
-            String secondPattern = "(?<coutinuousNum1>[之-]\\D+)(?<coutinuousNum2>[\\d\\uFF10-\\uFF19]+[樓FｆＦf])?"; //之四五1樓
+            String firstPattern = "(?<coutinuousNum1>[之-]+[\\d\\uFF10-\\uFF19]+)(?<coutinuousNum2>\\D+[之樓FｆＦf])?"; //之45一樓
+            String secondPattern = "(?<coutinuousNum1>[之-]\\D+)(?<coutinuousNum2>[\\d\\uFF10-\\uFF19]+[之樓FｆＦf])?"; //之四五1樓
             Matcher matcherFirst = Pattern.compile(firstPattern).matcher(input);
             Matcher matcherSecond = Pattern.compile(secondPattern).matcher(input);
             String[] flrArray = {address.getNumFlr1(), address.getNumFlr2(), address.getNumFlr3(), address.getNumFlr4(), address.getNumFlr5()};
@@ -527,6 +527,11 @@ public class SingleQueryService {
         //退室(鄰、里、室挖掉，看比不比得到)
         String JB111 = removeLastFiveChars(removeMiddleChars(mappingId, VILLAGE_START_INDEX, VILLAGE_END_INDEX)); //含鄉鎮市區
         String JB112 = removeLastFiveChars(removeMiddleChars(removeMiddleChars(mappingId, VILLAGE_START_INDEX, VILLAGE_END_INDEX), TOWN_START_INDEX, TOWN_END_INDEX)); //未含鄉鎮市區
+        //樓之之樓(鄰、里、室挖掉，含有鄉鎮市區)
+        String JB211 = exchangePosition(removeLastFiveChars(removeMiddleChars(mappingId, VILLAGE_START_INDEX, VILLAGE_END_INDEX))); //含鄉鎮市區
+        log.info("JB211:{}",JB211);
+        String JB212 = exchangePosition(removeLastFiveChars(removeMiddleChars(removeMiddleChars(mappingId, VILLAGE_START_INDEX, VILLAGE_END_INDEX), TOWN_START_INDEX, TOWN_END_INDEX))); //未含鄉鎮市區
+
         newMappingIdSet.forEach(id -> {
             //最嚴謹
             String newJA112NoCounty = removeMiddleChars(id, COUNTY_START_INDEX, COUNTY_END_INDEX); //最嚴謹比對(未含"縣市"，先歸在"JA112")
@@ -541,6 +546,12 @@ public class SingleQueryService {
             //退室(鄰、里、室挖掉，看比不比得到)
             String newJB111 = removeLastFiveChars(removeMiddleChars(id, VILLAGE_START_INDEX, VILLAGE_END_INDEX));
             String newJB112 = removeLastFiveChars(removeMiddleChars(removeMiddleChars(id, VILLAGE_START_INDEX, VILLAGE_END_INDEX), TOWN_START_INDEX, TOWN_END_INDEX));
+
+            //樓之之樓(鄰、里、室挖掉，含有鄉鎮市區)
+            String newJB211 = removeLastFiveChars(removeMiddleChars(id, VILLAGE_START_INDEX, VILLAGE_END_INDEX));
+            log.info("newJB211:{}",newJB211);
+            String newJB212 = removeLastFiveChars(removeMiddleChars(removeMiddleChars(id, VILLAGE_START_INDEX, VILLAGE_END_INDEX), TOWN_START_INDEX, TOWN_END_INDEX));
+
             if (JA112_NO_COUNTY.equals(newJA112NoCounty)) {
                 address.setJoinStep("JA112");
                 seqSet.add(findByKey("最嚴謹比對(未含\"縣市\"，先歸在\"JA112\")", id, null));
@@ -566,7 +577,15 @@ public class SingleQueryService {
             } else if (JB112.equals(newJB112)) {
                 address.setJoinStep("JB112");
                 seqSet.add(findByKey("退室，不含鄉鎮市區", id, null));
-            } else {
+            }
+            else if (JB211.equals(newJB211)) {
+                address.setJoinStep("JB211");
+                seqSet.add(findByKey("樓之之樓，含鄉鎮市區", id, null));
+            }
+            else if (JB212.equals(newJB212)) {
+                address.setJoinStep("JB212");
+                seqSet.add(findByKey("樓之之樓，不含鄉鎮市區", id, null));
+            }else {
                 log.info("甚麼都沒有比到!!");
                 seqSet.add(findByKey("甚麼都沒有比到，不退，找找看", id, null));
             }
@@ -591,26 +610,75 @@ public class SingleQueryService {
         return str.substring(0, str.length() - 5);
     }
 
-//    public static void main(String[] args) {
-//        log.info("aaaaa");
-//        Pattern regexPattern = Pattern.compile(String.valueOf("66000090\\d{13}023600660009500001200004\\d{14}00002"));
-//        Matcher matcher = regexPattern.matcher("6600009002101991055400236006600095000012000040000000001200000002");
-//        //有符合的mappingId，才是真正要拿來處理比對代碼的mappingId
-//        if (matcher.matches()) {
-//            log.info("ddddddd");
-//        }
-//    }
-
-
-        public static void main(String[] args) {
-            String originalString = "Hello World";
-            int start = 5; // 從索引3開始
-            int end = 6; // 到索引8結束
-
-            String result = removeMiddleChars(originalString, start, end);
-            System.out.println("原始字符串: " + originalString);
-            System.out.println("移除中間字符後: " + result);
+    //如果position欄位有 32xxx、x32xx、xx32x、xxx32 (32連在一起的)，就把position改成23xxx、x23xx、xx23x、xxx23
+    public static String exchangePosition(String str) {
+        log.info("原始 position mapping:{}" ,str);
+        StringBuilder result = new StringBuilder();
+        if (str.length() < 5) {
+            return str;
         }
+        // 將前面的字符直接添加進結果中
+        result.append(str, 0, str.length() - 5);
+        // 檢查最後五個字是否有32
+        String lastFive = str.substring(str.length() - 5);
+        if (lastFive.contains("32")) {
+            // 如果存在，則進行交換
+            int index = lastFive.indexOf("32");
+            result.append(lastFive.substring(0, index)); // 將 32 前面的字符添加到结果中
+            result.append("24"); // replace成" 七樓 之１"
+            result.append(lastFive.substring(index + 2)); // 將 32 后面的字符添加到结果中
+        } else {
+            // 如果不存在，直接把最後五個字元添加回字串
+            result.append(lastFive);
+        }
+        log.info("交換後的 position mapping:{}" ,result.toString());
+        return result.toString();
+    }
 
+
+    //找numFlrId，如果redis裡找不到的，就直接看能不能抽取數字部分，前面補0
+    public String setNumFlrId(Map<String, String> resultMap, Address address, String flrType) {
+        String result = resultMap.get(flrType + ":" + removeBasementAndChangeFtoFloor(getNumFlrByType(address, flrType), address, flrType));
+        String numericPart = replaceWithHalfWidthNumber(extractNumericPart(getNumFlrByType(address, flrType)));
+        switch (flrType) {
+            case "NUM_FLR_1":
+                return getResult(result, "000000", numericPart);
+            case "NUM_FLR_2":
+                return getResult(result, "00000", numericPart);
+            case "NUM_FLR_3":
+                return getResult(result, "0000", numericPart);
+            case "NUM_FLR_4":
+                return getResult(result, "000", numericPart);
+            case "NUM_FLR_5":
+                return getResult(result, "0", numericPart);
+            default:
+                return result;
+        }
+    }
+
+    private String getNumFlrByType(Address address, String flrType) {
+        switch (flrType) {
+            case "NUM_FLR_1":
+                return address.getNumFlr1();
+            case "NUM_FLR_2":
+                return address.getNumFlr2();
+            case "NUM_FLR_3":
+                return address.getNumFlr3();
+            case "NUM_FLR_4":
+                return address.getNumFlr4();
+            case "NUM_FLR_5":
+                return address.getNumFlr5();
+            default:
+                return "";
+        }
+    }
+
+    private String getResult(String result, String comparisonValue, String numericPart) {
+        if (comparisonValue.equals(result)) {
+            return padNumber(comparisonValue, numericPart);
+        } else {
+            return result;
+        }
+    }
 
 }

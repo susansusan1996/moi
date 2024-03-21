@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.example.pentaho.utils.NumberParser.extractNumericPart;
 import static com.example.pentaho.utils.NumberParser.replaceWithChineseNumber;
 
 @Component
@@ -67,16 +68,7 @@ public class AddressParser {
         return null;
     }
 
-    private static String extractNumericPart(String input) {
-        if (StringUtils.isNotNullOrEmpty(input)) {
-            Pattern numericPattern = Pattern.compile("[一二三四五六七八九十百千0-9]+");
-            Matcher numericMatcher = numericPattern.matcher(input);
-            if (numericMatcher.find()) {
-                return numericMatcher.group();
-            }
-        }
-        return "";
-    }
+
 
     private String findArea(String input, Address address) {
         if (!input.isEmpty()) {
