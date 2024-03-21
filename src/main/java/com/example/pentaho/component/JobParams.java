@@ -75,7 +75,7 @@ public class JobParams implements Serializable {
      * sys_sucess,sys_failed read file
      */
     @JsonProperty("processedCounts")
-    private Integer processedCounts;
+    private Integer PROCESSED_COUNTS;
 
     /**
      *
@@ -176,12 +176,12 @@ public class JobParams implements Serializable {
         this.BATCHFORM_ORIGINAL_FILE_ID = BATCHFORM_ORIGINAL_FILE_ID;
     }
 
-    public Integer getProcessedCounts() {
-        return processedCounts;
+    public Integer getPROCESSED_COUNTS() {
+        return PROCESSED_COUNTS;
     }
 
-    public void setProcessedCounts(Integer processedCounts) {
-        this.processedCounts = processedCounts;
+    public void setPROCESSED_COUNTS(Integer PROCESSED_COUNTS) {
+        this.PROCESSED_COUNTS = PROCESSED_COUNTS;
     }
 
     public String getStatus() {
@@ -203,7 +203,7 @@ public class JobParams implements Serializable {
                 ", USER_ID='" + USER_ID + '\'' +
                 ", DATA_SRC='" + DATA_SRC + '\'' +
                 ", DATA_DATE='" + DATA_DATE + '\'' +
-                ", processedCounts=" + processedCounts +
+                ", processedCounts=" + PROCESSED_COUNTS +
                 ", status='" + STATUS + '\'' +
                 '}';
     }

@@ -408,7 +408,7 @@ public class JobService {
     public String sftpUploadAndExecuteTrans(MultipartFile file,JobParams jobParams) throws IOException {
         /**檔案筆數**/
         /**給Pentaho Server & Shengsen 的參數*/
-        jobParams.setProcessedCounts(CSVReader(file));
+        jobParams.setPROCESSED_COUNTS(CSVReader(file));
 
         /**以 formName(申請單號) 為檔名**/
         String fileName = getFileName(file.getOriginalFilename(), jobParams.getFORM_NAME());
