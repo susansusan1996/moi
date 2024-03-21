@@ -11,7 +11,9 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -191,6 +193,26 @@ public class AddressParser {
         return elements;
     }
 
+    //如果還是有連在一起的地址，要切開EX.1之10樓，要切成"1之"，"10樓"
+    public Map<String, Object> parseNumFlrAgain(String rawNumFLR,String flrType) {
+        Map<String, Object> map = new HashMap();
+        final String numFlrFirst = "(?<numFlrFirst>[之-]+" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + ALL_CHAR + "+[FｆＦf]|" + ALL_CHAR + "+[號樓FｆＦf之-區棟]|" + BASEMENT_PATTERN + "|" + ALL_CHAR + "+(?!室))?";
+        final String numFlrSecond = "(?<numFlrSecond>[之-]+" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + ALL_CHAR + "+[FｆＦf]|" + ALL_CHAR + "+[號樓FｆＦf之-區棟]|" + BASEMENT_PATTERN + "|" + ALL_CHAR + ")?";
+        Pattern regex = Pattern.compile(numFlrFirst + numFlrSecond);
+        Matcher matcher = regex.matcher(rawNumFLR);
+        map.put("isParsed", false);
+        if (matcher.matches() && matcher.group("numFlrSecond") != null) {
+            String first = matcher.group("numFlrFirst");
+            String second = matcher.group("numFlrSecond");
+            log.info("再切割一次，numFlrFirst==>{}",first);
+            log.info("再切割一次，numFlrSecond==>{}",second);
+            map.put("isParsed", true);
+            map.put("numFlrFirst", first);
+            map.put("numFlrSecond", second);
+            map.put("flrType", flrType);
+        }
+        return map;
+    }
 
 }
 

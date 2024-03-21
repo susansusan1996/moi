@@ -200,11 +200,11 @@ public class SingleQueryService {
             keyMap.put("ROADAREA:"+ roadAreaKey, "0000000"); //7
             keyMap.put("LANE:" + replaceWithHalfWidthNumber(lane), "0000");//巷 //4
             keyMap.put("ALLEY:" + alleyIdSnKey, "0000000");//弄 //7
-            keyMap.put("NUM_FLR_1:" + removeBasementAndChangeFtoFloor(numFlr1,address,"NUM_FLR_1"), "000000"); //6
-            keyMap.put("NUM_FLR_2:" + removeBasementAndChangeFtoFloor(numFlr2,address,"NUM_FLR_2"), "00000"); //5
-            keyMap.put("NUM_FLR_3:" + removeBasementAndChangeFtoFloor(numFlr3,address,"NUM_FLR_3"), "0000"); //4
-            keyMap.put("NUM_FLR_4:" + removeBasementAndChangeFtoFloor(numFlr4,address,"NUM_FLR_4"), "000"); //3
-            keyMap.put("NUM_FLR_5:" + removeBasementAndChangeFtoFloor(numFlr5,address,"NUM_FLR_5"), "0"); //1
+            keyMap.put("NUM_FLR_1:" + removeBasementAndChangeFtoFloor(numFlr1,address,"NUM_FLR_1").getNumFlr1(), "000000"); //6
+            keyMap.put("NUM_FLR_2:" + removeBasementAndChangeFtoFloor(numFlr2,address,"NUM_FLR_2").getNumFlr2(), "00000"); //5
+            keyMap.put("NUM_FLR_3:" + removeBasementAndChangeFtoFloor(numFlr3,address,"NUM_FLR_3").getNumFlr3(), "0000"); //4
+            keyMap.put("NUM_FLR_4:" + removeBasementAndChangeFtoFloor(numFlr4,address,"NUM_FLR_4").getNumFlr4(), "000"); //3
+            keyMap.put("NUM_FLR_5:" + removeBasementAndChangeFtoFloor(numFlr5,address,"NUM_FLR_5").getNumFlr5(), "0"); //1
             keyMap.put("ROOM:" + replaceWithHalfWidthNumber(address.getRoom()), "00000"); //5
             //===========把存有各地址片段的map丟到redis找cd碼===========================
             Map<String, String> resultMap = findByKeys(keyMap);
@@ -301,21 +301,66 @@ public class SingleQueryService {
         return "000";
     }
     //把為了識別是basement的字眼拿掉、將F轉換成樓、-轉成之
-    public String removeBasementAndChangeFtoFloor(String rawString, Address address, String flrType) {
+    public Address removeBasementAndChangeFtoFloor(String rawString, Address address, String flrType) {
         if (rawString != null) {
             //convertFToFloorAndHyphenToZhi: 將F轉換成樓，-轉成之
             //replaceWithHalfWidthNumber: 把basement拿掉
             String result = convertFToFloorAndHyphenToZhi(replaceWithHalfWidthNumber(rawString).replace("basement:", ""));
+            Map<String, Object> resultMap = addressParser.parseNumFlrAgain(result,flrType);
+            Boolean isParsed = (Boolean) resultMap.get("isParsed"); //是否有再裁切過一次FLRNUM (有些地址還是會有1之10樓連再一起的狀況)
+            String numFlrFirst = (String) resultMap.get("numFlrFirst");
+            String numFlrSecond = (String) resultMap.get("numFlrSecond");
+            String type = (String) resultMap.get("flrType");
             switch (flrType) {
-                case "NUM_FLR_1" -> address.setNumFlr1(result);
-                case "NUM_FLR_2" -> address.setNumFlr2(result);
-                case "NUM_FLR_3" -> address.setNumFlr3(result);
-                case "NUM_FLR_4" -> address.setNumFlr4(result);
-                case "NUM_FLR_5" -> address.setNumFlr5(result);
+                case "NUM_FLR_1":
+                    if(isParsed && type!=null && type.equals(flrType)){
+                        log.info("NUM_FLR_1，xxxxxxxx");
+                        address.setNumFlr1(numFlrFirst);
+                        address.setNumFlr2(numFlrSecond);
+                    } else if (StringUtils.isNotNullOrEmpty(result)) {
+                        address.setNumFlr1(result);
+                    }
+                    break;
+                case "NUM_FLR_2":
+                    if(isParsed && type!=null && type.equals(flrType)){
+                        log.info("NUM_FLR_2，xxxxxxxx");
+                        address.setNumFlr2(numFlrFirst);
+                        address.setNumFlr3(numFlrSecond);
+                    } else if (StringUtils.isNotNullOrEmpty(result)) {
+                        address.setNumFlr2(result);
+                    }
+                    break;
+                case "NUM_FLR_3":
+                    if(isParsed && type!=null && type.equals(flrType)){
+                        log.info("NUM_FLR_3，xxxxxxxx");
+                        address.setNumFlr3(numFlrFirst);
+                        address.setNumFlr4(numFlrSecond);
+                    } else if (StringUtils.isNotNullOrEmpty(result)) {
+                        address.setNumFlr3(result);
+                    }
+                    break;
+                case "NUM_FLR_4":
+                    if(isParsed && type!=null && type.equals(flrType)){
+                        log.info("NUM_FLR_4，xxxxxxxx");
+                        address.setNumFlr4(numFlrFirst);
+                        address.setNumFlr5(numFlrSecond);
+                    } else if (StringUtils.isNotNullOrEmpty(result)) {
+                        address.setNumFlr4(result);
+                    }
+                    break;
+                case "NUM_FLR_5":
+                    if(isParsed && type!=null && type.equals(flrType)){
+                        log.info("NUM_FLR_5，xxxxxxxx");
+                        address.setNumFlr5(numFlrFirst);
+                        address.setAddrRemains(numFlrSecond);
+                    } else if (StringUtils.isNotNullOrEmpty(result)) {
+                        address.setNumFlr5(result);
+                    }
+                    break;
             }
-            return result;
+            return address;
         }
-        return "";
+        return address;
     }
 
 
@@ -515,6 +560,7 @@ public class SingleQueryService {
 
     private Set<String> findJoinStep(Address address, Set<String> newMappingIdSet, Set<String> seqSet) {
         String mappingId = address.getMappingId();
+        String seq = "";
         //最嚴謹
         String JA112_NO_COUNTY = removeMiddleChars(mappingId, COUNTY_START_INDEX, COUNTY_END_INDEX); //未含"縣市"，先歸在"JA112"
         String JA112 = removeMiddleChars(mappingId, TOWN_START_INDEX, TOWN_END_INDEX); //未含鄉鎮市區
@@ -532,7 +578,7 @@ public class SingleQueryService {
         log.info("JB211:{}",JB211);
         String JB212 = exchangePosition(removeLastFiveChars(removeMiddleChars(removeMiddleChars(mappingId, VILLAGE_START_INDEX, VILLAGE_END_INDEX), TOWN_START_INDEX, TOWN_END_INDEX))); //未含鄉鎮市區
 
-        newMappingIdSet.forEach(id -> {
+        for (String id : newMappingIdSet) {
             //最嚴謹
             String newJA112NoCounty = removeMiddleChars(id, COUNTY_START_INDEX, COUNTY_END_INDEX); //最嚴謹比對(未含"縣市"，先歸在"JA112")
             //最嚴謹，未含鄉鎮市區
@@ -549,47 +595,66 @@ public class SingleQueryService {
 
             //樓之之樓(鄰、里、室挖掉，含有鄉鎮市區)
             String newJB211 = removeLastFiveChars(removeMiddleChars(id, VILLAGE_START_INDEX, VILLAGE_END_INDEX));
-            log.info("newJB211:{}",newJB211);
+            log.info("newJB211:{}", newJB211);
             String newJB212 = removeLastFiveChars(removeMiddleChars(removeMiddleChars(id, VILLAGE_START_INDEX, VILLAGE_END_INDEX), TOWN_START_INDEX, TOWN_END_INDEX));
-
             if (JA112_NO_COUNTY.equals(newJA112NoCounty)) {
                 address.setJoinStep("JA112");
                 seqSet.add(findByKey("最嚴謹比對(未含\"縣市\"，先歸在\"JA112\")", id, null));
-            }
-            else if (JA112.equals(newJA112)) {
+                break;
+            } else if (JA112.equals(newJA112)) {
                 address.setJoinStep("JA112");
-                seqSet.add(findByKey("最嚴謹，未含鄉鎮市區", id, null));
+                seq = findByKey("最嚴謹，未含鄉鎮市區", id, null);
+                seqSet.add(seq);
+                break;
             } else if (JA211.equals(newJA211)) {
                 address.setJoinStep("JA211");
-                seqSet.add(findByKey("退鄰，含鄉鎮市區", id, null));
+                seq = findByKey("退鄰，含鄉鎮市區", id, null);
+                seqSet.add(seq);
+                break;
             } else if (JA212.equals(newJA212)) {
                 address.setJoinStep("JA212");
-                seqSet.add(findByKey("退鄰，不含鄉鎮市區", id, null));
+                seq = findByKey("退鄰，不含鄉鎮市區", id, null);
+                seqSet.add(seq);
+                break;
             } else if (JA311.equals(newJA311)) {
                 address.setJoinStep("JA311");
-                seqSet.add(findByKey("退里，含鄉鎮市區", id, null));
+                seq = findByKey("退里，含鄉鎮市區", id, null);
+                seqSet.add(seq);
+                break;
             } else if (JA312.equals(newJA312)) {
                 address.setJoinStep("JA312");
-                seqSet.add(findByKey("退里，不含鄉鎮市區", id, null));
+                seq = findByKey("退里，不含鄉鎮市區", id, null);
+                seqSet.add(seq);
+                break;
             } else if (JB111.equals(newJB111)) {
                 address.setJoinStep("JB111");
-                seqSet.add(findByKey("退室，含鄉鎮市區", id, null));
+                seq = findByKey("退室，含鄉鎮市區", id, null);
+                seqSet.add(seq);
+                break;
             } else if (JB112.equals(newJB112)) {
                 address.setJoinStep("JB112");
-                seqSet.add(findByKey("退室，不含鄉鎮市區", id, null));
-            }
-            else if (JB211.equals(newJB211)) {
+                seq = findByKey("退室，不含鄉鎮市區", id, null);
+                seqSet.add(seq);
+                break;
+            } else if (JB211.equals(newJB211)) {
                 address.setJoinStep("JB211");
-                seqSet.add(findByKey("樓之之樓，含鄉鎮市區", id, null));
-            }
-            else if (JB212.equals(newJB212)) {
+                seq =  findByKey("樓之之樓，含鄉鎮市區", id, null);
+                seqSet.add(seq);
+                break;
+            } else if (JB212.equals(newJB212)) {
                 address.setJoinStep("JB212");
-                seqSet.add(findByKey("樓之之樓，不含鄉鎮市區", id, null));
-            }else {
+                seq = findByKey("樓之之樓，不含鄉鎮市區", id, null);
+                seqSet.add(seq);
+                break;
+            } else {
                 log.info("甚麼都沒有比到!!");
                 seqSet.add(findByKey("甚麼都沒有比到，不退，找找看", id, null));
             }
-        });
+        }
+        if (address.getJoinStep() != null) {
+            seqSet.clear();
+            seqSet.add(seq);//留有比對到JOIN_STEP的那筆即可
+        }
         return seqSet;
     }
 
@@ -638,18 +703,24 @@ public class SingleQueryService {
 
     //找numFlrId，如果redis裡找不到的，就直接看能不能抽取數字部分，前面補0
     public String setNumFlrId(Map<String, String> resultMap, Address address, String flrType) {
-        String result = resultMap.get(flrType + ":" + removeBasementAndChangeFtoFloor(getNumFlrByType(address, flrType), address, flrType));
+        String result = "";
+        address = removeBasementAndChangeFtoFloor(getNumFlrByType(address, flrType), address, flrType);
         String numericPart = replaceWithHalfWidthNumber(extractNumericPart(getNumFlrByType(address, flrType)));
         switch (flrType) {
             case "NUM_FLR_1":
+                result = resultMap.get(flrType + ":" + address.getNumFlr1());
                 return getResult(result, "000000", numericPart);
             case "NUM_FLR_2":
+                result = resultMap.get(flrType + ":" + address.getNumFlr2());
                 return getResult(result, "00000", numericPart);
             case "NUM_FLR_3":
+                result = resultMap.get(flrType + ":" + address.getNumFlr3());
                 return getResult(result, "0000", numericPart);
             case "NUM_FLR_4":
+                result = resultMap.get(flrType + ":" + address.getNumFlr4());
                 return getResult(result, "000", numericPart);
             case "NUM_FLR_5":
+                result = resultMap.get(flrType + ":" + address.getNumFlr5());
                 return getResult(result, "0", numericPart);
             default:
                 return result;
