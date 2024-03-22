@@ -183,7 +183,7 @@ public class FileOutputService {
             sftpUtils.disconnect();
         }
         jobParams.setStatus(status);
-        BatchFormParams batchFormParams = new BatchFormParams(jobParams.getBATCH_ID(), jobParams.getBATCHFORM_ORIGINAL_FILE_ID(), String.valueOf(jobParams.getProcessedCounts()), jobParams.getStatus(), null);
+        BatchFormParams batchFormParams = new BatchFormParams(jobParams.getBATCH_ID(), jobParams.getBATCHFORM_ORIGINAL_FILE_ID(), String.valueOf(jobParams.getPROCESSED_COUNTS()), jobParams.getStatus(), null);
         log.info("給聖森更新狀態的參數:{}",batchFormParams );
         postBatchFormRequest("/batchForm/systemUpdate",batchFormParams,sourceFilePath);
 //      postBatchFormRequest(sourceFilePath,"/batchForm/systemUpdate",jobParams);
@@ -371,8 +371,8 @@ public class FileOutputService {
         if (jobParams.getBATCHFORM_ORIGINAL_FILE_ID() != null) {
             url.append("originalFileId").append("=").append(jobParams.getBATCHFORM_ORIGINAL_FILE_ID()).append(sperator);
         }
-        if (jobParams.getProcessedCounts() != null) {
-            url.append("processedCounts").append("=").append(jobParams.getProcessedCounts()).append(sperator);
+        if (jobParams.getPROCESSED_COUNTS() != null) {
+            url.append("processedCounts").append("=").append(jobParams.getPROCESSED_COUNTS()).append(sperator);
         }
         if (jobParams.getStatus() != null) {
             url.append("status").append("=").append(jobParams.getStatus()).append(sperator);
