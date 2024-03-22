@@ -44,14 +44,14 @@ public class JoinStepService {
                 "JB111", "JB112",
                 "JB211", "JB212"};
         for (String step : steps) {
-            String[][] indices = getIndices(step);
-            String id = removeChars(mappingId, indices, step);
+            String[][] index = getIndex(step);
+            String id = removeChars(mappingId, index, step);
             String newId;
             if (address.getJoinStep() != null) {
                 break;
             }
             for (String newMappingId : newMappingIdSet) {
-                newId = removeChars(newMappingId, indices, step);
+                newId = removeChars(newMappingId, index, step);
                 if (id.equals(newId)) {
                     if ("JA112_NO_COUNTY".equals(step)) {
                         step = "JA112";
@@ -85,7 +85,7 @@ public class JoinStepService {
         return seqSet;
     }
 
-    private String[][] getIndices(String step) {
+    private String[][] getIndex(String step) {
         return switch (step) {
             case "JA112_NO_COUNTY" ->
                     new String[][]{{Integer.toString(COUNTY_START_INDEX), Integer.toString(COUNTY_END_INDEX)}};
