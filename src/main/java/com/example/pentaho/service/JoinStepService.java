@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.LinkedHashMap;
 import java.util.Set;
 
 @Service
@@ -42,16 +43,26 @@ public class JoinStepService {
                 "JA211", "JA212",
                 "JA311", "JA312",
                 "JB111", "JB112",
-                "JB211", "JB212"};
+                "JB211", "JB212",
+                "JB311", "JB312" //退樓後之
+        };
         for (String step : steps) {
             String[][] index = getIndex(step);
-            String id = removeChars(mappingId, index, step);
+            String id = removeChars(mappingId, index, step, address, null);
+            if (step.startsWith("JB3")) {
+                log.info("oldId:{}", id);
+            }
             String newId;
             if (address.getJoinStep() != null) {
                 break;
             }
             for (String newMappingId : newMappingIdSet) {
-                newId = removeChars(newMappingId, index, step);
+                //先把newMappingId，切割好裝進map裡
+                LinkedHashMap<String, String> newMappingIdMap = mapNewMappingId(newMappingId);
+                newId = removeChars(newMappingId, index, step, address, newMappingIdMap);
+                if (step.startsWith("JB3")) {
+                    log.info("newId:{}", newId);
+                }
                 if (id.equals(newId)) {
                     if ("JA112_NO_COUNTY".equals(step)) {
                         step = "JA112";
@@ -60,8 +71,8 @@ public class JoinStepService {
                     if (StringUtils.isNotNullOrEmpty(seq)) {
                         seqSet.add(seq);
                         address.setJoinStep(step);
-                        //除了退室，有可能造成多址，其他有找到seq就可以停止loop
-                        if (!"JB111".equals(step) && !"JB112".equals(step)) {
+                        //除了"退室"、"退樓後之"，有可能造成多址，其他有找到seq就可以停止loop
+                        if (!step.startsWith("JB1") && !step.startsWith("JB3")) {
                             break;
                         }
                     }
@@ -104,11 +115,17 @@ public class JoinStepService {
                             {Integer.toString(VILLAGE_START_INDEX), Integer.toString(VILLAGE_END_INDEX)},
                             {Integer.toString(TOWN_START_INDEX), Integer.toString(TOWN_END_INDEX)}
                     };
-            case "JB111", "JB211" ->  //JB111: 退室(鄰、里、室挖掉)，含鄉鎮市區 //JB211: 樓之之樓，含鄉鎮市區
+            case "JB111", "JB211", "JB311" ->  //含鄉鎮市區
+                //JB111: 退室(鄰、里、室挖掉)
+                //JB211: 樓之之樓
+                //JB311: 退樓後之(鄰、里、室挖掉，position之的部分改0，mappingId之的部分也改0)
                     new String[][]{
                             {Integer.toString(VILLAGE_START_INDEX), Integer.toString(VILLAGE_END_INDEX)},
                             {Integer.toString(LAST_FIVE_INDEX)}};
-            case "JB112", "JB212" ->  //JB112: 退室(鄰、里、室挖掉)，不含鄉鎮市區 //JB212: 樓之之樓，不含鄉鎮市區
+            case "JB112", "JB212", "JB312" ->   //不含鄉鎮市區
+                //JB112: 退室(鄰、里、室挖掉)，不含鄉鎮市區
+                //JB212: 樓之之樓，不含鄉鎮市區
+                //JB312: 退樓後之(鄰、里、室挖掉，不含鄉鎮市區，position之的部分改0，mappingId之的部分也改0)
                     new String[][]{
                             {Integer.toString(VILLAGE_START_INDEX), Integer.toString(VILLAGE_END_INDEX)},
                             {Integer.toString(TOWN_START_INDEX), Integer.toString(TOWN_END_INDEX)},
@@ -118,8 +135,24 @@ public class JoinStepService {
     }
 
 
-    private String removeChars(String str, String[][] indices, String type) {
+    private String removeChars(String str, String[][] indices, String type, Address address, LinkedHashMap<String, String> newMappingIdMap) {
+        String result = "";
         StringBuilder builder = new StringBuilder(str);
+        //如果是"退樓後之"，要把之相對應的mapping欄位改成0
+        //先找最後一個"之"落在NUM_FLR_1~NUM_FLR_5的哪個欄位
+        if (type.startsWith("JB3") && newMappingIdMap != null) {
+            String flrColumnNamePrefix = "NUM_FLR_";
+            int flrNum = findBiggestFlr(address);
+            String oldNumSegment = address.getMappingIdMap().get(flrColumnNamePrefix + flrNum);
+            String newNumSegment = "0".repeat(oldNumSegment.length());
+            newMappingIdMap.put(flrColumnNamePrefix + flrNum, newNumSegment);
+            //再把newMappingIdMap的value都拼接起來
+            StringBuilder stringBuilder = new StringBuilder();
+            for (String value : newMappingIdMap.values()) {
+                stringBuilder.append(value);
+            }
+            builder = stringBuilder;
+        }
         for (String[] index : indices) {
             if (index.length == 2) {
                 builder.delete(Integer.parseInt(index[0]), Integer.parseInt(index[1]));
@@ -131,7 +164,8 @@ public class JoinStepService {
         if (type.startsWith("JB")) {
             builder = new StringBuilder(exchangePosition(builder.toString(), type));
         }
-        return builder.toString();
+        result = builder.toString();
+        return result;
     }
 
 
@@ -161,6 +195,35 @@ public class JoinStepService {
         String lastFive = positionMapping.substring(positionMapping.length() - 5);
         String updatedLastFive = lastFive.replace(oldPosition, newPosition);
         return positionMapping.replaceAll("\\d{5}$", updatedLastFive);
+    }
+
+    //找FLR欄位，到到哪個欄位都還有值
+    private int findBiggestFlr(Address address) {
+        String[] flrArray = {address.getNumFlr1(), address.getNumFlr2(), address.getNumFlr3(), address.getNumFlr4(), address.getNumFlr5()};
+        for (int i = 0; i < flrArray.length; i++) {
+            if (StringUtils.isNullOrEmpty(flrArray[i])) {
+                log.info("目前最大到:{}", "表示NUM_FLR_" + (i + 1));
+                return (i + 1);
+            }
+        }
+        //如果都沒有比對到，表示NUM_FLR_1 ~ NUM_FLR_5 都有值
+        return 5;
+    }
+
+
+    private LinkedHashMap<String, String> mapNewMappingId(String inputString) {
+        LinkedHashMap<String, String> mappingIdMap = new LinkedHashMap<>();
+        int[] mappingCount = {5, 3, 3, 3, 7, 4, 7, 2, 6, 5, 4, 3, 1, 1, 5, 5};
+        String[] segmentName = {"COUNTY", "TOWN", "VILLAGE", "NEIGHBOR", "ROADAREA", "LANE", "ALLEY", "NUMTYPE", "NUM_FLR_1", "NUM_FLR_2", "NUM_FLR_3", "NUM_FLR_4", "NUM_FLR_5", "BASEMENT", "NUMFLRPOS", "ROOM"};
+        String[] segmentedStrings = new String[mappingCount.length];
+        int startIndex = 0;
+        for (int i = 0; i < mappingCount.length; i++) {
+            int count = mappingCount[i];
+            segmentedStrings[i] = inputString.substring(startIndex, startIndex + count);
+            startIndex += count;
+            mappingIdMap.put(segmentName[i], segmentedStrings[i]);
+        }
+        return mappingIdMap;
     }
 
 }

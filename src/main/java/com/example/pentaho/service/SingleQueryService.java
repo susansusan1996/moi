@@ -150,6 +150,24 @@ public class SingleQueryService {
                             address.getNumFlr5Id(), basementStr, numFlrPos, address.getRoomIdSn())
                     .map(Object::toString)
                     .collect(Collectors.toList());
+            LinkedHashMap<String, String> mappingIdMap = new LinkedHashMap<>();
+            mappingIdMap.put("COUNTY",address.getCountyCd());
+            mappingIdMap.put("TOWN",address.getTownCd());
+            mappingIdMap.put("VILLAGE", address.getVillageCd());//里
+            mappingIdMap.put("NEIGHBOR", address.getNeighborCd());
+            mappingIdMap.put("ROADAREA",address.getRoadAreaSn());
+            mappingIdMap.put("LANE" , address.getLaneCd());//巷
+            mappingIdMap.put("ALLEY" , address.getAlleyIdSn());//弄
+            mappingIdMap.put("NUMTYPE",numTypeCd );
+            mappingIdMap.put("NUM_FLR_1",address.getNumFlr1Id());
+            mappingIdMap.put("NUM_FLR_2",address.getNumFlr2Id());
+            mappingIdMap.put("NUM_FLR_3",address.getNumFlr3Id());
+            mappingIdMap.put("NUM_FLR_4",address.getNumFlr4Id());
+            mappingIdMap.put("NUM_FLR_5",address.getNumFlr5Id());
+            mappingIdMap.put("BASEMENT",basementStr);
+            mappingIdMap.put("NUMFLRPOS",numFlrPos);
+            mappingIdMap.put("ROOM",address.getRoomIdSn());
+            address.setMappingIdMap(mappingIdMap);
             address.setMappingIdList(mappingIdList);
             address.setMappingId(String.join("", mappingIdList));
             address.setSegmentExistNumber(insertCharAtIndex(resultMap.getOrDefault("segmentExistNumber", ""), address));

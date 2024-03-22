@@ -1,6 +1,7 @@
 package com.example.pentaho.component;
 
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -44,7 +45,8 @@ public class Address {
     private String originalAddress;
     private String mappingId; //64碼
     private String segmentExistNumber; //紀錄user是否有輸入每個地址片段，有:1，沒有:0
-    private List<String> mappingIdList;
+    private LinkedHashMap<String, String> mappingIdMap;
+    private List<String> MappingIdList;
     private String joinStep; //地址比對代碼
     private Set<String> seqSet;
 
@@ -257,13 +259,6 @@ public class Address {
         this.segmentExistNumber = segmentExistNumber;
     }
 
-    public List<String> getMappingIdList() {
-        return mappingIdList;
-    }
-
-    public void setMappingIdList(List<String> mappingIdList) {
-        this.mappingIdList = mappingIdList;
-    }
 
     public String getJoinStep() {
         return joinStep;
@@ -385,6 +380,22 @@ public class Address {
         this.seqSet = seqSet;
     }
 
+    public LinkedHashMap<String, String> getMappingIdMap() {
+        return mappingIdMap;
+    }
+
+    public void setMappingIdMap(LinkedHashMap<String, String> mappingIdMap) {
+        this.mappingIdMap = mappingIdMap;
+    }
+
+    public List<String> getMappingIdList() {
+        return MappingIdList;
+    }
+
+    public void setMappingIdList(List<String> mappingIdList) {
+        MappingIdList = mappingIdList;
+    }
+
     @Override
     public String toString() {
         return "Address{" +
@@ -426,7 +437,7 @@ public class Address {
                 ", originalAddress='" + originalAddress + '\'' +
                 ", mappingId='" + mappingId + '\'' +
                 ", segmentExistNumber='" + segmentExistNumber + '\'' +
-                ", mappingIdList=" + mappingIdList +
+                ", mappingIdMap=" + mappingIdMap +
                 ", joinStep='" + joinStep + '\'' +
                 ", seqSet=" + seqSet +
                 '}';
