@@ -630,12 +630,10 @@ public class SingleQueryService {
                 address.setJoinStep("JB111");
                 seq = findByKey("退室，含鄉鎮市區", id, null);
                 seqSet.add(seq);
-                break;
             } else if (JB112.equals(newJB112)) {
                 address.setJoinStep("JB112");
                 seq = findByKey("退室，不含鄉鎮市區", id, null);
                 seqSet.add(seq);
-                break;
             } else if (JB211.equals(newJB211)) {
                 address.setJoinStep("JB211");
                 seq =  findByKey("樓之之樓，含鄉鎮市區", id, null);
@@ -652,8 +650,16 @@ public class SingleQueryService {
             }
         }
         if (address.getJoinStep() != null) {
-            seqSet.clear();
-            seqSet.add(seq);//留有比對到JOIN_STEP的那筆即可
+            // 退室多址(退室，且不只一筆)
+            if (seqSet.size() > 1) {
+                if ("JB111".equals(address.getJoinStep()) || "JB112".equals(address.getJoinStep())) {
+                    address.setJoinStep("JD311");
+                }
+                else {
+                    seqSet.clear();
+                    seqSet.add(seq);//留有比對到JOIN_STEP的那筆即可
+                }
+            }
         }
         return seqSet;
     }
