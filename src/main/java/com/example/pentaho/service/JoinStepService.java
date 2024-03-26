@@ -48,6 +48,7 @@ public class JoinStepService {
         };
         for (String step : steps) {
             String[][] index = getIndex(step);
+            //取代為0
             String id = removeChars(mappingId, index, step, address, null);
             if (step.startsWith("JB3")) {
                 log.info("oldId:{}", id);
@@ -154,15 +155,8 @@ public class JoinStepService {
         if (type.startsWith("JB3") && newMappingIdMap != null) {
             String flrColumnNamePrefix = "NUM_FLR_";
             int flrNum = findBiggestFlr(address);
-            String oldNumSegment = address.getMappingIdMap().get(flrColumnNamePrefix + flrNum);
-            String newNumSegment = "0".repeat(oldNumSegment.length());
-            newMappingIdMap.put(flrColumnNamePrefix + flrNum, newNumSegment);
-            //再把newMappingIdMap的value都拼接起來
-            StringBuilder stringBuilder = new StringBuilder();
-            for (String value : newMappingIdMap.values()) {
-                stringBuilder.append(value);
-            }
-            builder = stringBuilder;
+            String columnName = flrColumnNamePrefix + flrNum;
+            builder = new StringBuilder(assembleMap(address, columnName));
         }
         for (String[] index : indices) {
             if (index.length == 2) {
@@ -235,6 +229,23 @@ public class JoinStepService {
             mappingIdMap.put(segmentName[i], segmentedStrings[i]);
         }
         return mappingIdMap;
+    }
+
+    //組裝裝mappingId的map
+    private String assembleMap(Address address, String columnName) {
+        log.info("拼接mappingId，columnName:{}", columnName);
+        LinkedHashMap<String, String> newMappingIdMap = address.getMappingIdMap();
+        //舊的地址代碼
+        String oldNumSegment = address.getMappingIdMap().get(columnName);
+        //補0的地址代碼
+        String newNumSegment = "0".repeat(oldNumSegment.length());
+        newMappingIdMap.put(columnName, newNumSegment);
+        //再把newMappingIdMap的value都拼接起來
+        StringBuilder stringBuilder = new StringBuilder();
+        for (String value : newMappingIdMap.values()) {
+            stringBuilder.append(value);
+        }
+        return stringBuilder.toString();
     }
 
 }
