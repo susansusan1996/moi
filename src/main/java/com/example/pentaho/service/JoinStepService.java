@@ -29,8 +29,8 @@ public class JoinStepService {
 
     private static final String OLD_POSITION_1 = "32";
     private static final String NEW_POSITION_1 = "24";
-    private static final String OLD_POSITION_2 = "24";
-    private static final String NEW_POSITION_2 = "20";
+    private static final String OLD_POSITION_2 = "14";
+    private static final String NEW_POSITION_2 = "31";
     static String[] steps = {
             "JA112_NO_COUNTY", //未含"縣市"，先歸在"JA112"
             "JA112", //最嚴謹，未含鄉鎮市區
@@ -39,8 +39,8 @@ public class JoinStepService {
             "JB111", "JB112",
             "JB211", "JB212",
             "JB311", "JB312", //退樓後之
-            "JB411", "JB412"  //退樓
-
+            "JB411", "JB412",  //退樓
+            "JB511", "JB512"  //號之之號
     };
     private static final String NUMFLRPOS = "NUMFLRPOS";
     static List<String> MULTI_ADDRESS = List.of("JB111", "JB112", "JB311", "JB312", "JB411", "JB412");
@@ -52,7 +52,7 @@ public class JoinStepService {
             //把想要挖掉的地址片段代碼用0取代
             LinkedHashMap<String, String> oldMappingIdMap = new LinkedHashMap<>(address.getMappingIdMap());
             String oldId = replaceCharsWithZero("oldId",columns, step, address, oldMappingIdMap);
-            if (step.startsWith("JB3")) {
+            if (step.startsWith("JB5")) {
                 log.info("oldId:{}", oldId);
             }
             String newId;
@@ -63,7 +63,7 @@ public class JoinStepService {
                 //先把newMappingId，切割好裝進map裡
                 LinkedHashMap<String, String> newMappingIdMap = mapNewMappingId(newMappingId);
                 newId = replaceCharsWithZero("newId",columns, step, address, newMappingIdMap);
-                if (step.startsWith("JB3")) {
+                if (step.startsWith("JB5")) {
                     log.info("newId:{}", newId);
                 }
                 if (oldId.equals(newId)) {
@@ -120,13 +120,13 @@ public class JoinStepService {
                     List.of("NEIGHBOR", "VILLAGE");
             case "JA312" ->  //退里(鄰、里挖掉)，不含鄉鎮市區
                     List.of("NEIGHBOR", "VILLAGE", "TOWN");
-            case "JB111", "JB211", "JB311", "JB411" ->  //含鄉鎮市區
+            case "JB111", "JB211", "JB311", "JB411","JB511" ->  //含鄉鎮市區
                 //JB111: 退室(鄰、里、室挖掉)
                 //JB211: 樓之之樓
                 //JB311: 退樓後之(鄰、里、室挖掉，position之的部分改0，mappingId之的部分也改0)
                 //JB411: 退樓(鄰、里、室挖掉，position先全部歸零)
                     List.of("NEIGHBOR", "VILLAGE", "ROOM");
-            case "JB112", "JB212", "JB312", "JB412" ->   //不含鄉鎮市區
+            case "JB112", "JB212", "JB312", "JB412", "JB512" ->   //不含鄉鎮市區
                 //JB112: 退室(鄰、里、室挖掉)
                 //JB212: 樓之之樓
                 //JB312: 退樓後之(鄰、里、室挖掉，position之的部分改0，mappingId之的部分也改0)
@@ -184,6 +184,12 @@ public class JoinStepService {
             //oldId就不用再替換了，因為本來就沒有寫該欄位，所以本來就是0了
             case "JB311", "JB312" ->
                     newNumSegment = idType.equals("newId") ? replaceLeadingZeros(oldNumSegment) : oldNumSegment;
+            //樓之之樓
+            case "JB511", "JB512" -> {
+                oldPosition = OLD_POSITION_2;
+                newPosition = NEW_POSITION_2;
+                newNumSegment = oldNumSegment.replace(oldPosition, newPosition);
+            }
         }
         newMappingIdMap.put(NUMFLRPOS, newNumSegment);
     }
@@ -229,7 +235,7 @@ public class JoinStepService {
             mappingIdMap.put(columnName, newNumSegment);
         }
         //要交換POSITION
-        if (step.startsWith("JB2") || step.startsWith("JB3")) {
+        if (step.startsWith("JB")) {
             exchangePosition(idType, mappingIdMap, step);
         }
         //再把newMappingIdMap的value都拼接起來
