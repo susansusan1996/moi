@@ -7,8 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.LinkedHashMap;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class JoinStepService {
@@ -32,26 +31,28 @@ public class JoinStepService {
     private static final String NEW_POSITION_1 = "24";
     private static final String OLD_POSITION_2 = "24";
     private static final String NEW_POSITION_2 = "20";
+    static String[] steps = {
+            "JA112_NO_COUNTY", //未含"縣市"，先歸在"JA112"
+            "JA112", //最嚴謹，未含鄉鎮市區
+            "JA211", "JA212",
+            "JA311", "JA312",
+            "JB111", "JB112",
+            "JB211", "JB212",
+            "JB311", "JB312", //退樓後之
+            "JB411", "JB412"  //退樓
 
+    };
+    private static final String NUMFLRPOS = "NUMFLRPOS";
 
     public Set<String> findJoinStep(Address address, Set<String> newMappingIdSet, Set<String> seqSet) {
-        String mappingId = address.getMappingId();
         String seq = "";
-        String[] steps = {
-                "JA112_NO_COUNTY", //未含"縣市"，先歸在"JA112"
-                "JA112", //最嚴謹，未含鄉鎮市區
-                "JA211", "JA212",
-                "JA311", "JA312",
-                "JB111", "JB112",
-                "JB211", "JB212",
-                "JB311", "JB312" //退樓後之
-        };
         for (String step : steps) {
-            String[][] index = getIndex(step);
-            //取代為0
-            String id = removeChars(mappingId, index, step, address, null);
-            if (step.startsWith("JB3")) {
-                log.info("oldId:{}", id);
+            List<String> columns = new ArrayList<>(getColumnName(step));
+            //把想要挖掉的地址片段代碼用0取代
+            LinkedHashMap<String, String> oldMappingIdMap = new LinkedHashMap<>(address.getMappingIdMap());
+            String oldId = replaceCharsWithZero(columns, step, address, oldMappingIdMap);
+            if (step.startsWith("JB4")) {
+                log.info("oldId:{}", oldId);
             }
             String newId;
             if (address.getJoinStep() != null) {
@@ -60,11 +61,12 @@ public class JoinStepService {
             for (String newMappingId : newMappingIdSet) {
                 //先把newMappingId，切割好裝進map裡
                 LinkedHashMap<String, String> newMappingIdMap = mapNewMappingId(newMappingId);
-                newId = removeChars(newMappingId, index, step, address, newMappingIdMap);
-                if (step.startsWith("JB3")) {
+                newId = replaceCharsWithZero(columns, step, address, newMappingIdMap);
+                if (step.startsWith("JB4")) {
                     log.info("newId:{}", newId);
                 }
-                if (id.equals(newId)) {
+                if (oldId.equals(newId)) {
+                    log.info("找到一樣的!:{}", newId);
                     if ("JA112_NO_COUNTY".equals(step)) {
                         step = "JA112";
                     }
@@ -78,7 +80,7 @@ public class JoinStepService {
                         }
                     }
                 } else {
-                    seq = redisService.findByKey("不退，找找看", newId, "");
+                    seq = redisService.findByKey("不退，找找看", newMappingId, "");
                     if (StringUtils.isNotNullOrEmpty(seq)) {
                         seqSet.add(seq);
                     }
@@ -89,99 +91,85 @@ public class JoinStepService {
         //多址
         if (address.getJoinStep() != null && seqSet.size() > 1) {
             switch (address.getJoinStep()) {
-                case "JB111":
-                case "JB112":
-                    address.setJoinStep("JD311");
-                    break;
-                case "JB311":
-                    address.setJoinStep("JD411");
-                    break;
-                case "JB312":
-                    address.setJoinStep("JD412");
-                    break;
-                default:
+                case "JB111", "JB112" -> address.setJoinStep("JD311");
+                case "JB311" -> address.setJoinStep("JD411");
+                case "JB312" -> address.setJoinStep("JD412");
+                case "JB411" -> address.setJoinStep("JD511");
+                case "JB412" -> address.setJoinStep("JD512");
+                default -> {
                     seqSet.clear();
                     seqSet.add(seq);
-                    break;
+                }
             }
         }
         return seqSet;
     }
 
-    private String[][] getIndex(String step) {
+    private List<String> getColumnName(String step) {
         return switch (step) {
-            case "JA112_NO_COUNTY" ->
-                    new String[][]{{Integer.toString(COUNTY_START_INDEX), Integer.toString(COUNTY_END_INDEX)}};
-            case "JA112" -> //未含"縣市"，先歸在"JA112"
-                    new String[][]{{Integer.toString(TOWN_START_INDEX), Integer.toString(TOWN_END_INDEX)}};
+            case "JA112_NO_COUNTY" -> List.of("COUNTY"); //未含"縣市"，先歸在"JA112"
+            case "JA112" ->
+                    List.of("TOWN");
             case "JA211" ->  //退鄰(鄰挖掉)，含鄉鎮市區
-                    new String[][]{{Integer.toString(NEIGHBOR_START_INDEX), Integer.toString(NEIGHBOR_END_INDEX)}};
+                    List.of("NEIGHBOR");
             case "JA212" ->  //退鄰(鄰挖掉)，不含鄉鎮市區
-                    new String[][]{
-                            {Integer.toString(NEIGHBOR_START_INDEX), Integer.toString(NEIGHBOR_END_INDEX)},
-                            {Integer.toString(TOWN_START_INDEX), Integer.toString(TOWN_END_INDEX)}};
+                    List.of("NEIGHBOR", "TOWN");
             case "JA311" ->  //退里(鄰、里挖掉)，含鄉鎮市區
-                    new String[][]{{Integer.toString(VILLAGE_START_INDEX), Integer.toString(VILLAGE_END_INDEX)}};
+                    List.of("NEIGHBOR", "VILLAGE");
             case "JA312" ->  //退里(鄰、里挖掉)，不含鄉鎮市區
-                    new String[][]{
-                            {Integer.toString(VILLAGE_START_INDEX), Integer.toString(VILLAGE_END_INDEX)},
-                            {Integer.toString(TOWN_START_INDEX), Integer.toString(TOWN_END_INDEX)}
-                    };
-            case "JB111", "JB211", "JB311" ->  //含鄉鎮市區
+                    List.of("NEIGHBOR", "VILLAGE", "TOWN");
+            case "JB111", "JB211", "JB311", "JB411" ->  //含鄉鎮市區
                 //JB111: 退室(鄰、里、室挖掉)
                 //JB211: 樓之之樓
                 //JB311: 退樓後之(鄰、里、室挖掉，position之的部分改0，mappingId之的部分也改0)
-                    new String[][]{
-                            {Integer.toString(VILLAGE_START_INDEX), Integer.toString(VILLAGE_END_INDEX)},
-                            {Integer.toString(LAST_FIVE_INDEX)}};
-            case "JB112", "JB212", "JB312" ->   //不含鄉鎮市區
-                //JB112: 退室(鄰、里、室挖掉)，不含鄉鎮市區
-                //JB212: 樓之之樓，不含鄉鎮市區
-                //JB312: 退樓後之(鄰、里、室挖掉，不含鄉鎮市區，position之的部分改0，mappingId之的部分也改0)
-                    new String[][]{
-                            {Integer.toString(VILLAGE_START_INDEX), Integer.toString(VILLAGE_END_INDEX)},
-                            {Integer.toString(TOWN_START_INDEX), Integer.toString(TOWN_END_INDEX)},
-                            {Integer.toString(LAST_FIVE_INDEX)}};
-            default -> new String[][]{};
+                //JB411: 退樓(鄰、里、室挖掉，position先全部歸零)
+                    List.of("NEIGHBOR", "VILLAGE", "ROOM");
+            case "JB112", "JB212", "JB312", "JB412" ->   //不含鄉鎮市區
+                //JB112: 退室(鄰、里、室挖掉)
+                //JB212: 樓之之樓
+                //JB312: 退樓後之(鄰、里、室挖掉，position之的部分改0，mappingId之的部分也改0)
+                //JB412: 退樓(鄰、里、室挖掉，position先全部歸零)
+                    List.of("NEIGHBOR", "VILLAGE", "ROOM", "TOWN");
+            default -> List.of();
         };
     }
 
 
-    private String removeChars(String str, String[][] indices, String type, Address address, LinkedHashMap<String, String> newMappingIdMap) {
-        String result = "";
-        StringBuilder builder = new StringBuilder(str);
-        //如果是"退樓後之"，要把之相對應的mapping欄位改成0
-        //先找最後一個"之"落在NUM_FLR_1~NUM_FLR_5的哪個欄位
-        if (type.startsWith("JB3") && newMappingIdMap != null) {
+    private String replaceCharsWithZero(List<String> columns, String step, Address address, LinkedHashMap<String, String> mappingIdMap) {
+        // 如果是"退樓後之"，要把之相對應的mapping欄位改成0
+        if (step.startsWith("JB3") || step.startsWith("JB4")) {
+            int flrNum = findFlr(address);
             String flrColumnNamePrefix = "NUM_FLR_";
-            int flrNum = findBiggestFlr(address);
-            String columnName = flrColumnNamePrefix + flrNum;
-            builder = new StringBuilder(assembleMap(address, columnName));
-        }
-        for (String[] index : indices) {
-            if (index.length == 2) {
-                builder.delete(Integer.parseInt(index[0]), Integer.parseInt(index[1]));
-            } else if (index.length == 1) {
-                builder = new StringBuilder(builder.substring(0, builder.length() - 5));
+            String columnNameForChi = flrColumnNamePrefix + (flrNum + 1);
+            //檢查是否有對應的column，不存在則相加
+            boolean containsColumnNameForChi = columns.contains(columnNameForChi);
+            if (!containsColumnNameForChi) {
+                columns.add(columnNameForChi);
+            }
+            // 如果是JB4，需要找到退樓的"樓"在NUM_FLR_1~NUM_FLR_5的哪個column
+            if (step.startsWith("JB4")) {
+                String columnNameForLo = flrColumnNamePrefix + (flrNum + 2);
+                boolean containsColumnNameForLo = columns.contains(columnNameForLo);
+                if (!containsColumnNameForLo) {
+                    columns.add(columnNameForLo);
+                }
+                //退樓，樓(包含樓的position要歸零)
+                mappingIdMap.put("NUMFLRPOS","00000");
             }
         }
-        //要交換POSITION
-        if (type.startsWith("JB")) {
-            builder = new StringBuilder(exchangePosition(builder.toString(), type));
-        }
-        result = builder.toString();
-        return result;
+        return assembleMap(address, columns, mappingIdMap, step);
     }
 
 
+
     //如果position欄位有 32xxx、x32xx、xx32x、xxx32 (32連在一起的)，就把position改成23xxx、x23xx、xx23x、xxx23
-    private static String exchangePosition(String positionMapping, String type) {
-        if (positionMapping == null || positionMapping.length() < 5) {
-            return positionMapping;
-        }
-        String oldPosition;
-        String newPosition;
-        switch (type) {
+    private static void exchangePosition(LinkedHashMap<String, String> newMappingIdMap, String step) {
+        //舊的地址代碼
+        String oldNumSegment = newMappingIdMap.get(NUMFLRPOS);
+        //補0的地址代碼
+        String oldPosition = "";
+        String newPosition = "";
+        switch (step) {
             //樓之之樓
             case "JB211":
             case "JB212":
@@ -195,20 +183,19 @@ public class JoinStepService {
                 newPosition = NEW_POSITION_2;
                 break;
             default:
-                return positionMapping;
         }
-        String lastFive = positionMapping.substring(positionMapping.length() - 5);
-        String updatedLastFive = lastFive.replace(oldPosition, newPosition);
-        return positionMapping.replaceAll("\\d{5}$", updatedLastFive);
+        String newNumSegment = oldNumSegment.replace(oldPosition, newPosition);
+        newMappingIdMap.put(NUMFLRPOS, newNumSegment);
     }
 
-    //找FLR欄位，到到哪個欄位都還有值
-    private int findBiggestFlr(Address address) {
+    //找FLR欄位，看到哪個FLR欄位都還有值
+    private int findFlr(Address address) {
         String[] flrArray = {address.getNumFlr1(), address.getNumFlr2(), address.getNumFlr3(), address.getNumFlr4(), address.getNumFlr5()};
+//                                        0              1                   2                            3                4
         for (int i = 0; i < flrArray.length; i++) {
             if (StringUtils.isNullOrEmpty(flrArray[i])) {
-                log.info("目前最大到:{}", "表示NUM_FLR_" + (i + 1));
-                return (i + 1);
+                log.info("目前最大到:{}", "NUM_FLR_" + (i));
+                return (i);
             }
         }
         //如果都沒有比對到，表示NUM_FLR_1 ~ NUM_FLR_5 都有值
@@ -232,14 +219,19 @@ public class JoinStepService {
     }
 
     //組裝裝mappingId的map
-    private String assembleMap(Address address, String columnName) {
-        log.info("拼接mappingId，columnName:{}", columnName);
-        LinkedHashMap<String, String> newMappingIdMap = address.getMappingIdMap();
-        //舊的地址代碼
-        String oldNumSegment = address.getMappingIdMap().get(columnName);
-        //補0的地址代碼
-        String newNumSegment = "0".repeat(oldNumSegment.length());
-        newMappingIdMap.put(columnName, newNumSegment);
+    private String assembleMap(Address address, List<String> columns, LinkedHashMap<String, String> newMappingIdMap, String step) {
+        log.info("拼接mappingId，columnName:{}", columns);
+        for (String columnName : columns) {
+            //舊的地址代碼
+            String oldNumSegment = address.getMappingIdMap().get(columnName);
+            //補0的地址代碼
+            String newNumSegment = "0".repeat(oldNumSegment.length());
+            newMappingIdMap.put(columnName, newNumSegment);
+        }
+        //要交換POSITION
+        if (step.startsWith("JB")) {
+            exchangePosition(newMappingIdMap, step);
+        }
         //再把newMappingIdMap的value都拼接起來
         StringBuilder stringBuilder = new StringBuilder();
         for (String value : newMappingIdMap.values()) {
