@@ -98,6 +98,12 @@ public class RedisService {
     }
 
 
+
+    public List<String> findByKeys(Set<String> keys) {
+        return stringRedisTemplate.opsForValue().multiGet(keys);
+    }
+
+
     /**
      * 模糊比對，找出相符的 KEY (redis: scan)
      */
