@@ -85,12 +85,23 @@ public class JoinStepService {
             }
         }
 
+        //多址
         if (address.getJoinStep() != null && seqSet.size() > 1) {
-            if ("JB111".equals(address.getJoinStep()) || "JB112".equals(address.getJoinStep())) {
-                address.setJoinStep("JD311");
-            } else {
-                seqSet.clear();
-                seqSet.add(seq);
+            switch (address.getJoinStep()) {
+                case "JB111":
+                case "JB112":
+                    address.setJoinStep("JD311");
+                    break;
+                case "JB311":
+                    address.setJoinStep("JD411");
+                    break;
+                case "JB312":
+                    address.setJoinStep("JD412");
+                    break;
+                default:
+                    seqSet.clear();
+                    seqSet.add(seq);
+                    break;
             }
         }
         return seqSet;
