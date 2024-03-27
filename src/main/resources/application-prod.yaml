@@ -57,7 +57,7 @@ key:
 
 apserver:
   #  批次查詢: 聖森接收批次結束檔案的api url
-  target-url: http://211.75.133.17:7007/addr/api/iisi
+  target-url: http://211.75.133.17:7008/addr/api/iisi
   batchform-update:
   bigquery-update:
   token: /home/ubuntu/app/token/token.txt
