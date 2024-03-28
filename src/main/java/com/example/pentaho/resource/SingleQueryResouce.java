@@ -79,7 +79,7 @@ public class SingleQueryResouce {
 
     @PostMapping("/query-single-test")
     @Hidden
-    public ResponseEntity<List<IbdTbAddrCodeOfDataStandardDTO>> queryAddress(@RequestBody String originalString) {
+    public ResponseEntity<List<IbdTbAddrCodeOfDataStandardDTO>> queryAddress(@RequestBody String originalString) throws NoSuchFieldException, IllegalAccessException {
 //        try {
             return ResponseEntity.ok(singleQueryService.findJson(originalString));
 //        } catch (Exception e) {

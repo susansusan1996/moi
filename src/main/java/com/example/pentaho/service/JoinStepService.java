@@ -45,45 +45,54 @@ public class JoinStepService {
     private static final String NUMFLRPOS = "NUMFLRPOS";
     static List<String> MULTI_ADDRESS = List.of("JB111", "JB112", "JB311", "JB312", "JB411", "JB412");
 
-    public Set<String> findJoinStep(Address address, Set<String> newMappingIdSet, Set<String> seqSet) {
+    public Set<String> findJoinStep(Address address, Set<String> newMappingIdSet, Set<String> seqSet) throws NoSuchFieldException, IllegalAccessException {
         String seq = "";
         for (String step : steps) {
-            List<String> columns = new ArrayList<>(getColumnName(step));
-            //把想要挖掉的地址片段代碼用0取代
-            LinkedHashMap<String, String> oldMappingIdMap = new LinkedHashMap<>(address.getMappingIdMap());
-            String oldId = replaceCharsWithZero("oldId",columns, step, address, oldMappingIdMap);
-            if (step.startsWith("JB5")) {
-                log.info("oldId:{}", oldId);
-            }
-            String newId;
-            if (address.getJoinStep() != null) {
-                break;
-            }
-            for (String newMappingId : newMappingIdSet) {
-                //先把newMappingId，切割好裝進map裡
-                LinkedHashMap<String, String> newMappingIdMap = mapNewMappingId(newMappingId);
-                newId = replaceCharsWithZero("newId",columns, step, address, newMappingIdMap);
-                if (step.startsWith("JB5")) {
-                    log.info("newId:{}", newId);
+//            if (step.startsWith("JB5")) {
+//                //交換地址
+//                exchangeFlr(address);
+//                //交換地址後，重新查MAPPINGID
+//                Address newAddress = setAddressService.setAddressAndFindCdByRedis(address);
+//                seq = redisService.findByKey("JB5系列 mappingId 64碼", newAddress.getMappingId(), null);
+//                if (StringUtils.isNotNullOrEmpty(seq)) {
+//                    seqSet.add(seq);
+//                }
+//            } else {
+                List<String> columns = new ArrayList<>(getColumnName(step));
+                //把想要挖掉的地址片段代碼用0取代
+                LinkedHashMap<String, String> oldMappingIdMap = new LinkedHashMap<>(address.getMappingIdMap());
+                log.info("oldMappingIdMap:{}",oldMappingIdMap);
+                String oldId = replaceCharsWithZero("oldId", columns, step, address, oldMappingIdMap);
+                String newId;
+                if (address.getJoinStep() != null) {
+                    break;
                 }
-                if (oldId.equals(newId)) {
-                    log.info("找到一樣的!:{}", newId);
-                    if ("JA112_NO_COUNTY".equals(step)) {
-                        step = "JA112";
+                for (String newMappingId : newMappingIdSet) {
+                    //先把newMappingId，切割好裝進map裡
+                    LinkedHashMap<String, String> newMappingIdMap = mapNewMappingId(newMappingId);
+                    newId = replaceCharsWithZero("newId", columns, step, address, newMappingIdMap);
+                    if (step.startsWith("JB5")) {
+                        log.info("newId:{}", newId);
                     }
-                    seq = redisService.findByKey("退" + step, newMappingId, "");
-                    if (StringUtils.isNotNullOrEmpty(seq)) {
-                        seqSet.add(seq);
-                        address.setJoinStep(step);
-                        //除了"退室"、"退樓後之"、"退樓"，有可能造成多址，其他有找到seq就可以停止loop
-                        if (!MULTI_ADDRESS.contains(step)) {
-                            break;
+                    if (oldId.equals(newId)) {
+                        log.info("找到一樣的!:{}", newId);
+                        log.info("newMappingIdMap:{}",newMappingIdMap);
+                        if ("JA112_NO_COUNTY".equals(step)) {
+                            step = "JA112";
+                        }
+                        seq = redisService.findByKey("退" + step, newMappingId, "");
+                        if (StringUtils.isNotNullOrEmpty(seq)) {
+                            seqSet.add(seq);
+                            address.setJoinStep(step);
+                            //除了"退室"、"退樓後之"、"退樓"，有可能造成多址，其他有找到seq就可以停止loop
+                            if (!MULTI_ADDRESS.contains(step)) {
+                                break;
+                            }
                         }
                     }
                 }
-            }
+//            }
         }
-
         //如果JOIN_STEP都比對不到的話，就甚麼都不退，比對看看
         if (seqSet.isEmpty() && address.getJoinStep() == null) {
             log.info("找不到JOIN_STEP，甚麼都不退，比對看看");
@@ -137,7 +146,9 @@ public class JoinStepService {
     }
 
 
-    private String replaceCharsWithZero(String idType, List<String> columns, String step, Address address, LinkedHashMap<String, String> mappingIdMap) {
+    // 找出所有需要改成0的column
+    // 再把column 組裝 成mappingId
+    private String replaceCharsWithZero(String idType, List<String> columns, String step, Address address, LinkedHashMap<String, String> mappingIdMap) throws NoSuchFieldException, IllegalAccessException {
         // 如果是"退樓後之"，要把之相對應的mapping欄位改成0
         if (step.startsWith("JB3") || step.startsWith("JB4")) {
             int flrNum = findFlr(address);
@@ -146,17 +157,19 @@ public class JoinStepService {
             //檢查是否有對應的column，不存在則相加
             boolean containsColumnNameForChi = columns.contains(columnNameForChi);
             if (!containsColumnNameForChi) {
-                columns.add(columnNameForChi);
+                if (address.getMappingIdMap().get(columnNameForChi) != null) {
+                    columns.add(columnNameForChi);
+                }
             }
             // 如果是JB4，需要找到退樓的"樓"在NUM_FLR_1~NUM_FLR_5的哪個column
             if (step.startsWith("JB4")) {
                 String columnNameForLo = flrColumnNamePrefix + (flrNum + 2);
                 boolean containsColumnNameForLo = columns.contains(columnNameForLo);
                 if (!containsColumnNameForLo) {
-                    columns.add(columnNameForLo);
+                    if (address.getMappingIdMap().get(columnNameForLo) != null) {
+                        columns.add(columnNameForLo);
+                    }
                 }
-                //退樓，樓(包含樓的position要歸零)
-                mappingIdMap.put("NUMFLRPOS","00000");
             }
         }
         return assembleMap(idType, address, columns, mappingIdMap, step);
@@ -184,12 +197,19 @@ public class JoinStepService {
             //oldId就不用再替換了，因為本來就沒有寫該欄位，所以本來就是0了
             case "JB311", "JB312" ->
                     newNumSegment = idType.equals("newId") ? replaceLeadingZeros(oldNumSegment) : oldNumSegment;
-            //樓之之樓
+            //退樓，樓(包含樓的position要歸零)
+            //找到樓的位置
+            case "JB411", "JB412" -> {
+                newNumSegment = oldNumSegment.replace("2","0"); //樓的position是4，替換成0
+                log.info("newNumSegment:{}",newNumSegment);
+            }
+            //號之之號
             case "JB511", "JB512" -> {
                 oldPosition = OLD_POSITION_2;
                 newPosition = NEW_POSITION_2;
                 newNumSegment = oldNumSegment.replace(oldPosition, newPosition);
             }
+            default -> newNumSegment = oldNumSegment;
         }
         newMappingIdMap.put(NUMFLRPOS, newNumSegment);
     }
@@ -226,15 +246,19 @@ public class JoinStepService {
 
     //組裝裝mappingId的map
     private String assembleMap(String idType ,Address address, List<String> columns, LinkedHashMap<String, String> mappingIdMap, String step) {
-        log.info("拼接mappingId，columnName:{}", columns);
+        log.info("拼接mappingId，columnName:{},step:{}", columns, step);
+        //columns: 要替換成0的所有欄位
         for (String columnName : columns) {
-            //舊的地址代碼
-            String oldNumSegment = address.getMappingIdMap().get(columnName);
-            //補0的地址代碼
-            String newNumSegment = "0".repeat(oldNumSegment.length());
-            mappingIdMap.put(columnName, newNumSegment);
+            if (address.getMappingIdMap().get(columnName) != null) {
+                //舊的地址代碼
+                String oldNumSegment = address.getMappingIdMap().get(columnName);
+                //補0的地址代碼
+                String newNumSegment = "0".repeat(oldNumSegment.length());
+                //替換成0之後，裝進map裡
+                mappingIdMap.put(columnName, newNumSegment);
+            }
         }
-        //要交換POSITION
+        //交換POSITION
         if (step.startsWith("JB")) {
             exchangePosition(idType, mappingIdMap, step);
         }
@@ -264,6 +288,25 @@ public class JoinStepService {
         }
         log.info("改之後==>:{}", sb);
         return sb.toString();
+    }
+
+
+    private void exchangeFlr(Address address) throws NoSuchFieldException, IllegalAccessException {
+        String[] flrArray = {address.getNumFlr1(), address.getNumFlr2(), address.getNumFlr3(), address.getNumFlr4(), address.getNumFlr5()};
+        int index = address.getNumFlrPos().indexOf(NEW_POSITION_2); //找到"號之"在 postition number 的index
+        //交換
+        if (index != -1) {
+            String num1 = address.getProperty("numFlr" + (index + 1));
+            String num2 = address.getProperty("numFlr" + (index + 2));
+            log.info("交換前 num1 :{}", num1);
+            log.info("交換前 num2 :{}", num2);
+            address.setProperty("numFlr" + (index + 1), flrArray[index + 1]);
+            address.setProperty("numFlr" + (index + 2), flrArray[index]);
+            num1 = address.getProperty("numFlr" + (index + 1));
+            num2 = address.getProperty("numFlr" + (index + 2));
+            log.info("交換後 num1 :{}", num1);
+            log.info("交換後 num2 :{}", num2);
+        }
     }
 
 }

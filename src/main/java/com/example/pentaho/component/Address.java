@@ -1,6 +1,7 @@
 package com.example.pentaho.component;
 
 
+import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
@@ -52,6 +53,18 @@ public class Address {
 
 
     public Address() {
+    }
+
+    public void setProperty(String propertyName, String value) throws NoSuchFieldException, IllegalAccessException {
+        Field field = getClass().getDeclaredField(propertyName);
+        field.setAccessible(true);
+        field.set(this, value);
+    }
+
+    public String getProperty(String propertyName) throws NoSuchFieldException, IllegalAccessException {
+        Field field = getClass().getDeclaredField(propertyName);
+        field.setAccessible(true);
+        return (String) field.get(this);
     }
 
     public Address(String address) {
