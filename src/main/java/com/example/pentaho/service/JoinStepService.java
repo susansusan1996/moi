@@ -29,8 +29,8 @@ public class JoinStepService {
 
     private static final String OLD_POSITION_1 = "32";
     private static final String NEW_POSITION_1 = "24";
-    private static final String OLD_POSITION_2 = "14";
-    private static final String NEW_POSITION_2 = "31";
+    private static final String OLD_POSITION_2 = "31";
+    private static final String NEW_POSITION_2 = "14";
     static String[] steps = {
             "JA112_NO_COUNTY", //未含"縣市"，先歸在"JA112"
             "JA112", //最嚴謹，未含鄉鎮市區
@@ -40,14 +40,16 @@ public class JoinStepService {
             "JB211", "JB212",
             "JB311", "JB312", //退樓後之
             "JB411", "JB412",  //退樓
-            "JB511", "JB512"  //號之之號
+            "JB511", "JB512",  //號之之號
+            "JC111"  //臨建特附
     };
     private static final String NUMFLRPOS = "NUMFLRPOS";
     static List<String> MULTI_ADDRESS = List.of("JB111", "JB112", "JB311", "JB312", "JB411", "JB412");
 
     public Set<String> findJoinStep(Address address, Set<String> newMappingIdSet, Set<String> seqSet) throws NoSuchFieldException, IllegalAccessException {
         String seq = "";
-        for (String step : steps) {
+        if (!newMappingIdSet.isEmpty()) {
+            for (String step : steps) {
 //            if (step.startsWith("JB5")) {
 //                //交換地址
 //                exchangeFlr(address);
@@ -91,7 +93,9 @@ public class JoinStepService {
                         }
                     }
                 }
-//            }
+            }
+        }else{
+            log.info("沒有可以比對的mappingIdSet!!");
         }
         //如果JOIN_STEP都比對不到的話，就甚麼都不退，比對看看
         if (seqSet.isEmpty() && address.getJoinStep() == null) {
@@ -135,7 +139,7 @@ public class JoinStepService {
                 //JB311: 退樓後之(鄰、里、室挖掉，position之的部分改0，mappingId之的部分也改0)
                 //JB411: 退樓(鄰、里、室挖掉，position先全部歸零)
                     List.of("NEIGHBOR", "VILLAGE", "ROOM");
-            case "JB112", "JB212", "JB312", "JB412", "JB512" ->   //不含鄉鎮市區
+            case "JB112", "JB212", "JB312", "JB412", "JB512", "JC111" ->   //不含鄉鎮市區
                 //JB112: 退室(鄰、里、室挖掉)
                 //JB212: 樓之之樓
                 //JB312: 退樓後之(鄰、里、室挖掉，position之的部分改0，mappingId之的部分也改0)
@@ -171,6 +175,8 @@ public class JoinStepService {
                     }
                 }
             }
+        }else if("JC111".equals(step) ){//臨建特附，NUMTYPE要歸零
+            columns.add("NUMTYPE");
         }
         return assembleMap(idType, address, columns, mappingIdMap, step);
     }
@@ -205,9 +211,11 @@ public class JoinStepService {
             }
             //號之之號
             case "JB511", "JB512" -> {
+                log.info("oldPosition:{}",oldNumSegment);
                 oldPosition = OLD_POSITION_2;
                 newPosition = NEW_POSITION_2;
                 newNumSegment = oldNumSegment.replace(oldPosition, newPosition);
+                log.info("newPosition:{}",newNumSegment);
             }
             default -> newNumSegment = oldNumSegment;
         }

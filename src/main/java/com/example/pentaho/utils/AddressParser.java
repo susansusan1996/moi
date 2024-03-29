@@ -74,11 +74,14 @@ public class AddressParser {
 
     private String findArea(String input, Address address) {
         if (!input.isEmpty()) {
-            List<String> areaSet = getArea();
-            String areaPatternString = "["+String.join("|", areaSet) + "]+[里區市鄉衖衕橫路道街]"; //如果後面帶有[里區市鄉衖衕橫路道街]這些後綴字，就代表是不area
+            List<String> areaSet = getArea().stream()
+                    .map(area -> area + "(?!.*[里區市鄉衖衕橫路道街])") //如果後面帶有[里區市鄉衖衕橫路道街]這些後綴字，就代表是不area
+                    .toList();
+            String areaPatternString = String.join("|", areaSet);
+            log.info("areaPatternString:{}",areaPatternString);
             Pattern pattern = Pattern.compile(areaPatternString);
             Matcher matcher = pattern.matcher(input);
-            if (!matcher.find()) {
+            if (matcher.find()) {
                 for (String area : areaSet) {
                     if (input.contains(area)) {
                         address.setArea(area);
@@ -129,6 +132,7 @@ public class AddressParser {
         if (StringUtils.isNotNullOrEmpty(basementString)) {
             return parseAddress(parseBasement(basementString, origninalAddress, address), address);
         }
+        address.setOriginalAddress(origninalAddress);
         address.setZipcode(matcher.group("zipcode"));
         address.setCounty(matcher.group("county"));
         address.setTown(matcher.group("town"));

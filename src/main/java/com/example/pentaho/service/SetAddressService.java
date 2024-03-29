@@ -40,6 +40,7 @@ public class SetAddressService {
         String alley = address.getAlley(); //弄
         String subAlley = address.getSubAlley(); //弄
         String alleyIdSnKey = replaceWithHalfWidthNumber(alley) + replaceWithHalfWidthNumber(subAlley);
+        String numTypeCd = address.getNumTypeCd(); //臨建特附
         //如果有"之45一樓"，要額外處理
         if (StringUtils.isNotNullOrEmpty(address.getContinuousNum())) {
             formatCoutinuousFlrNum(address.getContinuousNum(), address);
@@ -79,7 +80,6 @@ public class SetAddressService {
         }
         address.setLaneCd(resultMap.get("LANE:" + replaceWithHalfWidthNumber(lane)));
         address.setAlleyIdSn(resultMap.get("ALLEY:" + alleyIdSnKey));
-        String numTypeCd = "95";
         address.setNumFlr1Id(setNumFlrId(resultMap, address, "NUM_FLR_1"));
         address.setNumFlr2Id(setNumFlrId(resultMap, address, "NUM_FLR_2"));
         address.setNumFlr3Id(setNumFlrId(resultMap, address, "NUM_FLR_3"));
@@ -315,7 +315,7 @@ public class SetAddressService {
         } else {
             stringBuilder.insert(3, '1');  //鄰找的到
         }
-        stringBuilder.insert(7, '1');  //numTypeCd一定找的到，所以直接寫1
+        stringBuilder.insert(7, '0');  //numTypeCd一律當作找不到，去模糊比對
         stringBuilder.insert(13, '0'); //basementStr一律當作找不到，去模糊比對
         stringBuilder.insert(14, '0'); //numFlrPos一律當作找不到，去模糊比對
         String result = stringBuilder.toString();

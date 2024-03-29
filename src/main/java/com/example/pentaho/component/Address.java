@@ -50,6 +50,7 @@ public class Address {
     private List<String> MappingIdList;
     private String joinStep; //地址比對代碼
     private Set<String> seqSet;
+    private String numTypeCd; //臨建特附
 
 
     public Address() {
@@ -409,6 +410,14 @@ public class Address {
         MappingIdList = mappingIdList;
     }
 
+    public String getNumTypeCd() {
+        return numTypeCd;
+    }
+
+    public void setNumTypeCd(String numTypeCd) {
+        this.numTypeCd = numTypeCd;
+    }
+
     @Override
     public String toString() {
         return "Address{" +
@@ -451,8 +460,10 @@ public class Address {
                 ", mappingId='" + mappingId + '\'' +
                 ", segmentExistNumber='" + segmentExistNumber + '\'' +
                 ", mappingIdMap=" + mappingIdMap +
+                ", MappingIdList=" + MappingIdList +
                 ", joinStep='" + joinStep + '\'' +
                 ", seqSet=" + seqSet +
+                ", numTypeCd='" + numTypeCd + '\'' +
                 '}';
     }
 }

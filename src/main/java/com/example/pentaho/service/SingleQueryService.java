@@ -67,12 +67,46 @@ public class SingleQueryService {
         //切地址
         Address address = addressParser.parseAddress(originalString, null);
         if (address != null) {
+            String numTypeCd = "95";
+            //如果有addrRemain的話，表示有可能是"臨建特附"，要把"臨建特附"先拿掉，再PARSE一次地址
+            if(StringUtils.isNotNullOrEmpty(address.getAddrRemains())){
+                numTypeCd = getNumTypeCd(address);
+                //臨建特附，再parse一次地址
+                if (!"95".equals(numTypeCd)) {
+                    address = addressParser.parseAddress(address.getOriginalAddress(), null);
+                    address.setNumTypeCd(numTypeCd);
+                }
+            }else{
+                address.setNumTypeCd(numTypeCd); //95
+            }
             return setAddressService.setAddressAndFindCdByRedis(address);
         }
         return null;
     }
 
-
+    private static String getNumTypeCd(Address address) {
+        String oldAddrRemains = address.getAddrRemains();
+        String newAddrRemains = "";
+        String numTypeCd;
+        if (oldAddrRemains.startsWith("臨") || oldAddrRemains.endsWith("臨")) {
+            numTypeCd = "96";
+            newAddrRemains = oldAddrRemains.replace("臨", "");
+        } else if (oldAddrRemains.startsWith("建") || oldAddrRemains.endsWith("建")) {
+            numTypeCd = "97";
+            newAddrRemains = oldAddrRemains.replace("建", "");
+        } else if (oldAddrRemains.startsWith("特") || oldAddrRemains.endsWith("特")) {
+            numTypeCd = "98";
+            newAddrRemains = oldAddrRemains.replace("特", "");
+        } else if (oldAddrRemains.startsWith("附") || oldAddrRemains.endsWith("附")) {
+            numTypeCd = "99";
+            newAddrRemains = oldAddrRemains.replace("附", "");
+        } else {
+            numTypeCd = "95";
+        }
+        //再把addrRemains拼回原本的address，再重新切一次地址
+        address.setOriginalAddress(address.getOriginalAddress().replace(oldAddrRemains, newAddrRemains));
+        return numTypeCd;
+    }
 
 
     Address findSeqByMappingIdAndJoinStep(Address address) throws NoSuchFieldException, IllegalAccessException {
@@ -90,6 +124,7 @@ public class SingleQueryService {
             log.info("因為地址不完整，組成新的 mappingId {}，以利模糊搜尋", newMappingId);
             log.info("模糊搜尋正則表達式為:{}", regex);
             Set<String> mappingIdSet = redisService.findListByScan(newMappingId);
+            log.info("mappingIdSet:{}",mappingIdSet);
             Pattern regexPattern = Pattern.compile(String.valueOf(regex));
             Set<String> newMappingIdSet = new HashSet<>();
             for (String newMapping : mappingIdSet) {
