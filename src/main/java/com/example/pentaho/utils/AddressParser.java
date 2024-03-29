@@ -54,6 +54,9 @@ public class AddressParser {
 
 
     public Address parseAddress(String origninalAddress, Address address) {
+        //去除特殊字元
+        origninalAddress = origninalAddress.replaceAll("[`~!@#$%^&*()+=|{}':;',\\[\\].<>/?~！@#￥%……&*（）——+|{}【】‘；：”“’。，、？\\\\\\s]+", "");
+        log.info("去除特殊字元後的origninalAddress:{}",origninalAddress);
         if (address == null) {
             address = new Address();
         }
