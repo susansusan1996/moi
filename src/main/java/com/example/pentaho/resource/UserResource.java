@@ -35,12 +35,6 @@ public class UserResource {
     @Autowired
     private UserService userService;
 
-    @Autowired
-    private RefreshTokenService refreshTokenService;
-
-    @Autowired
-    private ApiKeyService apiKeyService;
-
 
     /**
      * login
@@ -62,35 +56,6 @@ public class UserResource {
         log.info("user:{}", user);
         Login login = userService.findUserByUserName(user);
         return new ResponseEntity<>(login.getAcessToken().getToken(), HttpStatus.OK);
-    }
-
-
-    @PostMapping("/refreshToken")
-    public ResponseEntity<JwtReponse> refreshToken(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "refreshToken",
-                    required = true,
-                    content = @Content(
-                            schema = @Schema(implementation = User.class),
-                            examples = @ExampleObject(value = "{\"id\":\"673f7eec-8ae5-4e79-ad3a-42029eedf742\",\"refreshToken\":\"673f7eec-8ae5-4e79-ad3a-42029eedf742\"}")
-                    )
-            )
-            @RequestBody RefreshToken refreshToken) throws Exception {
-        log.info("refreshToken:{}", refreshToken);
-        List<RefreshToken> refreshTokens = refreshTokenService.findByRefreshToken(refreshToken);
-        if (!refreshTokens.isEmpty()) {
-            try {
-                if (refreshTokenService.verifyExpiration(refreshTokens.get(0))) {
-                    if(refreshTokens.get(0).getId().equals(refreshToken.getId())){
-                        return new ResponseEntity<>(apiKeyService.getApiKey(refreshTokens.get(0)), HttpStatus.OK);
-                    }
-                    return new ResponseEntity<>(new JwtReponse("使用者資訊錯誤"), HttpStatus.OK);
-                }
-            }catch (MoiException e){
-                return new ResponseEntity<>(new JwtReponse("api_key過期，請重新申請"), HttpStatus.OK);
-            }
-        }
-        return ResponseEntity.badRequest().build();
     }
 
 

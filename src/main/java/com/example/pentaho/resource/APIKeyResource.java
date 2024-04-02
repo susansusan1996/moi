@@ -1,14 +1,17 @@
 package com.example.pentaho.resource;
 
 import com.example.pentaho.component.JwtReponse;
+import com.example.pentaho.component.RefreshToken;
 import com.example.pentaho.component.User;
 import com.example.pentaho.exception.MoiException;
 import com.example.pentaho.service.ApiKeyService;
+import com.example.pentaho.service.RefreshTokenService;
 import com.example.pentaho.utils.UserContextUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.slf4j.Logger;
@@ -17,8 +20,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /***
  * 產生APIKey & 使用APIKey驗證的API
@@ -37,6 +43,10 @@ public class APIKeyResource {
     @Autowired
     private ApiKeyService apiKeyService;
 
+    @Autowired
+    private RefreshTokenService refreshTokenService;
+
+
 
     @Operation(description = "獲取APIKEY",
             parameters = {
@@ -47,8 +57,8 @@ public class APIKeyResource {
                             schema = @Schema(type = "string"))}
             ,
             responses = {
-                    @ApiResponse(responseCode = "200", description = "資拓私鑰加密JWT Token 時效為1天",
-                            content = @Content(schema = @Schema(implementation = String.class)))}
+                    @ApiResponse(responseCode = "200", description = "資拓私鑰加密JWT Token 時效為1天，refresh_token時效也為一天",
+                            content = @Content(schema = @Schema(implementation = JwtReponse.class)))}
     )
     @PostMapping("/getAuthorization")
     public ResponseEntity<JwtReponse> getAPIKey() {
@@ -90,5 +100,34 @@ public class APIKeyResource {
     @PostMapping("/forguest")
     public ResponseEntity<String> forGuestUser() {
         return new ResponseEntity<>("用戶未登入", HttpStatus.OK);
+    }
+
+
+    @PostMapping("/refreshToken")
+    public ResponseEntity<JwtReponse> refreshToken(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "用於refreshToken",
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = RefreshToken.class),
+                            examples = @ExampleObject(value = "{\"id\":\"673f7eec-8ae5-4e79-ad3a-42029eedf742\",\"refreshToken\":\"673f7eec-8ae5-4e79-ad3a-42029eedf742\"}")
+                    )
+            )
+            @RequestBody RefreshToken refreshToken) throws Exception {
+        log.info("refreshToken:{}", refreshToken);
+        List<RefreshToken> refreshTokens = refreshTokenService.findByRefreshToken(refreshToken);
+        if (!refreshTokens.isEmpty()) {
+            try {
+                if (refreshTokenService.verifyExpiration(refreshTokens.get(0))) {
+                    if(refreshTokens.get(0).getId().equals(refreshToken.getId())){
+                        return new ResponseEntity<>(apiKeyService.getApiKey(refreshTokens.get(0)), HttpStatus.OK);
+                    }
+                    return new ResponseEntity<>(new JwtReponse("使用者資訊錯誤"), HttpStatus.OK);
+                }
+            }catch (MoiException e){
+                return new ResponseEntity<>(new JwtReponse("api_key過期，請重新申請"), HttpStatus.OK);
+            }
+        }
+        return ResponseEntity.badRequest().build();
     }
 }
