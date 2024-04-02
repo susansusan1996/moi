@@ -1,6 +1,7 @@
 package com.example.pentaho.service;
 
 import com.example.pentaho.component.Address;
+import com.example.pentaho.repository.IbdTbAddrDataNewRepository;
 import com.example.pentaho.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +17,9 @@ public class JoinStepService {
 
     @Autowired
     private RedisService redisService;
+
+    @Autowired
+    private IbdTbAddrDataNewRepository ibdTbAddrDataNewRepository;
 
     private static final int COUNTY_START_INDEX = 0;
     private static final int COUNTY_END_INDEX = 5;
@@ -85,6 +89,7 @@ public class JoinStepService {
                         seq = redisService.findByKey("退" + step, newMappingId, "");
                         if (StringUtils.isNotNullOrEmpty(seq)) {
                             seqSet.add(seq);
+                            step = checkIfHistory(step, seq); //確認歷史門牌
                             address.setJoinStep(step);
                             //除了"退室"、"退樓後之"、"退樓"，有可能造成多址，其他有找到seq就可以停止loop
                             if (!MULTI_ADDRESS.contains(step)) {
@@ -315,6 +320,17 @@ public class JoinStepService {
             log.info("交換後 num1 :{}", num1);
             log.info("交換後 num2 :{}", num2);
         }
+    }
+
+    private String checkIfHistory(String step, String seq){
+        //確認是否為舊門牌
+        String validity = ibdTbAddrDataNewRepository.queryDataSourceAndValidityBySeq(seq);
+        if("HISTORY".equals(validity)){
+            //把step裡的1換成2!!
+            int index = step.length() - 2; //倒數第二個字的index
+            return step.substring(0, index) + "2" + step.substring(index + 1);
+        }
+        return step;
     }
 
 }

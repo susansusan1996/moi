@@ -33,6 +33,38 @@ public class IbdTbAddrDataNewRepositoryImpl implements IbdTbAddrDataNewRepositor
     }
 
     @Override
+    public List<String> queryDataSourceAndValidityBySeq(List<String> seqList) {
+        Query query = Query.builder()
+                .append("SELECT DATA_SOURCE AND VALIDITY")
+                .append("FROM addr_ods.IBD_TB_ADDR_DATA_REPOSITORY_NEW where seq IN (:seqList) ", seqList)
+                .build();
+        log.info("query:{}", query);
+        log.info("params:{}", query.getParameters());
+        List<String> list = sqlExecutor.queryForList(query, String.class);
+        return list;
+    }
+
+    @Override
+    public String queryDataSourceAndValidityBySeq(String seq) {
+        Query query = Query.builder()
+                .append("SELECT \n" +
+                        "    CASE \n" +
+                        "        WHEN DATA_SOURCE = 'HISTORY' THEN 'HISTORY'\n" +
+                        "        WHEN VALIDITY = 'F' THEN 'HISTORY'\n" +
+                        "        ELSE 'NOW'\n" +
+                        "    END AS VALIDITY\n" +
+                        "FROM \n" +
+                        "    addr_ods.IBD_TB_ADDR_DATA_REPOSITORY_NEW \n" +
+                        "WHERE \n" +
+                        "    seq = :seq;",seq)
+                .build();
+        log.info("query:{}", query);
+        log.info("params:{}", query.getParameters());
+        List<String> list = sqlExecutor.queryForList(query, String.class);
+        return list.get(0);
+    }
+
+    @Override
     public List<String> queryAllArea() {
         Query query = Query.builder()
                 .append("SELECT DISTINCT AREA FROM addr_ods.IBD_TB_ADDR_DATA_REPOSITORY_NEW ")
