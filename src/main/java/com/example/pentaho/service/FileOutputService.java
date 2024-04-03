@@ -4,7 +4,7 @@ import com.example.pentaho.component.*;
 import com.example.pentaho.exception.MoiException;
 import com.example.pentaho.repository.IbdTbAddrStatisticsOverallDevRepository;
 import com.example.pentaho.utils.ResourceUtils;
-import com.example.pentaho.utils.SFTPUtils;
+import com.example.pentaho.utils.custom.Sftp;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jcraft.jsch.SftpException;
 import org.slf4j.Logger;
@@ -44,16 +44,19 @@ public class FileOutputService {
     private ApServerComponent apServerComponent;
 
     @Autowired
-    private SFTPUtils sftpUtils;
-
-    @Autowired
     private ResourceUtils resourceUtils;
 
     @Autowired
     private IbdTbAddrStatisticsOverallDevRepository ibdTbAddrStatisticsOverallDevRepository;
 
+    @Autowired
+    private Sftp sftp;
+
     private final static Logger log = LoggerFactory.getLogger(JobService.class);
     private final String sperator = "&";
+
+
+
 
 
     public void etlFinishedAndSendFile(JobParams jobParams) throws IOException {
@@ -169,18 +172,18 @@ public class FileOutputService {
             log.info("目標檔名:{}", fileName);
             /**SFTP抓檔落地**/
 
-            sftpUtils.connect();
-            boolean hasFile = sftpUtils.listFiles(targetDir, fileName);
+            sftp.connect();
+            boolean hasFile = sftp.listFiles(targetDir, fileName);
             log.info("已完成zip檔:{}", hasFile);
             if (hasFile) {
-                boolean hasDownload = sftpUtils.downloadFile(directories.getLocalTempDir(), targetDir, fileName);
+                boolean hasDownload = sftp.downloadFile(directories.getLocalTempDir(), targetDir, fileName);
                 log.info("已下載zip檔:{}", hasDownload);
                 if (hasDownload) {
                     status = "DONE";
                     sourceFilePath = directories.getLocalTempDir() + fileName;
                 }
             }
-            sftpUtils.disconnect();
+            sftp.disconnect();
         }
         jobParams.setStatus(status);
         BatchFormParams batchFormParams = new BatchFormParams(jobParams.getBATCH_ID(), jobParams.getBATCHFORM_ORIGINAL_FILE_ID(), String.valueOf(jobParams.getPROCESSED_COUNTS()), jobParams.getStatus(), null);
@@ -209,12 +212,12 @@ public class FileOutputService {
         String fileName = batchId+".zip";
         boolean result =  false;
         try {
-            sftpUtils.connect();
-            result = sftpUtils.downloadFile(directories.getLocalTempDir(),directories.getBigDataSendFileDir(),fileName);
+            sftp.connect();
+            result = sftp.downloadFile(directories.getLocalTempDir(),directories.getBigDataSendFileDir(),fileName);
         }catch (Exception e){
             log.info("e:{}",e.toString());
         }
-        sftpUtils.disconnect();
+        sftp.disconnect();
         return result;
     }
 
