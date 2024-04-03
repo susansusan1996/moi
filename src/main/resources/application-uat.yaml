@@ -7,13 +7,13 @@ spring:
       port: 6379
       password: 1qaz@WSX
   datasource:
-    jdbc-url: jdbc:vertica://10.32.32.11:5433/vdb
+    jdbc-url: jdbc:vertica://10.32.32.71:5433/vdb
     username: M_ETL_ADDR_0001
     password: 1qaz@WSX
     driver-class-name: com.vertica.jdbc.Driver
     hikari:
       driver-class-name: io.opentracing.contrib.jdbc.TracingDriver
-      jdbc-url: jdbc:vertica://10.32.32.11:5433/vdb
+      jdbc-url: jdbc:vertica://10.32.32.71:5433/vdb
       poolName: Hikari
       auto-commit: false
       data-source-properties:
