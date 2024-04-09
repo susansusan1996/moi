@@ -38,8 +38,8 @@ public class User  {
     @JsonProperty("roles")
     private List<String> roles;
 
-
-
+    @JsonProperty("tokenType")
+    private String tokenType;
 
     /**使用者ID*/
     @JsonProperty("id")
@@ -81,6 +81,7 @@ public class User  {
             this.username = user.username;
             this.orgId = user.orgId;
             this.departName = user.departName;
+            this.tokenType = user.tokenType;
         } catch (JsonProcessingException e) {
         }
     }
@@ -191,6 +192,13 @@ public class User  {
         this.roles = roles;
     }
 
+    public String getTokenType() {
+        return tokenType;
+    }
+
+    public void setTokenType(String tokenType) {
+        this.tokenType = tokenType;
+    }
 
     @Override
     public String toString() {
@@ -203,6 +211,7 @@ public class User  {
                 ", localizeName='" + localizeName + '\'' +
                 ", email='" + email + '\'' +
                 ", roles=" + roles +
+                ", tokenType='" + tokenType + '\'' +
                 ", id='" + id + '\'' +
                 ", username='" + username + '\'' +
                 ", orgId='" + orgId + '\'' +

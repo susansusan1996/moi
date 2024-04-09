@@ -121,7 +121,7 @@ public class Token {
 
 
 
-    public static boolean findExpireDateOfRefreshToken(String RSAJWTToken,String keyName) throws ExpiredJwtException, NoSuchAlgorithmException, FileNotFoundException, InvalidKeySpecException {
+    public static boolean findExpireDateOfToken(String RSAJWTToken,String keyName) throws ExpiredJwtException, NoSuchAlgorithmException, FileNotFoundException, InvalidKeySpecException {
             log.info("keyName:{}", keyName);
             File file = ResourceUtils.getFile(keyName);
             byte[] keyBytes = readFileAsBytes(file);
@@ -158,7 +158,7 @@ public class Token {
             Jws<Claims> claimsJws = Jwts.parser().setSigningKey(publicKey).parseClaimsJws(RSAJWTToken);
             Claims body = claimsJws.getBody();
             log.info("body:{}", body.toString());
-            log.info("userInfo",body.get("userInfo"));
+            log.info("userInfo:{}",body.get("userInfo"));
             String userInfo = gson.toJson(body.get("userInfo"));
             return objectMapper.readValue(userInfo,User.class);
         } catch (Exception e) {

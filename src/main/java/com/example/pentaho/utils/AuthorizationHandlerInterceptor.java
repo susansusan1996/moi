@@ -94,6 +94,11 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
             if(Token.fromRSAJWTToken(RSATokenJwt,keyName)){
                 User user = Token.extractUserFromRSAJWTToken(RSATokenJwt,keyName);
                 log.info("user:{}",user);
+                //判斷使用者是不是拿refresh_token
+                if("refresh_token".equals(user.getTokenType())){
+                    log.info("使用者拿refresh_token打api,駁回");
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not allowed");
+                }
                 UserContextUtils.setUserHolder(user);
                 return true;
             }
