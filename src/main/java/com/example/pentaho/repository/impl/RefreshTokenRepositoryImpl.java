@@ -24,7 +24,7 @@ public class RefreshTokenRepositoryImpl implements RefreshTokenRepository {
     public void saveRefreshToken(RefreshToken refreshToken) {
         Query query = Query.builder()
                 .append("insert into ADDR_ODS.REFRESH_TOKEN (id, refresh_token, expiry_date)")
-                .append("VALUES (:id, :refreshtoken, CAST(:expirydate AS DATETIME))", refreshToken.getId(), refreshToken.getToken(), java.sql.Timestamp.from(refreshToken.getExpiryDate()))
+                .append("VALUES (:id, :refreshtoken, CAST(:expirydate AS DATETIME))", refreshToken.getId(), refreshToken.getRefreshToken(), java.sql.Timestamp.from(refreshToken.getExpiryDate()))
                 .build();
         log.info("query:{}", query);
         log.info("params:{}", query.getParameters());
@@ -43,10 +43,10 @@ public class RefreshTokenRepositoryImpl implements RefreshTokenRepository {
     }
 
     @Override
-    public List<RefreshToken> findByRefreshToken(String refreshToken) {
+    public List<RefreshToken> findByRefreshTokenAndUserId(String refreshToken, String id) {
         Query query = Query.builder()
                 .append("SELECT *")
-                .append("FROM ADDR_ODS.REFRESH_TOKEN WHERE refresh_token = :refreshToken", refreshToken)
+                .append("FROM ADDR_ODS.REFRESH_TOKEN WHERE refresh_token = :refreshToken and id = :id", refreshToken, id)
                 .build();
         log.info("query:{}", query);
         log.info("params:{}", query.getParameters());
@@ -57,7 +57,7 @@ public class RefreshTokenRepositoryImpl implements RefreshTokenRepository {
     public void deleteByRefreshToken(RefreshToken refreshToken) {
         Query query = Query.builder()
                 .append("delete FROM ADDR_ODS.REFRESH_TOKEN")
-                .append("WHERE refresh_token = :refreshToken", refreshToken.getToken())
+                .append("WHERE refresh_token = :refreshToken", refreshToken.getRefreshToken())
                 .build();
         log.info("query:{}", query);
         log.info("params:{}", query.getParameters());

@@ -5,6 +5,7 @@ import com.example.pentaho.utils.RSAJWTUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import org.slf4j.Logger;
@@ -14,12 +15,16 @@ import org.springframework.util.ResourceUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
+import java.util.Date;
 import java.util.Map;
 
 @Component
@@ -112,6 +117,27 @@ public class Token {
             log.info("e:{}", e.toString());
             return false;
         }
+    }
+
+
+
+    public static boolean findExpireDateOfRefreshToken(String RSAJWTToken,String keyName) throws ExpiredJwtException, NoSuchAlgorithmException, FileNotFoundException, InvalidKeySpecException {
+            log.info("keyName:{}", keyName);
+            File file = ResourceUtils.getFile(keyName);
+            byte[] keyBytes = readFileAsBytes(file);
+            byte[] decodedKeyBytes = Base64.getDecoder().decode(keyBytes);
+            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(decodedKeyBytes);
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            PublicKey publicKey = keyFactory.generatePublic(keySpec);
+            Jws<Claims> claimsJws = Jwts.parser().setSigningKey(publicKey).parseClaimsJws(RSAJWTToken.trim());
+            Claims body = claimsJws.getBody();
+            // 检查JWT令牌的过期时间
+            Date expiration = body.getExpiration();
+            if (expiration != null && expiration.before(new Date())) {
+                log.info("JWT token has expired.");
+            }
+            log.info("body:{}", body.toString());
+            return true;
     }
 
     /**

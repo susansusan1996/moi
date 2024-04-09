@@ -4,6 +4,7 @@ public class JwtReponse {
     private String token;
     private String refreshToken;
     private String expiryDate; //token的過期日(不是refreshToken的過期日)
+    private String refreshTokenExpiryDate; //refreshToken的過期日
     private String errorResponse;
 
     public JwtReponse() {
@@ -43,6 +44,15 @@ public class JwtReponse {
 
     public void setErrorResponse(String errorResponse) {
         this.errorResponse = errorResponse;
+    }
+
+
+    public String getRefreshTokenExpiryDate() {
+        return refreshTokenExpiryDate;
+    }
+
+    public void setRefreshTokenExpiryDate(String refreshTokenExpiryDate) {
+        this.refreshTokenExpiryDate = refreshTokenExpiryDate;
     }
 
     @Override

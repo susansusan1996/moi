@@ -23,14 +23,18 @@ public class ApiKeyService {
 
     private final int VALID_TIME = 1440;
 
-    public JwtReponse getApiKey(RefreshToken refreshToken) throws Exception {
+    public JwtReponse getApiKey(String userId ) throws Exception {
         User user = UserContextUtils.getUserHolder();
         log.info("user:{}", user);
         PrivateKey privateKey = RsaUtils.getPrivateKey((keyComponent.getApPrikeyName()));
         Map<String, Object> map = RSAJWTUtils.generateTokenExpireInMinutes(user, privateKey, VALID_TIME);
+        Map<String, Object> refreshTokenMap = RSAJWTUtils.generateTokenExpireInMinutes(user, privateKey, 1);
+        String refreshToken = (String) refreshTokenMap.get("token");
         Token token = new Token((String) map.get("token"), (String) map.get("expiryDate"));
+        refreshTokenService.saveRefreshToken( user == null? userId: user.getId(), refreshToken);
         JwtReponse jwtReponse = new JwtReponse();
-        jwtReponse.setRefreshToken(refreshTokenService.createRefreshToken(user == null ? refreshToken.getId() : user.getId()).getToken());
+        jwtReponse.setRefreshToken((String) refreshTokenMap.get("token"));
+        jwtReponse.setRefreshTokenExpiryDate((String) refreshTokenMap.get("expiryDate"));
         jwtReponse.setToken(token.getToken());
         jwtReponse.setExpiryDate(token.getExpiryDate());
         return jwtReponse;

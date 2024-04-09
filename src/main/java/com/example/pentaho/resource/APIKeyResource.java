@@ -113,14 +113,14 @@ public class APIKeyResource {
                             examples = @ExampleObject(value = "{\"id\":\"673f7eec-8ae5-4e79-ad3a-42029eedf742\",\"refreshToken\":\"673f7eec-8ae5-4e79-ad3a-42029eedf742\"}")
                     )
             )
-            @RequestBody RefreshToken refreshToken) throws Exception {
-        log.info("refreshToken:{}", refreshToken);
-        List<RefreshToken> refreshTokens = refreshTokenService.findByRefreshToken(refreshToken);
+            @RequestBody RefreshToken request) throws Exception {
+        log.info("refreshToken:{}", request);
+        List<RefreshToken> refreshTokens = refreshTokenService.findByRefreshToken(request);
         if (!refreshTokens.isEmpty()) {
             try {
                 if (refreshTokenService.verifyExpiration(refreshTokens.get(0))) {
-                    if(refreshTokens.get(0).getId().equals(refreshToken.getId())){
-                        return new ResponseEntity<>(apiKeyService.getApiKey(refreshTokens.get(0)), HttpStatus.OK);
+                    if(!refreshTokens.isEmpty()){
+                        return new ResponseEntity<>(apiKeyService.getApiKey(request.getId()), HttpStatus.OK);
                     }
                     return new ResponseEntity<>(new JwtReponse("使用者資訊錯誤"), HttpStatus.OK);
                 }
@@ -128,6 +128,6 @@ public class APIKeyResource {
                 return new ResponseEntity<>(new JwtReponse("api_key過期，請重新申請"), HttpStatus.OK);
             }
         }
-        return ResponseEntity.badRequest().build();
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
     }
 }

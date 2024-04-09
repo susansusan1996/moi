@@ -5,7 +5,7 @@ import java.time.Instant;
 public class RefreshToken {
 
     private String id;
-    private String token;
+    private String refreshToken;
     private Instant expiryDate;
     private User user;
 
@@ -18,9 +18,6 @@ public class RefreshToken {
         this.id = id;
     }
 
-    public String getToken() {
-        return token;
-    }
 
     public Instant getExpiryDate() {
         return expiryDate;
@@ -31,8 +28,12 @@ public class RefreshToken {
     }
 
 
-    public void setToken(String token) {
-        this.token = token;
+    public String getRefreshToken() {
+        return refreshToken;
+    }
+
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
     }
 
     public void setExpiryDate(Instant expiryDate) {

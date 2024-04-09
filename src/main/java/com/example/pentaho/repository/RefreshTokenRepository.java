@@ -12,7 +12,7 @@ public interface RefreshTokenRepository {
 
     List<RefreshToken> findById(String id);
 
-    List<RefreshToken> findByRefreshToken(String id);
+    List<RefreshToken> findByRefreshTokenAndUserId(String refreshToken, String id);
 
     void deleteByRefreshToken(RefreshToken refreshToken);
 
