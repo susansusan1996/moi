@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Component
@@ -32,17 +33,21 @@ public class RSAJWTUtils {
      * @param expire     過期時間，單位分鐘
      * @return JWT
      */
-    public static String generateTokenExpireInMinutes(Object userInfo, PrivateKey privateKey, int expire) throws JsonProcessingException {
+    public static Map<String,Object> generateTokenExpireInMinutes(Object userInfo, PrivateKey privateKey, int expire) throws JsonProcessingException {
         //计算过期时间
         Calendar c = Calendar.getInstance();
         c.add(Calendar.MINUTE, expire);
         ObjectMapper objectMapper = new ObjectMapper();
-        return Jwts.builder()
+        Map<String,Object> map = new LinkedHashMap<>();
+        map.put("token",Jwts.builder()
                 .claim(JWT_PAYLOAD_USER_KEY, objectMapper.writeValueAsString(userInfo))
                 .setId(new String(Base64.getEncoder().encode(UUID.randomUUID().toString().getBytes())))
                 .setExpiration(c.getTime())
                 .signWith(privateKey, SignatureAlgorithm.RS256)
-                .compact();
+                .compact());
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        map.put("expiryDate",dateFormat.format(c.getTime()));
+        return map;
     }
 
     /**

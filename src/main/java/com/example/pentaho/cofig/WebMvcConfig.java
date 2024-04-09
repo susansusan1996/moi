@@ -37,7 +37,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/api/singlequery/**",
                         "/api/single-track-query/**",
                         "/api/bigdata/**",
-                        "/api/api-key/**");
+                        "/api/api-key/getAuthorization",
+                        "/api/api-key/forapikey",
+                        "/api/api-key/forguest"
+                        );
         /**
          * 可以新增別的路徑的攔截
          * AdminAuthorizationHandlerInterceptor

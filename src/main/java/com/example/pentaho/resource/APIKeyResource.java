@@ -1,13 +1,11 @@
 package com.example.pentaho.resource;
 
-import com.example.pentaho.component.IbdTbIhChangeDoorplateHis;
-import com.example.pentaho.component.KeyComponent;
-import com.example.pentaho.component.Token;
+import com.example.pentaho.component.JwtReponse;
+import com.example.pentaho.component.RefreshToken;
 import com.example.pentaho.component.User;
 import com.example.pentaho.exception.MoiException;
-import com.example.pentaho.service.SingleTrackQueryService;
-import com.example.pentaho.utils.RSAJWTUtils;
-import com.example.pentaho.utils.RsaUtils;
+import com.example.pentaho.service.ApiKeyService;
+import com.example.pentaho.service.RefreshTokenService;
 import com.example.pentaho.utils.UserContextUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -26,7 +24,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.security.PrivateKey;
 import java.util.List;
 
 /***
@@ -37,18 +34,18 @@ import java.util.List;
 public class APIKeyResource {
     private static Logger log = LoggerFactory.getLogger(APIKeyResource.class);
 
-    /**API效期先設定1天**/
+    /**
+     * API效期先設定1天
+     **/
     private static final int VALID_TIME = 1440;
 
+
     @Autowired
-    private SingleTrackQueryService singleQueryTrackService;
+    private ApiKeyService apiKeyService;
 
-    private KeyComponent keyComponent;
+    @Autowired
+    private RefreshTokenService refreshTokenService;
 
-
-    public APIKeyResource(KeyComponent keyComponent) {
-        this.keyComponent = keyComponent;
-    }
 
 
     @Operation(description = "獲取APIKEY",
@@ -60,19 +57,15 @@ public class APIKeyResource {
                             schema = @Schema(type = "string"))}
             ,
             responses = {
-                    @ApiResponse(responseCode = "200", description = "資拓私鑰加密JWT Token 時效為1天",
-                            content = @Content(schema = @Schema(implementation = String.class)))}
+                    @ApiResponse(responseCode = "200", description = "資拓私鑰加密JWT Token 時效為1天，refresh_token時效也為一天",
+                            content = @Content(schema = @Schema(implementation = JwtReponse.class)))}
     )
     @PostMapping("/getAuthorization")
-    public ResponseEntity<Token> getAPIKey(){
-        try{
-        User user = UserContextUtils.getUserHolder();
-        log.info("user:{}",user);
-        PrivateKey privateKey = RsaUtils.getPrivateKey((keyComponent.getApPrikeyName()));
-            Token token = new Token(RSAJWTUtils.generateTokenExpireInMinutes(user, privateKey, VALID_TIME));
-            return new ResponseEntity<>(token, HttpStatus.OK);
-        }catch (Exception e){
-            log.info("e:{}",e.toString());
+    public ResponseEntity<JwtReponse> getAPIKey() {
+        try {
+            return new ResponseEntity<>(apiKeyService.getApiKey(null, null), HttpStatus.OK);
+        } catch (Exception e) {
+            log.info("e:{}", e.toString());
             throw new MoiException("generate error");
         }
     }
@@ -93,40 +86,50 @@ public class APIKeyResource {
                     @ApiResponse(responseCode = "500", description = ""),
             })
     @PostMapping("/forapikey")
-    public ResponseEntity<String> forAPIKeyUser(){
+    public ResponseEntity<String> forAPIKeyUser() {
         User user = UserContextUtils.getUserHolder();
-        log.info("user:{}",user);
-        return new ResponseEntity<>(user.getId(),HttpStatus.OK);
+        log.info("user:{}", user);
+        return new ResponseEntity<>(user.getId(), HttpStatus.OK);
     }
 
 
     /**
-     * 單筆軌跡未登入測試
+     * 單筆未登入測試
      */
-    @Operation(description = "單筆軌跡未登入",
-            parameters = {@Parameter(in = ParameterIn.HEADER,
-                    name = "Authorization",
-                    description = "jwt token,body附帶 userInfo={\"Id\":1,\"orgId\":\"Admin\"}",
-                    required = true,
-                    schema = @Schema(type = "string"))
-            },
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "",
-                            content = @Content(schema = @Schema(implementation = IbdTbIhChangeDoorplateHis.class))),
-                    @ApiResponse(responseCode = "500", description = "",
-                            content = @Content(schema = @Schema(implementation = String.class), examples = @ExampleObject(value = ""))
-                    )})
-    @PostMapping("/query-track-for-guest")
-    public ResponseEntity<List<IbdTbIhChangeDoorplateHis>> queryTrack(
+    @Operation(description = "單筆未登入測試")
+    @PostMapping("/forguest")
+    public ResponseEntity<String> forGuestUser() {
+        return new ResponseEntity<>("用戶未登入", HttpStatus.OK);
+    }
+
+
+    @PostMapping("/refreshToken")
+    public ResponseEntity<JwtReponse> refreshToken(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "編碼",
+                    description = "用refreshToken取得新的token",
                     required = true,
                     content = @Content(
-                            schema = @Schema(implementation = String.class),
-                            examples = @ExampleObject(value = "BSZ7538-0")
+                            schema = @Schema(implementation = RefreshToken.class),
+                            examples = @ExampleObject(value = "{\"refreshToken\": \"eyJhbGciOiJSUzI1NiJ9.eyJ1c2VySW5mbyI6IntcInRva2VuXCI6XCJCZWFyZXJcIixcInJlZnJlc2hUb2tlblwiOlwiQmVhcmVyXCIsXCJyZW1vdGVBZGRyXCI6XCIxOTIuMTY4LjMxLjE2N1wiLFwieHJlYWxJcFwiOlwiMTExLjgyLjI0MS41OFwiLFwiaGF2ZVRvQ2hhbmdlUHdkXCI6ZmFsc2UsXCJsb2NhbGl6ZU5hbWVcIjpcIueuoeeQhuWToeWnk-WQjVwiLFwiZW1haWxcIjpcImFkbWluQGdtYWlsLmNvbVwiLFwicm9sZXNcIjpbXCJST0xFX0FETUlOXCIsXCJST0xFX0lVU0VSXCIsXCJST0xFX01PREVSQVRPUlwiXSxcImlkXCI6XCI2NzNmN2VlYy04YWU1LTRlNzktYWQzYS00MjAyOWVlZGY3NDJcIixcInVzZXJuYW1lXCI6XCJhZG1pblwiLFwib3JnSWRcIjpcIkFETUlOXCIsXCJkZXBhcnROYW1lXCI6XCLnrqHnkIbmqZ_pl5xf5Zau5L2NVVBEQVRFXCIsXCJwYXNzd29yZFwiOm51bGx9IiwianRpIjoiWlRrM05UVTVZVE10TXpBMllTMDBPVFJtTFRsa1l6WXRNbVpsTXpSaE56UmtaakE1IiwiZXhwIjoxNzEyODAwNDMyfQ.a1egTZEfAVdBWkf9x1GMMXEV6ml41gQ2HoLFHAa7RR2eK7-4u--D92-cQLoF-644cgJyzhWdF_cggyg11IWo5ADRpZRAD1nYbLpt5Fl9aIRbTjA-Liey6rjsquoEcuGC4cqnCrHwdI_Ko_pu0DbevI4fi4lhLnBdvfFs0wTvaqPWhc935k_NWLwarGeV525S9k3soDJfBO1buU9VikFojalsIxQ5kuKMKsmZgEQAFb0eS4W_07HutvhdaJAmZNSIPOElSLa_mpuwRsqlho153lYsAvwjbhZuVMBHM3i72ZNSXNdz2olUXG6844s2YbQWTadOv3pXsN9oGw7j3ssugg\",\n" +
+                                    "\"id\":\"673f7eec-8ae5-4e79-ad3a-42029eedf742\"}")
                     )
             )
-            @RequestBody String addressId) {
-        return new ResponseEntity<>(singleQueryTrackService.querySingleTrack(addressId), HttpStatus.OK);
+            @RequestBody RefreshToken request) throws Exception {
+        log.info("refreshToken:{}", request);
+        List<RefreshToken> refreshTokens = refreshTokenService.findByRefreshToken(request);
+        if (!refreshTokens.isEmpty()) {
+            try {
+                if (refreshTokenService.verifyExpiration(refreshTokens.get(0))) {
+                    //refresh_token沒有過期
+                    if(!refreshTokens.isEmpty()){
+                        return new ResponseEntity<>(apiKeyService.getApiKey(request.getId(), refreshTokens.get(0)), HttpStatus.OK);
+                    }
+                    return new ResponseEntity<>(new JwtReponse("使用者資訊錯誤"), HttpStatus.OK);
+                }
+            }catch (MoiException e){
+                return new ResponseEntity<>(new JwtReponse("api_key過期，請重新申請"), HttpStatus.OK);
+            }
+        }
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
     }
 }
