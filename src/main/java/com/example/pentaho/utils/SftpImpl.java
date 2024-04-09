@@ -1,5 +1,6 @@
 package com.example.pentaho.utils;
 
+import com.example.pentaho.utils.custom.Sftp;
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.ChannelSftp.LsEntry;
@@ -10,24 +11,21 @@ import com.jcraft.jsch.SftpException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Properties;
 import java.util.Vector;
 
 
 @Component
 @ConfigurationProperties(prefix = "sftputils")
-public class SFTPUtils {
-    private static final Logger log = LoggerFactory.getLogger(SFTPUtils.class);
+@Profile("!uat")
+public class SftpImpl implements Sftp {
+    private static final Logger log = LoggerFactory.getLogger(SftpImpl.class);
     private String host;
     private String username;
     private int port;
@@ -41,11 +39,13 @@ public class SFTPUtils {
      * 建立SFTP連線
      */
     public void connect() {
+        log.info("in dev");
         try {
             JSch jsch = new JSch();
             log.info("privateKey:{}",privateKey);
             String path = ResourceUtils.getFile(privateKey).getPath();
             jsch.addIdentity(path);
+
             session = jsch.getSession(username, host, port);
             if (log.isInfoEnabled()) {
                 log.info("Session created.");
