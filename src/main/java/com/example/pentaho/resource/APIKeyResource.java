@@ -63,7 +63,7 @@ public class APIKeyResource {
     @PostMapping("/getAuthorization")
     public ResponseEntity<JwtReponse> getAPIKey() {
         try {
-            return new ResponseEntity<>(apiKeyService.getApiKey(null), HttpStatus.OK);
+            return new ResponseEntity<>(apiKeyService.getApiKey(null, null), HttpStatus.OK);
         } catch (Exception e) {
             log.info("e:{}", e.toString());
             throw new MoiException("generate error");
@@ -106,11 +106,12 @@ public class APIKeyResource {
     @PostMapping("/refreshToken")
     public ResponseEntity<JwtReponse> refreshToken(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "用於refreshToken",
+                    description = "用refreshToken取得新的token",
                     required = true,
                     content = @Content(
                             schema = @Schema(implementation = RefreshToken.class),
-                            examples = @ExampleObject(value = "{\"id\":\"673f7eec-8ae5-4e79-ad3a-42029eedf742\",\"refreshToken\":\"673f7eec-8ae5-4e79-ad3a-42029eedf742\"}")
+                            examples = @ExampleObject(value = "{\"refreshToken\": \"eyJhbGciOiJSUzI1NiJ9.eyJ1c2VySW5mbyI6IntcInRva2VuXCI6XCJCZWFyZXJcIixcInJlZnJlc2hUb2tlblwiOlwiQmVhcmVyXCIsXCJyZW1vdGVBZGRyXCI6XCIxOTIuMTY4LjMxLjE2N1wiLFwieHJlYWxJcFwiOlwiMTExLjgyLjI0MS41OFwiLFwiaGF2ZVRvQ2hhbmdlUHdkXCI6ZmFsc2UsXCJsb2NhbGl6ZU5hbWVcIjpcIueuoeeQhuWToeWnk-WQjVwiLFwiZW1haWxcIjpcImFkbWluQGdtYWlsLmNvbVwiLFwicm9sZXNcIjpbXCJST0xFX0FETUlOXCIsXCJST0xFX0lVU0VSXCIsXCJST0xFX01PREVSQVRPUlwiXSxcImlkXCI6XCI2NzNmN2VlYy04YWU1LTRlNzktYWQzYS00MjAyOWVlZGY3NDJcIixcInVzZXJuYW1lXCI6XCJhZG1pblwiLFwib3JnSWRcIjpcIkFETUlOXCIsXCJkZXBhcnROYW1lXCI6XCLnrqHnkIbmqZ_pl5xf5Zau5L2NVVBEQVRFXCIsXCJwYXNzd29yZFwiOm51bGx9IiwianRpIjoiWlRrM05UVTVZVE10TXpBMllTMDBPVFJtTFRsa1l6WXRNbVpsTXpSaE56UmtaakE1IiwiZXhwIjoxNzEyODAwNDMyfQ.a1egTZEfAVdBWkf9x1GMMXEV6ml41gQ2HoLFHAa7RR2eK7-4u--D92-cQLoF-644cgJyzhWdF_cggyg11IWo5ADRpZRAD1nYbLpt5Fl9aIRbTjA-Liey6rjsquoEcuGC4cqnCrHwdI_Ko_pu0DbevI4fi4lhLnBdvfFs0wTvaqPWhc935k_NWLwarGeV525S9k3soDJfBO1buU9VikFojalsIxQ5kuKMKsmZgEQAFb0eS4W_07HutvhdaJAmZNSIPOElSLa_mpuwRsqlho153lYsAvwjbhZuVMBHM3i72ZNSXNdz2olUXG6844s2YbQWTadOv3pXsN9oGw7j3ssugg\",\n" +
+                                    "\"id\":\"673f7eec-8ae5-4e79-ad3a-42029eedf742\"}")
                     )
             )
             @RequestBody RefreshToken request) throws Exception {
@@ -119,8 +120,9 @@ public class APIKeyResource {
         if (!refreshTokens.isEmpty()) {
             try {
                 if (refreshTokenService.verifyExpiration(refreshTokens.get(0))) {
+                    //refresh_token沒有過期
                     if(!refreshTokens.isEmpty()){
-                        return new ResponseEntity<>(apiKeyService.getApiKey(request.getId()), HttpStatus.OK);
+                        return new ResponseEntity<>(apiKeyService.getApiKey(request.getId(), refreshTokens.get(0)), HttpStatus.OK);
                     }
                     return new ResponseEntity<>(new JwtReponse("使用者資訊錯誤"), HttpStatus.OK);
                 }
