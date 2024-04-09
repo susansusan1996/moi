@@ -27,11 +27,15 @@ public class ApiKeyService {
         User user = UserContextUtils.getUserHolder();
         log.info("user:{}", user);
         PrivateKey privateKey = RsaUtils.getPrivateKey((keyComponent.getApPrikeyName()));
-        Map<String, Object> map = RSAJWTUtils.generateTokenExpireInMinutes(user, privateKey, VALID_TIME);
-        Map<String, Object> refreshTokenMap = RSAJWTUtils.generateTokenExpireInMinutes(user, privateKey, 1);
+        //一般token
+        Map<String, Object> toeknMap = RSAJWTUtils.generateTokenExpireInMinutes(user, privateKey, VALID_TIME); //一般TOKEN效期先設一天
+        //refresh_token
+        Map<String, Object> refreshTokenMap = RSAJWTUtils.generateTokenExpireInMinutes(user, privateKey, VALID_TIME * 2);  //REFRESH_TOKEN效期先設2天
         String refreshToken = (String) refreshTokenMap.get("token");
-        Token token = new Token((String) map.get("token"), (String) map.get("expiryDate"));
-        refreshTokenService.saveRefreshToken( user == null? userId: user.getId(), refreshToken);
+        Token token = new Token((String) toeknMap.get("token"), (String) toeknMap.get("expiryDate"));
+        //refresh_token存table
+        refreshTokenService.saveRefreshToken(user == null ? userId : user.getId(), refreshToken);
+        //設定返回給前端的物件
         JwtReponse jwtReponse = new JwtReponse();
         jwtReponse.setRefreshToken((String) refreshTokenMap.get("token"));
         jwtReponse.setRefreshTokenExpiryDate((String) refreshTokenMap.get("expiryDate"));
