@@ -7,6 +7,7 @@ import com.example.pentaho.exception.MoiException;
 import com.example.pentaho.service.ApiKeyService;
 import com.example.pentaho.service.RefreshTokenService;
 import com.example.pentaho.utils.UserContextUtils;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -19,10 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -54,16 +52,54 @@ public class APIKeyResource {
                             name = "Authorization",
                             description = "聖森私鑰加密 jwt token,body附帶userInfo={\"Id\":\"673f7eec-8ae5-4e79-ad3a-42029eedf742\",\"orgId\":\"ADMIN\"}",
                             required = true,
+                            schema = @Schema(type = "string")),
+                    @Parameter(in = ParameterIn.QUERY,
+                            name = "userId",
+                            description = "query字串要帶被審核通過的該userId ex. ?userId=\"673f7eec-8ae5-4e79-ad3a-42029eedf742\"",
+                            required = true,
                             schema = @Schema(type = "string"))}
             ,
             responses = {
-                    @ApiResponse(responseCode = "200", description = "資拓私鑰加密JWT Token 時效為1天，refresh_token時效也為一天",
+                    @ApiResponse(responseCode = "200", description = "資拓私鑰加密JWT Token 時效為1天，refresh_token時效為2天",
                             content = @Content(schema = @Schema(implementation = JwtReponse.class)))}
     )
-    @PostMapping("/getAuthorization")
-    public ResponseEntity<JwtReponse> getAPIKey() {
+    @PostMapping("/get-api-key")
+    public ResponseEntity<JwtReponse> getAPIKey(@RequestParam String userId) {
         try {
-            return new ResponseEntity<>(apiKeyService.getApiKey(null, null), HttpStatus.OK);
+            return new ResponseEntity<>(apiKeyService.getApiKey(userId), HttpStatus.OK);
+        } catch (Exception e) {
+            log.info("e:{}", e.toString());
+            throw new MoiException("generate error");
+        }
+    }
+
+
+
+    @Operation(description = "產生APIKEY",
+            parameters = {
+                    @Parameter(in = ParameterIn.HEADER,
+                            name = "Authorization",
+                            description = "聖森私鑰加密 jwt token,body附帶userInfo={\"Id\":\"673f7eec-8ae5-4e79-ad3a-42029eedf742\",\"orgId\":\"ADMIN\"}",
+                            required = true,
+                            schema = @Schema(type = "string")),
+                    @Parameter(in = ParameterIn.QUERY,
+                            name = "userId",
+                            description = "query字串要帶被審核通過的該userId ex. ?userId=\"673f7eec-8ae5-4e79-ad3a-42029eedf742\"",
+                            required = true,
+                            schema = @Schema(type = "string"))}
+            ,
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "資拓私鑰加密JWT Token 時效為1天，refresh_token時效為2天",
+                            content = @Content(schema = @Schema(implementation = JwtReponse.class)))}
+    )
+    @PostMapping("/create-api-key")
+    public ResponseEntity<JwtReponse> createApiKey(@RequestParam String userId) {
+        try {
+            return new ResponseEntity<>(apiKeyService.createApiKey(userId, null), HttpStatus.OK);
+        } catch (MoiException e) {
+            JwtReponse response = new JwtReponse();
+            response.setErrorResponse(String.valueOf(e));
+            return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
         } catch (Exception e) {
             log.info("e:{}", e.toString());
             throw new MoiException("generate error");
@@ -114,20 +150,21 @@ public class APIKeyResource {
                                     "\"id\":\"673f7eec-8ae5-4e79-ad3a-42029eedf742\"}")
                     )
             )
-            @RequestBody RefreshToken request) throws Exception {
+            @RequestBody RefreshToken request) {
         log.info("refreshToken:{}", request);
-        List<RefreshToken> refreshTokens = refreshTokenService.findByRefreshToken(request);
+        List<RefreshToken> refreshTokens = refreshTokenService.findByRefreshTokenAndUserId(request);
         if (!refreshTokens.isEmpty()) {
             try {
-                if (refreshTokenService.verifyExpiration(refreshTokens.get(0))) {
+                if (refreshTokenService.verifyExpiration(refreshTokens.get(0).getRefreshToken(), "refresh_token")) {
                     //refresh_token沒有過期
-                    if(!refreshTokens.isEmpty()){
-                        return new ResponseEntity<>(apiKeyService.getApiKey(request.getId(), refreshTokens.get(0)), HttpStatus.OK);
-                    }
-                    return new ResponseEntity<>(new JwtReponse("使用者資訊錯誤"), HttpStatus.OK);
+                    //卷新的token給他
+                    return new ResponseEntity<>(apiKeyService.exchangeForNewToken(request.getId()), HttpStatus.OK);
                 }
-            }catch (MoiException e){
-                return new ResponseEntity<>(new JwtReponse("api_key過期，請重新申請"), HttpStatus.OK);
+            } catch (ExpiredJwtException e) {
+                return new ResponseEntity<>(new JwtReponse("refresh_token過期"), HttpStatus.FORBIDDEN);
+            } catch (Exception e) {
+                log.info("refresh_token失敗:{}", e.getMessage());
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
         }
         return ResponseEntity.status(HttpStatus.FORBIDDEN).build();

@@ -6,7 +6,9 @@ public class RefreshToken {
 
     private String id;
     private String refreshToken;
+    private String token;
     private Instant expiryDate;
+    private Instant refreshTokenExpiryDate;
     private User user;
 
 
@@ -44,4 +46,20 @@ public class RefreshToken {
         this.user = user;
     }
 
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+    public Instant getRefreshTokenExpiryDate() {
+        return refreshTokenExpiryDate;
+    }
+
+    public void setRefreshTokenExpiryDate(Instant refreshTokenExpiryDate) {
+        this.refreshTokenExpiryDate = refreshTokenExpiryDate;
+    }
 }

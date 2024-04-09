@@ -37,7 +37,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/api/singlequery/**",
                         "/api/single-track-query/**",
                         "/api/bigdata/**",
-                        "/api/api-key/getAuthorization",
+                        "/api/api-key/get-api-key",
+                        "/api/api-key/create-api-key",
                         "/api/api-key/forapikey",
                         "/api/api-key/forguest"
                         );
