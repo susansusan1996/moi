@@ -45,7 +45,9 @@ public class JoinStepService {
             "JB311", "JB312", //退樓後之
             "JB411", "JB412",  //退樓
             "JB511", "JB512",  //號之之號
-            "JC111"  //臨建特附
+            "JC111",  //臨建特附
+            "JC211",  //路地名進階比對(有寫路地名，只是比對不到)
+            "JC311",  //缺路地名進階比對(沒寫路地名)
     };
     private static final String NUMFLRPOS = "NUMFLRPOS";
     static List<String> MULTI_ADDRESS = List.of("JB111", "JB112", "JB311", "JB312", "JB411", "JB412");
@@ -74,8 +76,12 @@ public class JoinStepService {
                     break;
                 }
                 for (String newMappingId : newMappingIdSet) {
+                    if (address.getJoinStep() != null) {
+                        break;
+                    }
                     //先把newMappingId，切割好裝進map裡
                     LinkedHashMap<String, String> newMappingIdMap = mapNewMappingId(newMappingId);
+                    log.info("newMappingIdMap:{}",newMappingIdMap);
                     newId = replaceCharsWithZero("newId", columns, step, address, newMappingIdMap);
                     if (step.startsWith("JB5")) {
                         log.info("newId:{}", newId);
@@ -89,6 +95,15 @@ public class JoinStepService {
                         seq = redisService.findByKey("退" + step, newMappingId, "");
                         if (StringUtils.isNotNullOrEmpty(seq)) {
                             seqSet.add(seq);
+                            //路地名比對
+                            log.info("address.getHasRoadArea():{}",address.getHasRoadArea().toString());
+                            if("JC211".equals(step) || "JC311".equals(step)){
+                                if (!address.getHasRoadArea()) {
+                                    step = "JC311"; //路地名連寫都沒寫==>JC311
+                                }else{
+                                    step = "JC211"; //有寫路地名只是找不到代碼
+                                }
+                            }
                             step = checkIfHistory(step, seq); //確認歷史門牌
                             address.setJoinStep(step);
                             //除了"退室"、"退樓後之"、"退樓"，有可能造成多址，其他有找到seq就可以停止loop
@@ -150,6 +165,9 @@ public class JoinStepService {
                 //JB312: 退樓後之(鄰、里、室挖掉，position之的部分改0，mappingId之的部分也改0)
                 //JB412: 退樓(鄰、里、室挖掉，position先全部歸零)
                     List.of("NEIGHBOR", "VILLAGE", "ROOM", "TOWN");
+            case "JC211", "JC311" ->   //不含鄉鎮市區
+                    //鄰、里、室、路地名
+                    List.of("NEIGHBOR", "VILLAGE", "ROADAREA", "ROOM", "TOWN");
             default -> List.of();
         };
     }

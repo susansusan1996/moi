@@ -65,23 +65,24 @@ public class SingleQueryService {
 
     public Address findMappingId(String originalString) {
         //切地址
-        Address address = addressParser.parseAddress(originalString, null);
-        if (address != null) {
-            String numTypeCd = "95";
-            //如果有addrRemain的話，表示有可能是"臨建特附"，要把"臨建特附"先拿掉，再PARSE一次地址
-            if(StringUtils.isNotNullOrEmpty(address.getAddrRemains())){
-                numTypeCd = getNumTypeCd(address);
-                //臨建特附，再parse一次地址
-                if (!"95".equals(numTypeCd)) {
-                    address = addressParser.parseAddress(address.getOriginalAddress(), null);
-                    address.setNumTypeCd(numTypeCd);
-                }
+        Address address = addressParser.parseAddress(originalString, null, null);
+        log.info("getOriginalAddress:{}",address.getOriginalAddress());
+        String numTypeCd = "95";
+        //如果有addrRemain的話，表示有可能是"臨建特附"，要把"臨建特附"先拿掉，再PARSE一次地址
+        if(StringUtils.isNotNullOrEmpty(address.getAddrRemains())){
+            numTypeCd = getNumTypeCd(address);
+            //臨建特附，再parse一次地址
+            if (!"95".equals(numTypeCd)) {
+                address = addressParser.parseAddress(null, address.getOriginalAddress(), address);
             }else{
-                address.setNumTypeCd(numTypeCd); //95
+                //有可能是地址沒有切出來導致有remain
+                address = addressParser.parseNotFoundArea(address);
             }
-            return setAddressService.setAddressAndFindCdByRedis(address);
+            address.setNumTypeCd(numTypeCd);
+        }else{
+            address.setNumTypeCd(numTypeCd); //95
         }
-        return null;
+        return setAddressService.setAddressAndFindCdByRedis(address);
     }
 
     private static String getNumTypeCd(Address address) {
@@ -102,6 +103,7 @@ public class SingleQueryService {
             newAddrRemains = oldAddrRemains.replace("附", "");
         } else {
             numTypeCd = "95";
+            newAddrRemains = oldAddrRemains;
         }
         //再把addrRemains拼回原本的address，再重新切一次地址
         address.setOriginalAddress(address.getOriginalAddress().replace(oldAddrRemains, newAddrRemains));

@@ -51,6 +51,7 @@ public class Address {
     private String joinStep; //地址比對代碼
     private Set<String> seqSet;
     private String numTypeCd; //臨建特附
+    private Boolean hasRoadArea; //有寫路地名為true，沒寫為false
 
 
     public Address() {
@@ -418,6 +419,14 @@ public class Address {
         this.numTypeCd = numTypeCd;
     }
 
+    public Boolean getHasRoadArea() {
+        return hasRoadArea;
+    }
+
+    public void setHasRoadArea(Boolean hasRoadArea) {
+        this.hasRoadArea = hasRoadArea;
+    }
+
     @Override
     public String toString() {
         return "Address{" +
@@ -464,6 +473,7 @@ public class Address {
                 ", joinStep='" + joinStep + '\'' +
                 ", seqSet=" + seqSet +
                 ", numTypeCd='" + numTypeCd + '\'' +
+                ", hasRoadArea=" + hasRoadArea +
                 '}';
     }
 }

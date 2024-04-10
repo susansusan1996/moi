@@ -75,8 +75,12 @@ public class SetAddressService {
         address.setNeighborCd(findNeighborCd(address.getNeighbor()));//鄰
         if (StringUtils.isNullOrEmpty(roadAreaKey)) {
             address.setRoadAreaSn("0000000");
+            //"沒有"填寫"路地名"先註記起來
+            address.setHasRoadArea(false);
         } else {
             address.setRoadAreaSn(resultMap.get("ROADAREA:" + roadAreaKey));
+            //"有"填寫"路地名"先註記起來
+            address.setHasRoadArea(true);
         }
         address.setLaneCd(resultMap.get("LANE:" + replaceWithHalfWidthNumber(lane)));
         address.setAlleyIdSn(resultMap.get("ALLEY:" + alleyIdSnKey));

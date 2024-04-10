@@ -23,7 +23,7 @@ public class IbdTbAddrCodeOfDataStandardRepositoryImpl implements IbdTbAddrCodeO
     @Override
     public List<IbdTbAddrCodeOfDataStandardDTO> findBySeq(List<Integer> seq) {
         List<Integer> seqWhenEmpty = new ArrayList<>();
-        seqWhenEmpty.add(1);
+        seqWhenEmpty.add(-1);
         Query query = Query.builder()
                 .append("SELECT ADDR_ODS.IBD_TB_ADDR_CODE_OF_DATA_STANDARD.*")
                 .append("FROM ADDR_ODS.IBD_TB_ADDR_CODE_OF_DATA_STANDARD WHERE SEQ IN (:SEQ)", seq.isEmpty() ? seqWhenEmpty: seq)
