@@ -45,8 +45,8 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
         log.info("requestURI:{}",request.getRequestURI());
 
         /**單筆未登入**/
-        //todo:要改成凰喜api的路徑
-        if("/api/api-key/forguest".equals(request.getRequestURI())){
+        //todo:要改成凰喜單筆對外 & 單筆軌跡對外 uri
+        if("/api/api-key/query-track-for-guest".equals(request.getRequestURI())){
             /**限流每分鐘20個請求**/
             if(!FOR_GUEST_BUCKET.tryConsume(1)){
                 throw new ResponseStatusException(HttpStatus.BANDWIDTH_LIMIT_EXCEEDED);

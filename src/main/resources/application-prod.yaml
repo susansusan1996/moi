@@ -1,3 +1,4 @@
+#正式環境 暫用 AWS環境參數
 spring:
   data:
     redis:
@@ -69,11 +70,11 @@ apserver:
   #  status=DONE
 
 sftputils:
- host: 52.33.116.195
- port: 22
- username: ubuntu
-# private-key: D:\moi_key\moi-addr-privatekey.pem
- private-key: /home/ubuntu/app/moi_key/moi-addr-privatekey.pem
+  host: 52.33.116.195
+  port: 22
+  username: ubuntu
+  # private-key: D:\moi_key\moi-addr-privatekey.pem
+  private-key: /home/ubuntu/app/moi_key/moi-addr-privatekey.pem
 
 
 

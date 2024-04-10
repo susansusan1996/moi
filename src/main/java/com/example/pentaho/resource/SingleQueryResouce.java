@@ -9,10 +9,12 @@ import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +32,7 @@ import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping("/api/singlequery")
+@SecurityRequirement(name = "Authorization")
 public class SingleQueryResouce {
 
     private static Logger log = LoggerFactory.getLogger(SingleQueryResouce.class);
@@ -98,19 +101,20 @@ public class SingleQueryResouce {
     /***
      * 單筆查詢軌跡
      */
-    @Operation(description = "單筆軌跡",
-            parameters = {@Parameter(in = ParameterIn.HEADER,
-                    name = "Authorization",
-                    description = "jwt token,body附帶 userInfo={\"Id\":1,\"orgId\":\"Admin\"}",
-                    required = true,
-                    schema = @Schema(type = "string"))
-            },
+    @Operation(
+            description = "單筆軌跡",
+//            parameters = {@Parameter(in = ParameterIn.HEADER,
+//                    name = "Authorization",
+//                    description = "jwt token,body附帶 userInfo={\"Id\":1,\"orgId\":\"Admin\"}",
+//                    required = true,
+//                    schema = @Schema(type = "string"))
+//            },
             responses = {
                     @ApiResponse(responseCode = "200", description = "",
                             content = @Content(schema = @Schema(implementation = IbdTbIhChangeDoorplateHis.class))),
                     @ApiResponse(responseCode = "500", description = "",
                             content = @Content(schema = @Schema(implementation = String.class), examples = @ExampleObject(value = ""))
-                    )})
+                            )})
     @PostMapping("/query-track")
     public ResponseEntity<List<IbdTbIhChangeDoorplateHis>> queryTrack(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
