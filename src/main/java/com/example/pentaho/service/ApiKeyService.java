@@ -78,7 +78,7 @@ public class ApiKeyService {
                 user.setTokenType("refresh_token");
                 refreshTokenMap = RSAJWTUtils.generateTokenExpireInMinutes(user, privateKey, VALID_TIME*2);  //REFRESH_TOKEN效期先設2天
                 //token存table
-                refreshTokenService.saveRefreshToken(userId, toeknMap, refreshTokenMap);
+                refreshTokenService.saveRefreshToken(userId, toeknMap, refreshTokenMap, "AGREE");
             }else{
                 throw new MoiException("該用戶已申請過ApiKey");
             }

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 
@@ -28,11 +29,13 @@ public class RefreshTokenRepositoryImpl implements RefreshTokenRepository {
     @Override
     public void saveRefreshToken(RefreshToken refreshToken) {
         Query query = Query.builder()
-                .append("insert into ADDR_ODS.REFRESH_TOKEN (id, refresh_token, refresh_token_expiry_date, token ,expiry_date )")
-                .append("VALUES (:id, :refreshtoken, CAST(:refreshtokenexpirydate AS DATETIME), :token, CAST(:expirydate AS DATETIME))",
+                .append("insert into ADDR_ODS.REFRESH_TOKEN (id, refresh_token, refresh_token_expiry_date, token ,expiry_date,create_timestamp, review_result )")
+                .append("VALUES (:id, :refreshtoken, CAST(:refreshtokenexpirydate AS DATETIME), :token, CAST(:expirydate AS DATETIME), :now, 'AGREE' )",
                         refreshToken.getId(),
-                        refreshToken.getRefreshToken(), java.sql.Timestamp.from(refreshToken.getRefreshTokenExpiryDate()),
-                        refreshToken.getToken(), java.sql.Timestamp.from(refreshToken.getExpiryDate()))
+                        refreshToken.getRefreshToken(), refreshToken.getRefreshTokenExpiryDate() == null ? null : java.sql.Timestamp.from(refreshToken.getRefreshTokenExpiryDate()),
+                        refreshToken.getToken(), refreshToken.getExpiryDate() == null ? null : java.sql.Timestamp.from(refreshToken.getExpiryDate()),
+                        java.sql.Timestamp.from(Instant.now())
+                )
                 .build();
         log.info("query:{}", query);
         log.info("params:{}", query.getParameters());
@@ -89,6 +92,17 @@ public class RefreshTokenRepositoryImpl implements RefreshTokenRepository {
         Date expiryDate = dateFormat.parse(String.valueOf(reponse.getExpiryDate()));
         Query query = Query.builder()
                 .append("update ADDR_ODS.REFRESH_TOKEN set token = :token , expiry_Date = :expiryDate", reponse.getToken(), java.sql.Timestamp.from(expiryDate.toInstant()))
+                .append("WHERE id = :id", userId)
+                .build();
+        log.info("query:{}", query);
+        log.info("params:{}", query.getParameters());
+        sqlExecutor.update(query);
+    }
+
+    @Override
+    public void updateByUserId(String userId) {
+        Query query = Query.builder()
+                .append("update ADDR_ODS.REFRESH_TOKEN set refresh_token = NULL , token = NULL, refresh_token_expiry_date = NULL, expiry_Date = NULL, review_result = 'REJECT', create_timestamp = :now", java.sql.Timestamp.from(Instant.now()))
                 .append("WHERE id = :id", userId)
                 .build();
         log.info("query:{}", query);
