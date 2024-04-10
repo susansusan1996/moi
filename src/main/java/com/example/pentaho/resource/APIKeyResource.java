@@ -23,6 +23,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.text.ParseException;
 import java.util.List;
 
 /***
@@ -86,6 +87,11 @@ public class APIKeyResource {
                             name = "userId",
                             description = "query字串要帶被審核通過的該userId ex. ?userId=673f7eec-8ae5-4e79-ad3a-42029eedf742",
                             required = true,
+                            schema = @Schema(type = "string")),
+                    @Parameter(in = ParameterIn.QUERY,
+                            name = "reviewResult",
+                            description = "query字串帶審核結果(AGREE、REJECT) ex. reviewResult=AGREE，或是 reviewResult=REJECT"  ,
+                            required = true,
                             schema = @Schema(type = "string"))}
             ,
             responses = {
@@ -93,11 +99,21 @@ public class APIKeyResource {
                             content = @Content(schema = @Schema(implementation = JwtReponse.class)))}
     )
     @PostMapping("/create-api-key")
-    public ResponseEntity<JwtReponse> createApiKey(@RequestParam String userId) {
+    public ResponseEntity<JwtReponse> createApiKey(@RequestParam String userId, @RequestParam String reviewResult) throws ParseException {
+        JwtReponse response = new JwtReponse();
+        if ("REJECT".equals(reviewResult)) {
+            //如果有值，表示要用更新的
+            if(!refreshTokenService.findByUserId(userId).isEmpty()){
+                refreshTokenService.updateByUserId(userId);
+            }else{
+                refreshTokenService.saveRefreshToken(userId, null, null, reviewResult);
+            }
+            response.setErrorResponse("已儲存被拒絕申請的使用者資訊");
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
         try {
             return new ResponseEntity<>(apiKeyService.createApiKey(userId, null), HttpStatus.OK);
         } catch (MoiException e) {
-            JwtReponse response = new JwtReponse();
             response.setErrorResponse(String.valueOf(e));
             return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
         } catch (Exception e) {

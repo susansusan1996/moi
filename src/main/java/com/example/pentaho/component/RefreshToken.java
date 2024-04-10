@@ -9,6 +9,7 @@ public class RefreshToken {
     private String token;
     private Instant expiryDate;
     private Instant refreshTokenExpiryDate;
+    private String reviewResult; //審核結果(AGREE、REJECT)
     private User user;
 
 
@@ -61,5 +62,26 @@ public class RefreshToken {
 
     public void setRefreshTokenExpiryDate(Instant refreshTokenExpiryDate) {
         this.refreshTokenExpiryDate = refreshTokenExpiryDate;
+    }
+
+    public String getReviewResult() {
+        return reviewResult;
+    }
+
+    public void setReviewResult(String reviewResult) {
+        this.reviewResult = reviewResult;
+    }
+
+    @Override
+    public String toString() {
+        return "RefreshToken{" +
+                "id='" + id + '\'' +
+                ", refreshToken='" + refreshToken + '\'' +
+                ", token='" + token + '\'' +
+                ", expiryDate=" + expiryDate +
+                ", refreshTokenExpiryDate=" + refreshTokenExpiryDate +
+                ", reviewResult='" + reviewResult + '\'' +
+                ", user=" + user +
+                '}';
     }
 }

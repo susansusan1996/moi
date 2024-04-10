@@ -22,5 +22,7 @@ public interface RefreshTokenRepository {
 
     void updateTokenByUserId(String id, JwtReponse reponse) throws ParseException;
 
+    void updateByUserId(String userId);
+
 
 }

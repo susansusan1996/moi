@@ -29,19 +29,24 @@ public class RefreshTokenService {
     @Autowired
     private KeyComponent keyComponent;
 
-    public RefreshToken saveRefreshToken(String id, Map<String, Object> tokenMap, Map<String, Object> refreshTokenMap) throws ParseException {
-        User user = UserContextUtils.getUserHolder();
-        log.info("user:{}", user);
+    public RefreshToken saveRefreshToken(String id, Map<String, Object> tokenMap, Map<String, Object> refreshTokenMap, String reviewResult) throws ParseException {
         RefreshToken refreshToken = new RefreshToken();
-        refreshToken.setId(id);
-        refreshToken.setRefreshToken((String) refreshTokenMap.get("token"));
-        refreshToken.setToken((String) tokenMap.get("token"));
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        Date expiryDate = dateFormat.parse(String.valueOf(tokenMap.get("expiryDate")));
-        Date refreshTokenExpiryDate = dateFormat.parse(String.valueOf(refreshTokenMap.get("expiryDate")));
-        refreshToken.setRefreshTokenExpiryDate(refreshTokenExpiryDate.toInstant()); //refresh_token，效期先設2天
-        refreshToken.setExpiryDate(expiryDate.toInstant()); //refresh_token，效期先設1天
-        refreshTokenRepository.saveRefreshToken(refreshToken);
+        if("AGREE".equals(reviewResult)){
+            User user = UserContextUtils.getUserHolder();
+            log.info("user:{}", user);
+            refreshToken.setId(id);
+            refreshToken.setRefreshToken((String) refreshTokenMap.get("token"));
+            refreshToken.setToken((String) tokenMap.get("token"));
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            Date expiryDate = dateFormat.parse(String.valueOf(tokenMap.get("expiryDate")));
+            Date refreshTokenExpiryDate = dateFormat.parse(String.valueOf(refreshTokenMap.get("expiryDate")));
+            refreshToken.setRefreshTokenExpiryDate(refreshTokenExpiryDate.toInstant()); //refresh_token，效期先設2天
+            refreshToken.setExpiryDate(expiryDate.toInstant()); //refresh_token，效期先設1天
+            refreshTokenRepository.saveRefreshToken(refreshToken);
+        }else{
+            refreshToken.setId(id);
+            refreshTokenRepository.saveRefreshToken(refreshToken);
+        }
         return refreshToken;
     }
 
@@ -87,5 +92,9 @@ public class RefreshTokenService {
 
     public void updateTokenByUserId(String userId, JwtReponse reponse) throws ParseException {
         refreshTokenRepository.updateTokenByUserId(userId, reponse);
+    }
+
+    public void updateByUserId(String userId) {
+        refreshTokenRepository.updateByUserId(userId);
     }
 }
