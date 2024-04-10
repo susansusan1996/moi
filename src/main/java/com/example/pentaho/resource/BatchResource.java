@@ -20,6 +20,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +41,7 @@ import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/batchForm")
+@SecurityRequirement(name = "Authorization")
 public class BatchResource {
 
     private static Logger log = LoggerFactory.getLogger(BatchResource.class);
@@ -99,7 +101,7 @@ public class BatchResource {
                     @Parameter(in = ParameterIn.HEADER,
                             name = "Authorization",
                             description = "jwt token,body附帶userInfo={\"Id\":\"673f7eec-8ae5-4e79-ad3a-42029eedf742\",\"orgId\":\"ADMIN\"}",
-                            required = true,
+//                            required = true,
                             schema = @Schema(type = "string"))}
     ,
         responses = {
@@ -223,7 +225,7 @@ public class BatchResource {
             parameters = {  @Parameter(in = ParameterIn.HEADER,
                     name = "Authorization",
                     description = "聖森私鑰加密 jwt token,body附帶userInfo={\"Id\":1,\"departName\":\"A05\"} ,departName需為代號",
-                    required = true,
+//                    required = true,
                     schema = @Schema(type = "string"))
             })
     @PostMapping("/bigdata-finished")
