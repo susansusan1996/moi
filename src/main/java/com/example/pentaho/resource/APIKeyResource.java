@@ -51,11 +51,10 @@ public class APIKeyResource {
                     @Parameter(in = ParameterIn.HEADER,
                             name = "Authorization",
                             description = "聖森私鑰加密 jwt token,body附帶userInfo={\"Id\":\"673f7eec-8ae5-4e79-ad3a-42029eedf742\",\"orgId\":\"ADMIN\"}",
-                            required = true,
                             schema = @Schema(type = "string")),
                     @Parameter(in = ParameterIn.QUERY,
                             name = "userId",
-                            description = "query字串要帶被審核通過的該userId ex. ?userId=\"673f7eec-8ae5-4e79-ad3a-42029eedf742\"",
+                            description = "query字串要帶被審核通過的該userId ex. ?userId=673f7eec-8ae5-4e79-ad3a-42029eedf742",
                             required = true,
                             schema = @Schema(type = "string"))}
             ,
@@ -80,11 +79,10 @@ public class APIKeyResource {
                     @Parameter(in = ParameterIn.HEADER,
                             name = "Authorization",
                             description = "聖森私鑰加密 jwt token,body附帶userInfo={\"Id\":\"673f7eec-8ae5-4e79-ad3a-42029eedf742\",\"orgId\":\"ADMIN\"}",
-                            required = true,
                             schema = @Schema(type = "string")),
                     @Parameter(in = ParameterIn.QUERY,
                             name = "userId",
-                            description = "query字串要帶被審核通過的該userId ex. ?userId=\"673f7eec-8ae5-4e79-ad3a-42029eedf742\"",
+                            description = "query字串要帶被審核通過的該userId ex. ?userId=673f7eec-8ae5-4e79-ad3a-42029eedf742",
                             required = true,
                             schema = @Schema(type = "string"))}
             ,
@@ -113,7 +111,6 @@ public class APIKeyResource {
             parameters = {@Parameter(in = ParameterIn.HEADER,
                     name = "Authorization",
                     description = "資拓私鑰加密的jwt token",
-                    required = true,
                     schema = @Schema(type = "string"))
             },
             responses = {
