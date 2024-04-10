@@ -63,7 +63,7 @@ public class APIKeyResource {
                     @ApiResponse(responseCode = "200", description = "資拓私鑰加密JWT Token 時效為1天，refresh_token時效為2天",
                             content = @Content(schema = @Schema(implementation = JwtReponse.class)))}
     )
-    @PostMapping("/get-api-key")
+    @GetMapping("/get-api-key")
     public ResponseEntity<JwtReponse> getAPIKey(@RequestParam String userId) {
         try {
             return new ResponseEntity<>(apiKeyService.getApiKey(userId), HttpStatus.OK);
