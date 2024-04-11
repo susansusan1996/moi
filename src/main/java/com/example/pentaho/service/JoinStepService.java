@@ -48,6 +48,7 @@ public class JoinStepService {
             "JC111",  //臨建特附
             "JC211",  //路地名進階比對(有寫路地名，只是比對不到)
             "JC311",  //缺路地名進階比對(沒寫路地名)
+            "JC411"," JC412",  //號樓之要件 (漏寫之)，邏輯:原本有"之"的該欄位position會是0，要改成3(.+之$)
     };
     private static final String NUMFLRPOS = "NUMFLRPOS";
     static List<String> MULTI_ADDRESS = List.of("JB111", "JB112", "JB311", "JB312", "JB411", "JB412");
@@ -165,9 +166,12 @@ public class JoinStepService {
                 //JB312: 退樓後之(鄰、里、室挖掉，position之的部分改0，mappingId之的部分也改0)
                 //JB412: 退樓(鄰、里、室挖掉，position先全部歸零)
                     List.of("NEIGHBOR", "VILLAGE", "ROOM", "TOWN");
-            case "JC211", "JC311" ->   //不含鄉鎮市區
+            case "JC211", "JC311", "JC412" ->   //不含鄉鎮市區
                     //鄰、里、室、路地名
                     List.of("NEIGHBOR", "VILLAGE", "ROADAREA", "ROOM", "TOWN");
+            case "JC411" ->   //含鄉鎮市區
+                //鄰、里、室、路地名
+                    List.of("NEIGHBOR", "VILLAGE", "ROADAREA", "ROOM");
             default -> List.of();
         };
     }
@@ -239,6 +243,13 @@ public class JoinStepService {
                 newPosition = NEW_POSITION_2;
                 newNumSegment = oldNumSegment.replace(oldPosition, newPosition);
                 log.info("newPosition:{}",newNumSegment);
+            }
+            //JC411 號樓之要件 (漏寫之)，邏輯:原本有"之"的該欄位position會是0或7，要改成3(.+之$)
+            case "JC411", "JC412" -> {
+                log.info("號樓之(漏寫之) oldPosition:{}",oldNumSegment);
+                //只有oldId需要replace(因為只有oldId有漏寫之)
+                newNumSegment = idType.equals("newId") ? oldNumSegment : replaceFirstZerosOrSevenWithThree(oldNumSegment);
+                log.info("號樓之(漏寫之) newPosition:{}",newNumSegment);
             }
             default -> newNumSegment = oldNumSegment;
         }
@@ -312,12 +323,34 @@ public class JoinStepService {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < number.length(); i++) {
             if (i == index - 1) {
-                sb.append('0'); // 第一個不為0的數字的錢一個數字替換成0
+                sb.append('0'); // 第一個不為0的數字的前一個數字替換成0
             } else {
                 sb.append(number.charAt(i));
             }
         }
         log.info("改之後==>:{}", sb);
+        return sb.toString();
+    }
+
+
+    //找第一個0或7，把0或7改成3 (JC4 ，號樓之要件 (漏寫之))
+    private static String replaceFirstZerosOrSevenWithThree(String number) {
+        log.info("replaceFirstZerosOrSevenWithThree 改之前==>:{}",number);
+        int index = 0;
+        // 找第一個為0的數字的index
+        while (index < number.length() && !(number.charAt(index) == '0') && !(number.charAt(index) == '7')) {
+            index++;
+        }
+        log.info("index==>:{}",index);
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < number.length(); i++) {
+            if (i == index) {
+                sb.append('3'); // 第一個為0的數字的替換成3
+            } else {
+                sb.append(number.charAt(i));
+            }
+        }
+        log.info("replaceFirstZerosOrSevenWithThree 改之後==>:{}", sb);
         return sb.toString();
     }
 
