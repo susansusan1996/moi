@@ -19,6 +19,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,7 +28,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api")
-@Hidden
+@Profile("uat")
 public class UserResource {
 
     private final static Logger log = LoggerFactory.getLogger(UserResource.class);
@@ -36,25 +37,9 @@ public class UserResource {
     private UserService userService;
 
 
-    /**
-     * login
-     * @param user
-     * @return
-     * {"id":"673f7eec-8ae5-4e79-ad3a-42029eedf742","departName":"A05"}
-     */
-    @PostMapping("/login")
-    public ResponseEntity<String> login(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "登入",
-                    required = true,
-                    content = @Content(
-                            schema = @Schema(implementation = User.class),
-                            examples = @ExampleObject(value = "{\"id\":\"673f7eec-8ae5-4e79-ad3a-42029eedf742\",\"departName\":\"A05\"}")
-                    )
-            )
-            @RequestBody User user) {
-        log.info("user:{}", user);
-        Login login = userService.findUserByUserName(user);
+    @GetMapping("/login")
+    public ResponseEntity<String> login() {
+        Login login = userService.findUserByUserName();
         return new ResponseEntity<>(login.getAcessToken().getToken(), HttpStatus.OK);
     }
 
