@@ -115,7 +115,7 @@ public class RedisService {
      * 模糊比對，找出相符的 KEY (redis: scan)
      */
     public Set<String> findListByScan(String key) {
-        Set<String> keySet = stringRedisTemplate2.execute((RedisCallback<Set<String>>) connection -> {
+        Set<String> keySet = stringRedisTemplate1.execute((RedisCallback<Set<String>>) connection -> {
             Set<String> keySetTemp = new ConcurrentSkipListSet<>();
             try (Cursor<byte[]> cursor = connection.scan(ScanOptions.scanOptions()
                     .match(key) //模糊比對
