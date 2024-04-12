@@ -48,10 +48,11 @@ public class JoinStepService {
             "JC111",  //臨建特附
             "JC211",  //路地名進階比對(有寫路地名，只是比對不到)
             "JC311",  //缺路地名進階比對(沒寫路地名)
-            "JC411"," JC412",  //號樓之要件 (漏寫之)，邏輯:原本有"之"的該欄位position會是0，要改成3(.+之$)
+            "JC411","JC412",  //號樓之要件 (漏寫之)，邏輯:原本有"之"的該欄位position會是0或7，要改成4(.+之$)，數字欄位也要從7xxx改成0xxx
+            "JD111","JD112",  //排除要件對應多址 (村里鄰拔掉變多筆)
     };
     private static final String NUMFLRPOS = "NUMFLRPOS";
-    static List<String> MULTI_ADDRESS = List.of("JB111", "JB112", "JB311", "JB312", "JB411", "JB412");
+    static List<String> MULTI_ADDRESS = List.of("JB111", "JB112", "JB311", "JB312", "JB411", "JB412","JD111","JD112");
 
     public Set<String> findJoinStep(Address address, Set<String> newMappingIdSet, Set<String> seqSet) throws NoSuchFieldException, IllegalAccessException {
         String seq = "";
@@ -71,6 +72,16 @@ public class JoinStepService {
                 //把想要挖掉的地址片段代碼用0取代
                 LinkedHashMap<String, String> oldMappingIdMap = new LinkedHashMap<>(address.getMappingIdMap());
                 log.info("oldMappingIdMap:{}",oldMappingIdMap);
+                //JC4要重新模糊搜尋一次mappingId (因為FLRNUM會是錯誤的7開頭，這樣模糊搜尋會完全找不到)
+                if (step.startsWith("JC4")) {
+                    //要重新找一遍
+                    String oldNumSegment = address.getMappingIdMap().get(NUMFLRPOS);
+                    log.info("oldNumSegment:{}", oldNumSegment);
+                    String index = findFirstZeroOrSevenIndex(oldNumSegment);
+                    String numFlr = address.getMappingIdMap().get("NUM_FLR_" + index);
+                    address.setProperty(numFlr, "之" + address.getProperty(numFlr)); //補之
+                    newMappingIdSet = redisService.fuzzySearchMappingId(address);
+                }
                 String oldId = replaceCharsWithZero("oldId", columns, step, address, oldMappingIdMap);
                 String newId;
                 if (address.getJoinStep() != null) {
@@ -166,12 +177,12 @@ public class JoinStepService {
                 //JB312: 退樓後之(鄰、里、室挖掉，position之的部分改0，mappingId之的部分也改0)
                 //JB412: 退樓(鄰、里、室挖掉，position先全部歸零)
                     List.of("NEIGHBOR", "VILLAGE", "ROOM", "TOWN");
-            case "JC211", "JC311", "JC412" ->   //不含鄉鎮市區
-                    //鄰、里、室、路地名
-                    List.of("NEIGHBOR", "VILLAGE", "ROADAREA", "ROOM", "TOWN");
             case "JC411" ->   //含鄉鎮市區
                 //鄰、里、室、路地名
                     List.of("NEIGHBOR", "VILLAGE", "ROADAREA", "ROOM");
+            case "JC211", "JC311", "JC412" ->   //不含鄉鎮市區
+                    //鄰、里、室、路地名
+                    List.of("NEIGHBOR", "VILLAGE", "ROADAREA", "ROOM", "TOWN");
             default -> List.of();
         };
     }
@@ -248,7 +259,15 @@ public class JoinStepService {
             case "JC411", "JC412" -> {
                 log.info("號樓之(漏寫之) oldPosition:{}",oldNumSegment);
                 //只有oldId需要replace(因為只有oldId有漏寫之)
-                newNumSegment = idType.equals("newId") ? oldNumSegment : replaceFirstZerosOrSevenWithThree(oldNumSegment);
+                Map<String, String> map = replaceFirstZerosOrSevenWithFour(oldNumSegment);
+                String index = map.get("INDEX"); //就是這個欄位要從7xxx改成0xxx
+                String nuFlrKey = "NUM_FLR_" + index;
+                String numFlrCD = newMappingIdMap.get(nuFlrKey);
+                if(numFlrCD.startsWith("7")){
+                    numFlrCD = numFlrCD.replaceFirst("7","0"); //把第一個7改成0
+                    newMappingIdMap.put(nuFlrKey, numFlrCD);
+                }
+                newNumSegment = idType.equals("newId") ? oldNumSegment : map.get("NUMFLRPOS");
                 log.info("號樓之(漏寫之) newPosition:{}",newNumSegment);
             }
             default -> newNumSegment = oldNumSegment;
@@ -301,7 +320,7 @@ public class JoinStepService {
             }
         }
         //交換POSITION
-        if (step.startsWith("JB")) {
+        if (step.startsWith("JB") || step.startsWith("JC")) {
             exchangePosition(idType, mappingIdMap, step);
         }
         //再把newMappingIdMap的value都拼接起來
@@ -315,14 +334,14 @@ public class JoinStepService {
     private String replaceLeadingZeros(String number) {
         log.info("改之前==>:{}",number);
         int index = 0;
-        // 找第一個不為0的數字的index
-        while (index < number.length() && !(number.charAt(index) == '0')) {
+        // 找第一個為2的數字的index
+        while (index < number.length() && !(number.charAt(index) == '2')) {
             index++;
         }
         log.info("index==>:{}",index);
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < number.length(); i++) {
-            if (i == index - 1) {
+            if (i == index + 1) {
                 sb.append('0'); // 第一個不為0的數字的前一個數字替換成0
             } else {
                 sb.append(number.charAt(i));
@@ -333,10 +352,12 @@ public class JoinStepService {
     }
 
 
-    //找第一個0或7，把0或7改成3 (JC4 ，號樓之要件 (漏寫之))
-    private static String replaceFirstZerosOrSevenWithThree(String number) {
+    //找第一個0或7，把0或7改成4 (JC4 ，號樓之要件 (漏寫之))
+    private static Map<String, String> replaceFirstZerosOrSevenWithFour(String number) {
+        Map<String, String> map = new LinkedHashMap<>();
         log.info("replaceFirstZerosOrSevenWithThree 改之前==>:{}",number);
         int index = 0;
+        String flrNumIndex = "";
         // 找第一個為0的數字的index
         while (index < number.length() && !(number.charAt(index) == '0') && !(number.charAt(index) == '7')) {
             index++;
@@ -345,13 +366,35 @@ public class JoinStepService {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < number.length(); i++) {
             if (i == index) {
-                sb.append('3'); // 第一個為0的數字的替換成3
+                sb.append('4'); // 第一個為0或7的數字的替換成4
+                flrNumIndex = String.valueOf(index+1);
             } else {
                 sb.append(number.charAt(i));
             }
         }
         log.info("replaceFirstZerosOrSevenWithThree 改之後==>:{}", sb);
-        return sb.toString();
+        map.put("NUMFLRPOS", sb.toString());
+        map.put("INDEX", flrNumIndex);
+        return map;
+    }
+
+
+    private static String findFirstZeroOrSevenIndex(String number) {
+        Map<String, String> map = new LinkedHashMap<>();
+        int index = 0;
+        String flrNumIndex = "";
+        // 找第一個為0的數字的index
+        while (index < number.length() && !(number.charAt(index) == '0') && !(number.charAt(index) == '7')) {
+            index++;
+        }
+        log.info("index==>:{}", index);
+        for (int i = 0; i < number.length(); i++) {
+            if (i == index) {
+                flrNumIndex = String.valueOf(index + 1);
+                break;
+            }
+        }
+        return flrNumIndex;
     }
 
 
