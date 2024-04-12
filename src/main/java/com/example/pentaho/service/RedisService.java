@@ -4,6 +4,7 @@ import com.example.pentaho.component.SingleQueryDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.*;
 import org.springframework.stereotype.Service;
 
@@ -19,14 +20,19 @@ public class RedisService {
     Integer SCAN_SIZE = 1000;
 
     @Autowired
-    private StringRedisTemplate stringRedisTemplate;
+    @Qualifier("stringRedisTemplate2")
+    private StringRedisTemplate stringRedisTemplate2;
+
+    @Autowired
+    @Qualifier("stringRedisTemplate1")
+    private StringRedisTemplate stringRedisTemplate1;
 
 
     /**
      * 找為LIST的值 (redis: LRANGE)
      */
     public List<String> findListByKey(String key) {
-        ListOperations<String, String> listOps = stringRedisTemplate.opsForList();
+        ListOperations<String, String> listOps = stringRedisTemplate2.opsForList();
         List<String> elements = listOps.range(key, 0, -1);
         log.info("elements:{}", elements);
         return elements;
@@ -36,7 +42,7 @@ public class RedisService {
      * set單一個值 (redis: set)
      */
     public void setData(SingleQueryDTO singleQueryDTO) {
-        stringRedisTemplate.opsForValue().set(singleQueryDTO.getRedisKey(), singleQueryDTO.getRedisValue());
+        stringRedisTemplate2.opsForValue().set(singleQueryDTO.getRedisKey(), singleQueryDTO.getRedisValue());
         log.info("set單一個值，key: {}, value: {}", singleQueryDTO.getRedisKey(), singleQueryDTO.getRedisValue());
     }
 
@@ -45,7 +51,7 @@ public class RedisService {
      * 一個key塞多筆值(redis: RPUSH)
      */
     public void pushData(SingleQueryDTO singleQueryDTO) {
-        stringRedisTemplate.opsForList().rightPushAll(singleQueryDTO.getRedisKey(), singleQueryDTO.getRedisValueList());
+        stringRedisTemplate2.opsForList().rightPushAll(singleQueryDTO.getRedisKey(), singleQueryDTO.getRedisValueList());
         log.info("push value to a key，key: {}, value: {}", singleQueryDTO.getRedisKey(), singleQueryDTO.getRedisValueList());
     }
 
@@ -54,7 +60,7 @@ public class RedisService {
      * 找為SET的值 (redis: SMEMBERS)
      */
     public Set<String> findSetByKey(SingleQueryDTO singleQueryDTO) {
-        SetOperations<String, String> setOps = stringRedisTemplate.opsForSet();
+        SetOperations<String, String> setOps = stringRedisTemplate2.opsForSet();
         Set<String> elements = setOps.members(singleQueryDTO.getRedisKey());
         log.info("elements:{}", elements);
         return elements;
@@ -63,10 +69,11 @@ public class RedisService {
 
     /**
      * 找單一個值 (redis: get)
+     * 找 mappingId
      */
     public String findByKey(String columnName, String key, String defaultValue) {
         if (key != null && !key.isEmpty()) {
-            String redisValue = stringRedisTemplate.opsForValue().get(key);
+            String redisValue = stringRedisTemplate1.opsForValue().get(key);
             if (redisValue != null && !redisValue.isEmpty()) {
                 log.info("columnName:{} , redisKey: {} , redisValue: {}", columnName, key, redisValue);
                 return redisValue;
@@ -79,7 +86,7 @@ public class RedisService {
     public Map<String, String> findByKeys(Map<String, String> keyMap, String segmentExistNumber) {
         Map<String, String> resultMap = new HashMap<>();
         List<String> redisKeys = new ArrayList<>(keyMap.keySet());
-        List<String> redisValues = stringRedisTemplate.opsForValue().multiGet(redisKeys);
+        List<String> redisValues = stringRedisTemplate2.opsForValue().multiGet(redisKeys);
         for (int i = 0; i < redisKeys.size(); i++) {
             String key = redisKeys.get(i);
             String redisValue = redisValues.get(i);
@@ -100,7 +107,7 @@ public class RedisService {
 
 
     public List<String> findByKeys(Set<String> keys) {
-        return stringRedisTemplate.opsForValue().multiGet(keys);
+        return stringRedisTemplate2.opsForValue().multiGet(keys);
     }
 
 
@@ -108,7 +115,7 @@ public class RedisService {
      * 模糊比對，找出相符的 KEY (redis: scan)
      */
     public Set<String> findListByScan(String key) {
-        Set<String> keySet = stringRedisTemplate.execute((RedisCallback<Set<String>>) connection -> {
+        Set<String> keySet = stringRedisTemplate2.execute((RedisCallback<Set<String>>) connection -> {
             Set<String> keySetTemp = new ConcurrentSkipListSet<>();
             try (Cursor<byte[]> cursor = connection.scan(ScanOptions.scanOptions()
                     .match(key) //模糊比對
