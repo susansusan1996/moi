@@ -14,6 +14,9 @@ public interface RefreshTokenRepository {
 
     List<RefreshToken> findById(String id);
 
+    List<RefreshToken> findByUserIdAndReviewResult(String id);
+
+
     List<RefreshToken> findByRefreshTokenAndUserId(String refreshToken, String id);
 
     void deleteByRefreshToken(String refreshToken);
@@ -22,7 +25,7 @@ public interface RefreshTokenRepository {
 
     void updateTokenByUserId(String id, JwtReponse reponse) throws ParseException;
 
-    void updateByUserId(String userId);
+    void updateByUserId(RefreshToken refreshToken);
 
 
 }

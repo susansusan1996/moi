@@ -72,7 +72,7 @@ public class ApiKeyService {
         Map<String, Object> refreshTokenMap = null;
         //refreshToken == null，表示全新的申請
         if (refreshToken == null) {
-            List<RefreshToken>  refreshTokens = refreshTokenService.findByUserId(userId);
+            List<RefreshToken>  refreshTokens = refreshTokenService.findByUserIdAndReviewResult(userId);
             //找不到該userId相對應的TOKEN資料，才需要再存一筆新的，不然會重複申請
             if(refreshTokens.isEmpty()){
                 user.setTokenType("refresh_token");

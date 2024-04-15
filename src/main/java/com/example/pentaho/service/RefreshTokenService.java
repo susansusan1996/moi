@@ -42,7 +42,12 @@ public class RefreshTokenService {
             Date refreshTokenExpiryDate = dateFormat.parse(String.valueOf(refreshTokenMap.get("expiryDate")));
             refreshToken.setRefreshTokenExpiryDate(refreshTokenExpiryDate.toInstant()); //refresh_token，效期先設2天
             refreshToken.setExpiryDate(expiryDate.toInstant()); //refresh_token，效期先設1天
-            refreshTokenRepository.saveRefreshToken(refreshToken);
+            refreshToken.setReviewResult(reviewResult);
+            if(refreshTokenRepository.findById(id).isEmpty()){
+                refreshTokenRepository.saveRefreshToken(refreshToken);
+            }else{
+                refreshTokenRepository.updateByUserId(refreshToken);
+            }
         }else{
             refreshToken.setId(id);
             refreshTokenRepository.saveRefreshToken(refreshToken);
@@ -64,6 +69,14 @@ public class RefreshTokenService {
      */
     public List<RefreshToken> findByUserId(String userId) {
         return refreshTokenRepository.findById(userId);
+    }
+
+
+    /**
+     * 用userId找到該筆API_KEY資訊
+     */
+    public List<RefreshToken> findByUserIdAndReviewResult(String userId) {
+        return refreshTokenRepository.findByUserIdAndReviewResult(userId);
     }
 
     /**
@@ -95,6 +108,9 @@ public class RefreshTokenService {
     }
 
     public void updateByUserId(String userId) {
-        refreshTokenRepository.updateByUserId(userId);
+        RefreshToken refreshToken = new RefreshToken();
+        refreshToken.setId(userId);
+        refreshToken.setReviewResult("REJECT");
+        refreshTokenRepository.updateByUserId(refreshToken);
     }
 }
