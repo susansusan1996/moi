@@ -6,6 +6,7 @@ import com.example.pentaho.repository.AliasRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
@@ -26,7 +27,8 @@ public class AddressParser {
 
 
     @Autowired
-    private StringRedisTemplate stringRedisTemplate;
+    @Qualifier("stringRedisTemplate2")
+    private StringRedisTemplate stringRedisTemplate2;
 
     @Autowired
     private AliasRepository aliasRepository;
@@ -240,7 +242,7 @@ public class AddressParser {
      * 找為LIST的值 (redis: LRANGE)
      */
     public List<String> findListByKey(String key) {
-        ListOperations<String, String> listOps = stringRedisTemplate.opsForList();
+        ListOperations<String, String> listOps = stringRedisTemplate2.opsForList();
         List<String> elements = listOps.range(key, 0, -1);
         log.info("elements:{}", elements);
         return elements;
