@@ -82,7 +82,7 @@ public class SingleQueryService {
         }else{
             address.setNumTypeCd(numTypeCd); //95
         }
-        return setAddressService.setAddressAndFindCdByRedis(address);
+        return redisService.setAddressAndFindCdByRedis(address);
     }
 
     private static String getNumTypeCd(Address address) {

@@ -56,7 +56,7 @@ public class JoinStepService {
 
     public Set<String> findJoinStep(Address address, Set<String> newMappingIdSet, Set<String> seqSet) throws NoSuchFieldException, IllegalAccessException {
         String seq = "";
-        if (!newMappingIdSet.isEmpty()) {
+//        if (!newMappingIdSet.isEmpty()) {
             for (String step : steps) {
 //            if (step.startsWith("JB5")) {
 //                //交換地址
@@ -73,13 +73,17 @@ public class JoinStepService {
                 LinkedHashMap<String, String> oldMappingIdMap = new LinkedHashMap<>(address.getMappingIdMap());
                 log.info("oldMappingIdMap:{}",oldMappingIdMap);
                 //JC4要重新模糊搜尋一次mappingId (因為FLRNUM會是錯誤的7開頭，這樣模糊搜尋會完全找不到)
-                if (step.startsWith("JC4")) {
-                    //要重新找一遍
-                    String oldNumSegment = address.getMappingIdMap().get(NUMFLRPOS);
-                    log.info("oldNumSegment:{}", oldNumSegment);
-                    String index = findFirstZeroOrSevenIndex(oldNumSegment);
-                    String numFlr = address.getMappingIdMap().get("NUM_FLR_" + index);
-                    address.setProperty(numFlr, "之" + address.getProperty(numFlr)); //補之
+                //要重新找一遍
+                String oldNumSegment = address.getMappingIdMap().get(NUMFLRPOS);
+                log.info("oldNumSegment:{}", oldNumSegment);
+                String index = findFirstZeroOrSevenIndex(oldNumSegment);
+                String numFlrKey = "numFlr" + index;
+                log.info("之之之之 numFlrKey:{}，step:{}", numFlrKey, step);
+                if (step.startsWith("JC4") && address.getProperty(numFlrKey)!=null && !address.getProperty(numFlrKey).startsWith("之")) {
+                    log.info("之之之之，前:{}，step:{}", address.getProperty(numFlrKey), step);
+                    address.setProperty(numFlrKey, "之" + address.getProperty(numFlrKey)); //補之
+                    log.info("之之之之，後:{}，step:{}", address.getProperty(numFlrKey), step);
+                    address = redisService.setAddressAndFindCdByRedis(address);
                     newMappingIdSet = redisService.fuzzySearchMappingId(address);
                 }
                 String oldId = replaceCharsWithZero("oldId", columns, step, address, oldMappingIdMap);
@@ -95,9 +99,6 @@ public class JoinStepService {
                     LinkedHashMap<String, String> newMappingIdMap = mapNewMappingId(newMappingId);
                     log.info("newMappingIdMap:{}",newMappingIdMap);
                     newId = replaceCharsWithZero("newId", columns, step, address, newMappingIdMap);
-                    if (step.startsWith("JB5")) {
-                        log.info("newId:{}", newId);
-                    }
                     if (oldId.equals(newId)) {
                         log.info("找到一樣的!:{}", newId);
                         log.info("newMappingIdMap:{}",newMappingIdMap);
@@ -126,9 +127,9 @@ public class JoinStepService {
                     }
                 }
             }
-        }else{
-            log.info("沒有可以比對的mappingIdSet!!");
-        }
+//        }else{
+//            log.info("沒有可以比對的mappingIdSet!!");
+//        }
         //如果JOIN_STEP都比對不到的話，就甚麼都不退，比對看看
         if (seqSet.isEmpty() && address.getJoinStep() == null) {
             log.info("找不到JOIN_STEP，甚麼都不退，比對看看");
@@ -267,7 +268,7 @@ public class JoinStepService {
                     numFlrCD = numFlrCD.replaceFirst("7","0"); //把第一個7改成0
                     newMappingIdMap.put(nuFlrKey, numFlrCD);
                 }
-                newNumSegment = idType.equals("newId") ? oldNumSegment : map.get("NUMFLRPOS");
+                newNumSegment =  map.get("NUMFLRPOS");
                 log.info("號樓之(漏寫之) newPosition:{}",newNumSegment);
             }
             default -> newNumSegment = oldNumSegment;
