@@ -1,10 +1,12 @@
 package com.example.pentaho.component;
 
 public class JwtReponse {
+    private String id;
     private String token;
     private String refreshToken;
     private String expiryDate; //token的過期日(不是refreshToken的過期日)
     private String refreshTokenExpiryDate; //refreshToken的過期日
+    private String reviewResult;
     private String errorResponse;
 
     public JwtReponse() {
@@ -53,6 +55,22 @@ public class JwtReponse {
 
     public void setRefreshTokenExpiryDate(String refreshTokenExpiryDate) {
         this.refreshTokenExpiryDate = refreshTokenExpiryDate;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getReviewResult() {
+        return reviewResult;
+    }
+
+    public void setReviewResult(String reviewResult) {
+        this.reviewResult = reviewResult;
     }
 
     @Override
