@@ -1,7 +1,6 @@
 package com.example.pentaho.resource;
 
 import com.example.pentaho.component.*;
-import com.example.pentaho.exception.MoiException;
 import com.example.pentaho.service.SingleQueryService;
 import com.example.pentaho.service.SingleTrackQueryService;
 import com.example.pentaho.utils.AddressParser;
@@ -9,7 +8,6 @@ import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -20,15 +18,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.context.request.async.DeferredResult;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping("/api/singlequery")
@@ -72,6 +64,7 @@ public class SingleQueryResouce {
                             schema = @Schema(type = "string"))}
     )
     @PostMapping("/query-single")
+    @Authorized(keyName = "SHENG")
     public ResponseEntity<String> queryAddressJson(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "單筆查詢，request body 要帶 json，需包含:originalAddress、county(可為空)、town(可為空)。具體資料格式如下:",
@@ -103,12 +96,11 @@ public class SingleQueryResouce {
      */
     @Operation(
             description = "單筆軌跡",
-//            parameters = {@Parameter(in = ParameterIn.HEADER,
-//                    name = "Authorization",
-//                    description = "jwt token,body附帶 userInfo={\"Id\":1,\"orgId\":\"Admin\"}",
-//                    required = true,
-//                    schema = @Schema(type = "string"))
-//            },
+            parameters = {@Parameter(in = ParameterIn.HEADER,
+                    name = "Authorization",
+                    description = "jwt token,body附帶 userInfo={\"Id\":1,\"orgId\":\"Admin\"}",
+                    schema = @Schema(type = "string"))
+            },
             responses = {
                     @ApiResponse(responseCode = "200", description = "",
                             content = @Content(schema = @Schema(implementation = IbdTbIhChangeDoorplateHis.class))),
@@ -116,6 +108,7 @@ public class SingleQueryResouce {
                             content = @Content(schema = @Schema(implementation = String.class), examples = @ExampleObject(value = ""))
                             )})
     @PostMapping("/query-track")
+    @Authorized(keyName = "SHENG")
     public ResponseEntity<List<IbdTbIhChangeDoorplateHis>> queryTrack(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "編碼",

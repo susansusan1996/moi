@@ -1,11 +1,12 @@
 package com.example.pentaho.resource;
 
-import com.example.pentaho.component.JwtReponse;
-import com.example.pentaho.component.RefreshToken;
-import com.example.pentaho.component.User;
+import com.example.pentaho.component.*;
 import com.example.pentaho.exception.MoiException;
 import com.example.pentaho.service.ApiKeyService;
 import com.example.pentaho.service.RefreshTokenService;
+import com.example.pentaho.service.SingleQueryService;
+import com.example.pentaho.service.SingleTrackQueryService;
+import com.example.pentaho.utils.AddressParser;
 import com.example.pentaho.utils.UserContextUtils;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -47,6 +49,17 @@ public class APIKeyResource {
     private RefreshTokenService refreshTokenService;
 
 
+    @Autowired
+    private SingleTrackQueryService singleTrackQueryService;
+
+    @Autowired
+    private SingleQueryService singleQueryService;
+
+
+    @Autowired
+    private AddressParser  addressParser;
+
+
 
     @Operation(description = "獲取APIKEY",
             parameters = {
@@ -66,6 +79,7 @@ public class APIKeyResource {
                             content = @Content(schema = @Schema(implementation = JwtReponse.class)))}
     )
     @GetMapping("/get-api-key")
+    @Authorized(keyName = "SHENG")
     public ResponseEntity<JwtReponse> getAPIKey(@RequestParam String userId) {
         try {
             return new ResponseEntity<>(apiKeyService.getApiKey(userId), HttpStatus.OK);
@@ -95,6 +109,7 @@ public class APIKeyResource {
                             content = @Content(schema = @Schema(implementation = JwtReponse.class)))}
     )
     @PostMapping("/create-api-key")
+    @Authorized(keyName = "SHENG")
     public ResponseEntity<JwtReponse> createApiKey(@RequestParam String userId) {
         try {
             return new ResponseEntity<>(apiKeyService.createApiKey(userId, null), HttpStatus.OK);
@@ -124,6 +139,7 @@ public class APIKeyResource {
                     @ApiResponse(responseCode = "500", description = ""),
             })
     @PostMapping("/forapikey")
+    @Authorized(keyName = "AP")
     public ResponseEntity<String> forAPIKeyUser() {
         User user = UserContextUtils.getUserHolder();
         log.info("user:{}", user);
@@ -135,13 +151,16 @@ public class APIKeyResource {
      * 單筆未登入測試
      */
     @Operation(description = "單筆未登入測試")
-    @PostMapping("/forguest")
+    @GetMapping("/forguest")
+    @UnAuthorized
+    @RateLimiting(capacity = 20,tokens = 20,mintues = 1)
     public ResponseEntity<String> forGuestUser() {
         return new ResponseEntity<>("用戶未登入", HttpStatus.OK);
     }
 
 
     @PostMapping("/refreshToken")
+    @UnAuthorized
     public ResponseEntity<JwtReponse> refreshToken(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "用refreshToken取得新的token",
@@ -171,4 +190,124 @@ public class APIKeyResource {
         }
         return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
     }
+
+
+    /***
+     * 取得指定【地址識別碼】之異動軌跡
+     */
+    @Operation(description = "取得指定【地址識別碼】之異動軌跡",
+            parameters = {@Parameter(in = ParameterIn.HEADER,
+                    name = "Authorization",
+                    description = "資拓私鑰加密的jwt token",
+                    required = true,
+                    schema = @Schema(type = "string"))
+            },
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "",
+                            content = @Content(schema = @Schema(implementation = IbdTbIhChangeDoorplateHis.class))),
+                    @ApiResponse(responseCode = "500", description = "",
+                            content = @Content(schema = @Schema(implementation = String.class), examples = @ExampleObject(value = ""))
+                    )})
+    @GetMapping("/query-track")
+    @Authorized(keyName = "AP")
+    public ResponseEntity<List<IbdTbIhChangeDoorplateHis>> queryTrack(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "編碼",
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = String.class),
+                            examples = @ExampleObject(value = "BSZ7538-0")
+                    )
+            )
+             String addressId) {
+        return new ResponseEntity<>(singleTrackQueryService.querySingleTrack(addressId), HttpStatus.OK);
+    }
+
+
+    /***
+     * OpenAPI
+     * 指定【地址】之標準格式地址
+     */
+    @Operation(description = "指定【地址】之標準格式地址",
+            parameters = {@Parameter(in = ParameterIn.HEADER,
+                    name = "Authorization",
+                    description = "資拓私鑰加密的jwt token",
+                    required = true,
+                    schema = @Schema(type = "string"))
+            },
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "",
+                            content = @Content(schema = @Schema(implementation = Address.class))),
+                    @ApiResponse(responseCode = "500", description = "",
+                            content = @Content(schema = @Schema(implementation = String.class), examples = @ExampleObject(value = ""))
+                    )})
+    @GetMapping("/query-standard-address")
+    @Authorized(keyName = "AP")
+    public ResponseEntity<Address> queryStandardAddress(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "地址",
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = String.class),
+                            examples = @ExampleObject(value = "台南市東區衛國里007鄰衛國街１１４巷９弄１０號B六樓之５")
+                    )
+            )
+             String address) {
+        log.info("address:{}",address);
+        return new ResponseEntity<>(addressParser.parseAddress(address,null),HttpStatus.OK);
+    }
+
+    /**
+     * 取得指定【地址】之地址識別碼相關資訊
+     */
+    @Operation(description = "取得指定【地址】之地址識別碼相關資訊",
+            parameters = {@Parameter(in = ParameterIn.HEADER,
+                    name = "Authorization",
+                    description = "資拓私鑰加密的jwt token",
+                    required = true,
+                    schema = @Schema(type = "string"))
+            }
+    )
+    @GetMapping("/query-single")
+    @Authorized(keyName = "AP")
+    public ResponseEntity<String> queryAddressJson(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "單筆查詢，request body 要帶 json，需包含:originalAddress、county(可為空)、town(可為空)。具體資料格式如下:",
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = SingleQueryDTO.class),
+                            examples = @ExampleObject(value = "台南市東區衛國里007鄰衛國街１１４巷９弄１０號B六樓之５,臺南市(可為空),東區(可為空)")
+                    )
+            )
+             String singleQueryStr) {
+        log.info("單筆查詢，參數為:{}",singleQueryStr);
+        if(singleQueryStr.indexOf(",") >=0){
+            String[] params = singleQueryStr.split(",");
+            SingleQueryDTO singleQueryDTO = new SingleQueryDTO();
+            switch (params.length){
+                case 1:
+                    singleQueryDTO.setOriginalAddress(params[0]);
+                    break;
+                case 2:
+                    singleQueryDTO.setOriginalAddress(params[0]);
+                    singleQueryDTO.setCounty(params[1]);
+                    break;
+                case 3:
+                    singleQueryDTO.setOriginalAddress(params[0]);
+                    singleQueryDTO.setCounty(params[1]);
+                    singleQueryDTO.setTown(params[2]);
+                    break;
+                default:
+                    return new ResponseEntity<>("輸入格是錯誤，請重新確認",HttpStatus.BAD_REQUEST);
+            }
+            log.info("singleQueryDTO:{}",singleQueryDTO);
+            return ResponseEntity.ok(singleQueryService.findJsonTest(singleQueryDTO));
+        }else{
+            SingleQueryDTO singleQueryDTO = new SingleQueryDTO();
+            singleQueryDTO.setOriginalAddress(singleQueryStr);
+            return ResponseEntity.ok(singleQueryService.findJsonTest(singleQueryDTO));
+        }
+    }
+
+
 }
