@@ -1,96 +1,86 @@
 package com.example.pentaho.utils;
 
-import com.example.pentaho.component.KeyComponent;
-import com.example.pentaho.component.Token;
-import com.example.pentaho.component.User;
-import com.example.pentaho.service.BucketUtils;
-import io.github.bucket4j.Bucket;
+import com.example.pentaho.component.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.ModelAndView;
 
-import java.time.Duration;
+import java.lang.reflect.Method;
 
 
 @Component
 public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
 
     private final static Logger log = LoggerFactory.getLogger(AuthorizationHandlerInterceptor.class);
+
     private final KeyComponent keyComponent;
 
-    /**先設定1分鐘20次**/
-    private final Bucket FOR_GUEST_BUCKET = BucketUtils.getBucket(20, Duration.ofMinutes(1));
 
     public AuthorizationHandlerInterceptor(KeyComponent keyComponent) {
         this.keyComponent = keyComponent;
     }
 
+
+      @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+          log.info("Token Check");
+
+          HandlerMethod handlerMethod = (HandlerMethod) handler;
+          Class<?> clazz = handlerMethod.getBeanType();
+          Method method = handlerMethod.getMethod();
+
+          /**依註解取keyName**/
+          /**聖森公鑰**/
+          if(clazz.isAnnotationPresent(Authorized.class) || method.isAnnotationPresent(Authorized.class)){
+              String keyName = keyComponent.keyMapping(method.getAnnotation(Authorized.class).keyName());
+            return vertifyToken(request,keyName);
+          }
+
+          if(clazz.isAnnotationPresent(UnAuthorized.class) || method.isAnnotationPresent(UnAuthorized.class)){
+              log.info("Token Check OK");
+              return true;
+          }
+          //todo:
+          log.info("Token Check OK");
+          return true;
+      }
+
     /***
-     *攔截
+     * 驗證
      * @param request
-     * @param response
-     * @param handler
+     * @param keyName
      * @return
      * @throws Exception
      */
-    @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        log.info("requestURI:{}",request.getRequestURI());
+    public boolean vertifyToken(HttpServletRequest request, String keyName) throws Exception {
+        log.info("keyName:{}",keyName);
 
-        /**單筆未登入**/
-        //todo:要改成凰喜單筆對外 & 單筆軌跡對外 uri
-        if("/api/api-key/query-track-for-guest".equals(request.getRequestURI())){
-            /**限流每分鐘20個請求**/
-            if(!FOR_GUEST_BUCKET.tryConsume(1)){
-                throw new ResponseStatusException(HttpStatus.BANDWIDTH_LIMIT_EXCEEDED);
-            }
-            return true;
-        }
-
+        /**確認有沒有token**/
         String authHeader = request.getHeader("Authorization");
         log.info("request header = { Authorization:Bearer accessToken }:{}", authHeader);
+
         /**確認有無Authorization:Bearer 的 header**/
         if (authHeader == null || !authHeader.startsWith("Bearer")) {
-            /**前端補403導回登入頁?**/
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not allowed");
         }
 
-            /**
-             * 確認有無Authorization:Bearer RASJWTToken
-             * 驗證使用者身分
-             * 先直接給予JwtToken
-             */
-            if (authHeader.substring(7, authHeader.length()) == null && "".equals(authHeader.substring(7, authHeader.length()))) {
-                /**前端補403導回登入頁?**/
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not allowed");
-            }
-
-        String RSATokenJwt = authHeader.substring(7, authHeader.length());
-        log.info("RASJWTToken:{}", RSATokenJwt);
-
         /**
-         * 驗證RASJWTToken
-         * 完成後return true 會再導向Spring-SecurityFilterChain
+         * 確認有無Authorization:Bearer RASJWTToken
+         * 驗證使用者身分
+         * 先直接給予JwtToken
          */
-        String keyName = keyComponent.getPubkeyName();
-
-
-        /**
-         * PentahoServer & 單筆APIKey 用資拓pri解密
-         * payload 必須要存在 userInfo !!
-         * **/
-        //todo:單筆要改成凰喜api的路徑
-        if("/api/batchForm/finished".equals(request.getRequestURI()) || "/api/api-key/forapikey".equals(request.getRequestURI())){
-          keyName =keyComponent.getApPubkeyName();
+        if (authHeader.substring(7, authHeader.length()) == null && "".equals(authHeader.substring(7, authHeader.length()))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not allowed");
         }
 
+        String RSATokenJwt = authHeader.substring(7, authHeader.length());
             if(Token.fromRSAJWTToken(RSATokenJwt,keyName)){
                 User user = Token.extractUserFromRSAJWTToken(RSATokenJwt,keyName);
                 log.info("user:{}",user);
@@ -100,10 +90,20 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
                     throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not allowed");
                 }
                 UserContextUtils.setUserHolder(user);
+                log.info("Token Check OK");
                 return true;
             }
-        /**其他錯誤；前端補403導回登入頁?**/
         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not allowed");
+    }
+
+    @Override
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
+        HandlerInterceptor.super.postHandle(request, response, handler, modelAndView);
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+        HandlerInterceptor.super.afterCompletion(request, response, handler, ex);
     }
 }
 
