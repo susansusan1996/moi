@@ -1,9 +1,7 @@
 package com.example.pentaho.resource;
 
 
-import com.example.pentaho.component.Directory;
-import com.example.pentaho.component.JobParams;
-import com.example.pentaho.component.SingleBatchQueryParams;
+import com.example.pentaho.component.*;
 import com.example.pentaho.exception.MoiException;
 import com.example.pentaho.service.FileOutputService;
 import com.example.pentaho.service.JobService;
@@ -31,7 +29,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
@@ -60,6 +57,7 @@ public class BatchResource {
     private Directory directories;
 
     private ObjectMapper objectMapper = new ObjectMapper();
+
 
 
     /**
@@ -96,7 +94,18 @@ public class BatchResource {
     }
 
 
-    @Operation(description = "批次查詢(call pentaho & sftp file)、異動批次查詢",
+    /***
+     * 批次查詢(call pentaho job & sftp file)、批次軌跡查詢
+     * @param Id
+     * @param originalFileId
+     * @param formName
+     * @param formBuilderId
+     * @param formBuilderOrgId
+     * @param file
+     * @return
+     * @throws IOException
+     */
+    @Operation(description = "批次查詢(call pentaho & sftp file)、批次軌跡查詢",
             parameters = {
                     @Parameter(in = ParameterIn.HEADER,
                             name = "Authorization",
@@ -112,6 +121,7 @@ public class BatchResource {
         }
 )
     @PostMapping("/excuteETLJob")
+    @Authorized(keyName = "SHENG")
     public ResponseEntity<String> sftpUploadAndExecuteTrans(
         @Parameter(
                 description ="批次ID" ,
@@ -197,6 +207,7 @@ public class BatchResource {
     }
 
     @PostMapping(path = "/finished")
+    @Authorized(keyName = "AP")
     public void sftpDownloadAndSend(@RequestBody String requestBody) throws IOException, SftpException, URISyntaxException {
         log.info("requestBody:{}",requestBody);
         /**解析requestBody中的參數**/
@@ -216,7 +227,7 @@ public class BatchResource {
 
 
     /***
-     * 改回傳log就好
+     * 大量查詢回傳log就好
      * @param formName
      * @return
      * @throws IOException
@@ -225,10 +236,10 @@ public class BatchResource {
             parameters = {  @Parameter(in = ParameterIn.HEADER,
                     name = "Authorization",
                     description = "聖森私鑰加密 jwt token,body附帶userInfo={\"Id\":1,\"departName\":\"A05\"} ,departName需為代號",
-//                    required = true,
                     schema = @Schema(type = "string"))
             })
     @PostMapping("/bigdata-finished")
+    @Authorized(keyName = "SHENG")
     public ResponseEntity<Integer> BigDataFinished(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "表單編號",
