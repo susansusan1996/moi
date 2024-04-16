@@ -3,6 +3,7 @@ package com.example.pentaho.resource;
 import com.example.pentaho.component.*;
 import com.example.pentaho.exception.MoiException;
 import com.example.pentaho.service.ApiKeyService;
+import com.example.pentaho.service.RedisService;
 import com.example.pentaho.service.RefreshTokenService;
 import com.example.pentaho.service.SingleQueryService;
 import com.example.pentaho.service.SingleTrackQueryService;
@@ -25,6 +26,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.text.ParseException;
 import java.util.List;
 
 /***
@@ -48,6 +50,8 @@ public class APIKeyResource {
     @Autowired
     private RefreshTokenService refreshTokenService;
 
+    @Autowired
+    private RedisService redisService;
 
     @Autowired
     private SingleTrackQueryService singleTrackQueryService;
@@ -66,11 +70,10 @@ public class APIKeyResource {
                     @Parameter(in = ParameterIn.HEADER,
                             name = "Authorization",
                             description = "聖森私鑰加密 jwt token,body附帶userInfo={\"Id\":\"673f7eec-8ae5-4e79-ad3a-42029eedf742\",\"orgId\":\"ADMIN\"}",
-                            required = true,
                             schema = @Schema(type = "string")),
                     @Parameter(in = ParameterIn.QUERY,
                             name = "userId",
-                            description = "query字串要帶被審核通過的該userId ex. ?userId=\"673f7eec-8ae5-4e79-ad3a-42029eedf742\"",
+                            description = "query字串要帶被審核通過的該userId ex. ?userId=673f7eec-8ae5-4e79-ad3a-42029eedf742",
                             required = true,
                             schema = @Schema(type = "string"))}
             ,
@@ -80,15 +83,9 @@ public class APIKeyResource {
     )
     @GetMapping("/get-api-key")
     @Authorized(keyName = "SHENG")
-    public ResponseEntity<JwtReponse> getAPIKey(@RequestParam String userId) {
-        try {
-            return new ResponseEntity<>(apiKeyService.getApiKey(userId), HttpStatus.OK);
-        } catch (Exception e) {
-            log.info("e:{}", e.toString());
-            throw new MoiException("generate error");
-        }
+    public ResponseEntity<JwtReponse> getAPIKey(@RequestParam String userId) throws Exception {
+        return new ResponseEntity<>(apiKeyService.getApiKey(userId), HttpStatus.OK);
     }
-
 
 
     @Operation(description = "產生APIKEY",
@@ -96,11 +93,15 @@ public class APIKeyResource {
                     @Parameter(in = ParameterIn.HEADER,
                             name = "Authorization",
                             description = "聖森私鑰加密 jwt token,body附帶userInfo={\"Id\":\"673f7eec-8ae5-4e79-ad3a-42029eedf742\",\"orgId\":\"ADMIN\"}",
-                            required = true,
                             schema = @Schema(type = "string")),
                     @Parameter(in = ParameterIn.QUERY,
                             name = "userId",
-                            description = "query字串要帶被審核通過的該userId ex. ?userId=\"673f7eec-8ae5-4e79-ad3a-42029eedf742\"",
+                            description = "query字串要帶被審核通過的該userId ex. ?userId=673f7eec-8ae5-4e79-ad3a-42029eedf742",
+                            required = true,
+                            schema = @Schema(type = "string")),
+                    @Parameter(in = ParameterIn.QUERY,
+                            name = "reviewResult",
+                            description = "query字串帶審核結果(AGREE、REJECT) ex. reviewResult=AGREE，或是 reviewResult=REJECT",
                             required = true,
                             schema = @Schema(type = "string"))}
             ,
@@ -110,11 +111,16 @@ public class APIKeyResource {
     )
     @PostMapping("/create-api-key")
     @Authorized(keyName = "SHENG")
-    public ResponseEntity<JwtReponse> createApiKey(@RequestParam String userId) {
+    public ResponseEntity<JwtReponse> createApiKey(@RequestParam String userId, @RequestParam String reviewResult) throws ParseException {
+        JwtReponse response = new JwtReponse();
+        if ("REJECT".equals(reviewResult)) {
+            refreshTokenService.saveRefreshToken(userId, null, null, reviewResult);
+            response.setErrorResponse("已儲存被拒絕申請的使用者資訊");
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
         try {
-            return new ResponseEntity<>(apiKeyService.createApiKey(userId, null), HttpStatus.OK);
+            return new ResponseEntity<>(apiKeyService.createApiKey(userId, null, "fromApi"), HttpStatus.OK);
         } catch (MoiException e) {
-            JwtReponse response = new JwtReponse();
             response.setErrorResponse(String.valueOf(e));
             return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
         } catch (Exception e) {
@@ -130,7 +136,6 @@ public class APIKeyResource {
             parameters = {@Parameter(in = ParameterIn.HEADER,
                     name = "Authorization",
                     description = "資拓私鑰加密的jwt token",
-                    required = true,
                     schema = @Schema(type = "string"))
             },
             responses = {
@@ -173,10 +178,10 @@ public class APIKeyResource {
             )
             @RequestBody RefreshToken request) {
         log.info("refreshToken:{}", request);
-        List<RefreshToken> refreshTokens = refreshTokenService.findByRefreshTokenAndUserId(request);
-        if (!refreshTokens.isEmpty()) {
+        RefreshToken refreshToken = redisService.findRefreshTokenByUserId(request.getId());
+        if (refreshToken != null) {
             try {
-                if (refreshTokenService.verifyExpiration(refreshTokens.get(0).getRefreshToken(), "refresh_token")) {
+                if (refreshTokenService.verifyExpiration(request.getId(), refreshToken.getRefreshToken(), "refresh_token")) {
                     //refresh_token沒有過期
                     //卷新的token給他
                     return new ResponseEntity<>(apiKeyService.exchangeForNewToken(request.getId()), HttpStatus.OK);
@@ -211,15 +216,14 @@ public class APIKeyResource {
     @GetMapping("/query-track")
     @Authorized(keyName = "AP")
     public ResponseEntity<List<IbdTbIhChangeDoorplateHis>> queryTrack(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            @Parameter(
                     description = "編碼",
                     required = true,
                     content = @Content(
                             schema = @Schema(implementation = String.class),
                             examples = @ExampleObject(value = "BSZ7538-0")
                     )
-            )
-             String addressId) {
+            ) @RequestParam String addressId) {
         return new ResponseEntity<>(singleTrackQueryService.querySingleTrack(addressId), HttpStatus.OK);
     }
 
@@ -244,17 +248,14 @@ public class APIKeyResource {
     @GetMapping("/query-standard-address")
     @Authorized(keyName = "AP")
     public ResponseEntity<Address> queryStandardAddress(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "地址",
+            @Parameter(description ="地址",
                     required = true,
                     content = @Content(
                             schema = @Schema(implementation = String.class),
-                            examples = @ExampleObject(value = "台南市東區衛國里007鄰衛國街１１４巷９弄１０號B六樓之５")
-                    )
-            )
-             String address) {
+                            examples = @ExampleObject(value = "台南市東區衛國里007鄰衛國街１１４巷９弄１０號B六樓之５,臺南市(可為空),東區(可為空)")
+            )) @RequestParam String address) {
         log.info("address:{}",address);
-        return new ResponseEntity<>(addressParser.parseAddress(address,null),HttpStatus.OK);
+        return new ResponseEntity<>(addressParser.parseAddress(address,null,null),HttpStatus.OK);
     }
 
     /**
@@ -271,15 +272,14 @@ public class APIKeyResource {
     @GetMapping("/query-single")
     @Authorized(keyName = "AP")
     public ResponseEntity<String> queryAddressJson(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "單筆查詢，request body 要帶 json，需包含:originalAddress、county(可為空)、town(可為空)。具體資料格式如下:",
+            @Parameter(
+                    description = "地址、縣市、鄉鎮市區以,區隔組合成字串(順序不可改)。",
                     required = true,
                     content = @Content(
-                            schema = @Schema(implementation = SingleQueryDTO.class),
+                            schema = @Schema(implementation = String.class),
                             examples = @ExampleObject(value = "台南市東區衛國里007鄰衛國街１１４巷９弄１０號B六樓之５,臺南市(可為空),東區(可為空)")
                     )
-            )
-             String singleQueryStr) {
+            ) @RequestParam String singleQueryStr) {
         log.info("單筆查詢，參數為:{}",singleQueryStr);
         if(singleQueryStr.indexOf(",") >=0){
             String[] params = singleQueryStr.split(",");
@@ -298,7 +298,7 @@ public class APIKeyResource {
                     singleQueryDTO.setTown(params[2]);
                     break;
                 default:
-                    return new ResponseEntity<>("輸入格是錯誤，請重新確認",HttpStatus.BAD_REQUEST);
+                    return new ResponseEntity<>("格式輸入錯誤，請重新確認",HttpStatus.BAD_REQUEST);
             }
             log.info("singleQueryDTO:{}",singleQueryDTO);
             return ResponseEntity.ok(singleQueryService.findJsonTest(singleQueryDTO));

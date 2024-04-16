@@ -3,8 +3,9 @@ package com.example.pentaho.utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class NumberParser {
     private static final Logger log = LoggerFactory.getLogger(NumberParser.class);
@@ -31,6 +32,7 @@ public class NumberParser {
             map.put("七", "7");
             map.put("八", "8");
             map.put("九", "9");
+            map.put("十", "1");
             map.put("０", "0");
             map.put("１", "1");
             map.put("２", "2");
@@ -55,6 +57,100 @@ public class NumberParser {
         }
         return "";
     }
+
+    //檢查有無匹配一|二|三|四|五|六|七|八|九|十
+    public static boolean containsChineseNumbers(String input) {
+        String regex = ".*(一|二|三|四|五|六|七|八|九|十).*";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(input);
+        return matcher.matches();
+    }
+
+    private static final HashMap<Character, Integer> numberMap = new HashMap<>();
+
+    static {
+        numberMap.put('零', 0);
+        numberMap.put('一', 1);
+        numberMap.put('二', 2);
+        numberMap.put('三', 3);
+        numberMap.put('四', 4);
+        numberMap.put('五', 5);
+        numberMap.put('六', 6);
+        numberMap.put('七', 7);
+        numberMap.put('八', 8);
+        numberMap.put('九', 9);
+    }
+
+    public static String chineseNumberToArabic(String chineseNumber) {
+        int result = 0;
+        if (chineseNumber == null || chineseNumber.isEmpty()) {
+            log.error("xxxxxxxxxxxxx");
+        }
+            int temp = 0;
+            for (int i = 0; i < chineseNumber.length(); i++) {
+                char c = chineseNumber.charAt(i);
+                if (Character.isDigit(c)) {
+                    temp = c - '0';
+                } else {
+                    switch (c) {
+                        case '零':
+                            temp = 0;
+                            break;
+                        case '一':
+                            temp = 1;
+                            break;
+                        case '二':
+                        case '两':
+                            temp = 2;
+                            break;
+                        case '三':
+                            temp = 3;
+                            break;
+                        case '四':
+                            temp = 4;
+                            break;
+                        case '五':
+                            temp = 5;
+                            break;
+                        case '六':
+                            temp = 6;
+                            break;
+                        case '七':
+                            temp = 7;
+                            break;
+                        case '八':
+                            temp = 8;
+                            break;
+                        case '九':
+                            temp = 9;
+                            break;
+                        case '十':
+                            if (temp == 0) {
+                                temp = 10;
+                            } else {
+                                result += temp * 10;
+                                temp = 0;
+                            }
+                            break;
+                        case '百':
+                            result += temp * 100;
+                            temp = 0;
+                            break;
+                        default:
+                    }
+                }
+            }
+            result += temp;
+        return String.valueOf(result);
+    }
+
+
+
+    public static void main(String[] args) {
+        String chineseNumber = "八零";
+        System.out.println(replaceWithHalfWidthNumber(chineseNumber));
+    }
+
 
 
     public static String replaceWithChineseNumber(String input) {
@@ -113,5 +209,39 @@ public class NumberParser {
             return result.toString();
         }
         return "";
+    }
+
+    //將F轉換成樓，-轉成之
+    public static String convertFToFloorAndHyphenToZhi(String input) {
+        if (input.endsWith("F") || input.endsWith("ｆ") || input.endsWith("Ｆ") || input.endsWith("f")) {
+            String result = input.substring(0, input.length() - 1) + "樓";
+            return result.replace("-", "之");
+        } else {
+            return input.replace("-", "之");
+        }
+    }
+
+    public static String extractNumericPart(String input) {
+        if (StringUtils.isNotNullOrEmpty(input)) {
+            Pattern numericPattern = Pattern.compile("[一二三四五六七八九十百千0-9]+");
+            Matcher numericMatcher = numericPattern.matcher(input);
+            if (numericMatcher.find()) {
+                return numericMatcher.group();
+            }
+        }
+        return "";
+    }
+
+    //補0
+    public static String padNumber(String comparisonValue, String numPart) {
+        // 計算需要補充0的個數
+        int zeroPaddingCount = Math.max(0, comparisonValue.length() - numPart.length());
+        // 在數字部分前面補0
+        StringBuilder paddedNumBuilder = new StringBuilder();
+        for (int i = 0; i < zeroPaddingCount; i++) {
+            paddedNumBuilder.append("0");
+        }
+        paddedNumBuilder.append(numPart);
+        return paddedNumBuilder.toString();
     }
 }

@@ -1,6 +1,8 @@
 package com.example.pentaho.component;
 
 
+import java.lang.reflect.Field;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -44,12 +46,27 @@ public class Address {
     private String originalAddress;
     private String mappingId; //64碼
     private String segmentExistNumber; //紀錄user是否有輸入每個地址片段，有:1，沒有:0
-    private List<String> mappingIdList;
+    private LinkedHashMap<String, String> mappingIdMap;
+    private List<String> MappingIdList;
     private String joinStep; //地址比對代碼
     private Set<String> seqSet;
+    private String numTypeCd; //臨建特附
+    private Boolean hasRoadArea; //有寫路地名為true，沒寫為false
 
 
     public Address() {
+    }
+
+    public void setProperty(String propertyName, String value) throws NoSuchFieldException, IllegalAccessException {
+        Field field = getClass().getDeclaredField(propertyName);
+        field.setAccessible(true);
+        field.set(this, value);
+    }
+
+    public String getProperty(String propertyName) throws NoSuchFieldException, IllegalAccessException {
+        Field field = getClass().getDeclaredField(propertyName);
+        field.setAccessible(true);
+        return (String) field.get(this);
     }
 
     public Address(String address) {
@@ -257,13 +274,6 @@ public class Address {
         this.segmentExistNumber = segmentExistNumber;
     }
 
-    public List<String> getMappingIdList() {
-        return mappingIdList;
-    }
-
-    public void setMappingIdList(List<String> mappingIdList) {
-        this.mappingIdList = mappingIdList;
-    }
 
     public String getJoinStep() {
         return joinStep;
@@ -385,6 +395,38 @@ public class Address {
         this.seqSet = seqSet;
     }
 
+    public LinkedHashMap<String, String> getMappingIdMap() {
+        return mappingIdMap;
+    }
+
+    public void setMappingIdMap(LinkedHashMap<String, String> mappingIdMap) {
+        this.mappingIdMap = mappingIdMap;
+    }
+
+    public List<String> getMappingIdList() {
+        return MappingIdList;
+    }
+
+    public void setMappingIdList(List<String> mappingIdList) {
+        MappingIdList = mappingIdList;
+    }
+
+    public String getNumTypeCd() {
+        return numTypeCd;
+    }
+
+    public void setNumTypeCd(String numTypeCd) {
+        this.numTypeCd = numTypeCd;
+    }
+
+    public Boolean getHasRoadArea() {
+        return hasRoadArea;
+    }
+
+    public void setHasRoadArea(Boolean hasRoadArea) {
+        this.hasRoadArea = hasRoadArea;
+    }
+
     @Override
     public String toString() {
         return "Address{" +
@@ -426,9 +468,12 @@ public class Address {
                 ", originalAddress='" + originalAddress + '\'' +
                 ", mappingId='" + mappingId + '\'' +
                 ", segmentExistNumber='" + segmentExistNumber + '\'' +
-                ", mappingIdList=" + mappingIdList +
+                ", mappingIdMap=" + mappingIdMap +
+                ", MappingIdList=" + MappingIdList +
                 ", joinStep='" + joinStep + '\'' +
                 ", seqSet=" + seqSet +
+                ", numTypeCd='" + numTypeCd + '\'' +
+                ", hasRoadArea=" + hasRoadArea +
                 '}';
     }
 }

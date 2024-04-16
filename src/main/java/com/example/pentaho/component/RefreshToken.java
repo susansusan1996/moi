@@ -1,16 +1,14 @@
 package com.example.pentaho.component;
 
-import java.time.Instant;
-
 public class RefreshToken {
 
     private String id;
     private String refreshToken;
     private String token;
-    private Instant expiryDate;
-    private Instant refreshTokenExpiryDate;
+    private String expiryDate;
+    private String refreshTokenExpiryDate;
+    private String reviewResult; //審核結果(AGREE、REJECT)
     private User user;
-
 
     public String getId() {
         return id;
@@ -20,16 +18,6 @@ public class RefreshToken {
         this.id = id;
     }
 
-
-    public Instant getExpiryDate() {
-        return expiryDate;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-
     public String getRefreshToken() {
         return refreshToken;
     }
@@ -37,15 +25,6 @@ public class RefreshToken {
     public void setRefreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
     }
-
-    public void setExpiryDate(Instant expiryDate) {
-        this.expiryDate = expiryDate;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
 
     public String getToken() {
         return token;
@@ -55,11 +34,35 @@ public class RefreshToken {
         this.token = token;
     }
 
-    public Instant getRefreshTokenExpiryDate() {
+    public String getExpiryDate() {
+        return expiryDate;
+    }
+
+    public void setExpiryDate(String expiryDate) {
+        this.expiryDate = expiryDate;
+    }
+
+    public String getRefreshTokenExpiryDate() {
         return refreshTokenExpiryDate;
     }
 
-    public void setRefreshTokenExpiryDate(Instant refreshTokenExpiryDate) {
+    public void setRefreshTokenExpiryDate(String refreshTokenExpiryDate) {
         this.refreshTokenExpiryDate = refreshTokenExpiryDate;
+    }
+
+    public String getReviewResult() {
+        return reviewResult;
+    }
+
+    public void setReviewResult(String reviewResult) {
+        this.reviewResult = reviewResult;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }

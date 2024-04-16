@@ -1,7 +1,7 @@
 package com.example.pentaho.resource;
 
 import com.example.pentaho.component.SingleQueryDTO;
-import com.example.pentaho.service.SingleQueryService;
+import com.example.pentaho.service.RedisService;
 import io.swagger.v3.oas.annotations.Hidden;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +19,7 @@ public class RedisResouce {
     private static Logger log = LoggerFactory.getLogger(RedisResouce.class);
 
     @Autowired
-    private SingleQueryService redisService;
+    private RedisService redisService;
 
 
     /**
