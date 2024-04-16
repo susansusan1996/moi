@@ -90,8 +90,13 @@ public class RedisService {
      * 找 mappingId
      */
     public String findByKey(String columnName, String key, String defaultValue) {
-
-
+        if (key != null && !key.isEmpty()) {
+            String redisValue = stringRedisTemplate1.opsForValue().get(key);
+            if (redisValue != null && !redisValue.isEmpty()) {
+                log.info("columnName:{} , redisKey: {} , redisValue: {}", columnName, key, redisValue);
+                return redisValue;
+            }
+        }
         return defaultValue;
     }
 
