@@ -5,6 +5,7 @@ import com.example.pentaho.component.RefreshToken;
 import com.example.pentaho.component.User;
 import com.example.pentaho.exception.MoiException;
 import com.example.pentaho.service.ApiKeyService;
+import com.example.pentaho.service.RedisService;
 import com.example.pentaho.service.RefreshTokenService;
 import com.example.pentaho.utils.UserContextUtils;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -24,7 +25,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
-import java.util.List;
 
 /***
  * 產生APIKey & 使用APIKey驗證的API
@@ -47,6 +47,8 @@ public class APIKeyResource {
     @Autowired
     private RefreshTokenService refreshTokenService;
 
+    @Autowired
+    private RedisService redisService;
 
 
     @Operation(description = "獲取APIKEY",
@@ -66,15 +68,9 @@ public class APIKeyResource {
                             content = @Content(schema = @Schema(implementation = JwtReponse.class)))}
     )
     @GetMapping("/get-api-key")
-    public ResponseEntity<JwtReponse> getAPIKey(@RequestParam String userId) {
-        try {
-            return new ResponseEntity<>(apiKeyService.getApiKey(userId), HttpStatus.OK);
-        } catch (Exception e) {
-            log.info("e:{}", e.toString());
-            throw new MoiException("generate error");
-        }
+    public ResponseEntity<JwtReponse> getAPIKey(@RequestParam String userId) throws Exception {
+        return new ResponseEntity<>(apiKeyService.getApiKey(userId), HttpStatus.OK);
     }
-
 
 
     @Operation(description = "產生APIKEY",
@@ -90,7 +86,7 @@ public class APIKeyResource {
                             schema = @Schema(type = "string")),
                     @Parameter(in = ParameterIn.QUERY,
                             name = "reviewResult",
-                            description = "query字串帶審核結果(AGREE、REJECT) ex. reviewResult=AGREE，或是 reviewResult=REJECT"  ,
+                            description = "query字串帶審核結果(AGREE、REJECT) ex. reviewResult=AGREE，或是 reviewResult=REJECT",
                             required = true,
                             schema = @Schema(type = "string"))}
             ,
@@ -102,17 +98,12 @@ public class APIKeyResource {
     public ResponseEntity<JwtReponse> createApiKey(@RequestParam String userId, @RequestParam String reviewResult) throws ParseException {
         JwtReponse response = new JwtReponse();
         if ("REJECT".equals(reviewResult)) {
-            //如果有值，表示要用更新的
-            if(!refreshTokenService.findByUserId(userId).isEmpty()){
-                refreshTokenService.updateByUserId(userId);
-            }else{
-                refreshTokenService.saveRefreshToken(userId, null, null, reviewResult);
-            }
+            refreshTokenService.saveRefreshToken(userId, null, null, reviewResult);
             response.setErrorResponse("已儲存被拒絕申請的使用者資訊");
             return new ResponseEntity<>(response, HttpStatus.OK);
         }
         try {
-            return new ResponseEntity<>(apiKeyService.createApiKey(userId, null), HttpStatus.OK);
+            return new ResponseEntity<>(apiKeyService.createApiKey(userId, null, "fromApi"), HttpStatus.OK);
         } catch (MoiException e) {
             response.setErrorResponse(String.valueOf(e));
             return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
@@ -167,10 +158,10 @@ public class APIKeyResource {
             )
             @RequestBody RefreshToken request) {
         log.info("refreshToken:{}", request);
-        List<RefreshToken> refreshTokens = refreshTokenService.findByRefreshTokenAndUserId(request);
-        if (!refreshTokens.isEmpty()) {
+        RefreshToken refreshToken = redisService.findRefreshTokenByUserId(request.getId());
+        if (refreshToken != null) {
             try {
-                if (refreshTokenService.verifyExpiration(refreshTokens.get(0).getRefreshToken(), "refresh_token")) {
+                if (refreshTokenService.verifyExpiration(request.getId(), refreshToken.getRefreshToken(), "refresh_token")) {
                     //refresh_token沒有過期
                     //卷新的token給他
                     return new ResponseEntity<>(apiKeyService.exchangeForNewToken(request.getId()), HttpStatus.OK);

@@ -11,7 +11,6 @@ import org.springframework.stereotype.Repository;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-
 import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
@@ -30,18 +29,18 @@ public class RefreshTokenRepositoryImpl implements RefreshTokenRepository {
 
     @Override
     public void saveRefreshToken(RefreshToken refreshToken) {
-        Query query = Query.builder()
-                .append("insert into ADDR_ODS.REFRESH_TOKEN (id, refresh_token, refresh_token_expiry_date, token ,expiry_date,create_timestamp, review_result )")
-                .append("VALUES (:id, :refreshtoken, CAST(:refreshtokenexpirydate AS DATETIME), :token, CAST(:expirydate AS DATETIME), :now, 'AGREE' )",
-                        refreshToken.getId(),
-                        refreshToken.getRefreshToken(), refreshToken.getRefreshTokenExpiryDate() == null ? null : java.sql.Timestamp.from(refreshToken.getRefreshTokenExpiryDate()),
-                        refreshToken.getToken(), refreshToken.getExpiryDate() == null ? null : java.sql.Timestamp.from(refreshToken.getExpiryDate()),
-                        java.sql.Timestamp.from(Instant.now())
-                )
-                .build();
-        log.info("query:{}", query);
-        log.info("params:{}", query.getParameters());
-        sqlExecutor.insert(query);
+//        Query query = Query.builder()
+//                .append("insert into ADDR_ODS.REFRESH_TOKEN (id, refresh_token, refresh_token_expiry_date, token ,expiry_date,create_timestamp, review_result )")
+//                .append("VALUES (:id, :refreshtoken, CAST(:refreshtokenexpirydate AS DATETIME), :token, CAST(:expirydate AS DATETIME), :now, 'AGREE' )",
+//                        refreshToken.getId(),
+//                        refreshToken.getRefreshToken(), refreshToken.getRefreshTokenExpiryDate() == null ? null : java.sql.Timestamp.from(refreshToken.getRefreshTokenExpiryDate()),
+//                        refreshToken.getToken(), refreshToken.getExpiryDate() == null ? null : java.sql.Timestamp.from(refreshToken.getExpiryDate()),
+//                        java.sql.Timestamp.from(Instant.now())
+//                )
+//                .build();
+//        log.info("query:{}", query);
+//        log.info("params:{}", query.getParameters());
+//        sqlExecutor.insert(query);
     }
 
     @Override
@@ -117,8 +116,8 @@ public class RefreshTokenRepositoryImpl implements RefreshTokenRepository {
         Map<String,Object> map = new HashMap<>();
         map.put("refresh_token",refreshToken.getRefreshToken());
         map.put("token",refreshToken.getToken());
-        map.put("refresh_token_expiry_date", refreshToken.getRefreshTokenExpiryDate() != null ? java.sql.Timestamp.from(refreshToken.getRefreshTokenExpiryDate()) : null);
-        map.put("expiry_Date", refreshToken.getExpiryDate() != null ? java.sql.Timestamp.from(refreshToken.getExpiryDate()) : null);
+//        map.put("refresh_token_expiry_date", refreshToken.getRefreshTokenExpiryDate() != null ? java.sql.Timestamp.from(refreshToken.getRefreshTokenExpiryDate()) : null);
+//        map.put("expiry_Date", refreshToken.getExpiryDate() != null ? java.sql.Timestamp.from(refreshToken.getExpiryDate()) : null);
         map.put("review_result",refreshToken.getReviewResult());
         map.put("create_timestamp",java.sql.Timestamp.from(Instant.now()));
         map.put("id",refreshToken.getId());
