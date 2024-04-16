@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.*;
@@ -120,7 +121,7 @@ public class BatchResource {
                         content = @Content(schema = @Schema(implementation = String.class), examples= @ExampleObject(value = "CALL_JOB_ERROR"))),
         }
 )
-    @PostMapping("/excuteETLJob")
+    @PostMapping(value="/excuteETLJob",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Authorized(keyName = "SHENG")
     public ResponseEntity<String> sftpUploadAndExecuteTrans(
         @Parameter(
@@ -148,11 +149,12 @@ public class BatchResource {
                 required = true,
                 schema = @Schema(type = "string"))
         @RequestParam("formBuilderOrgId") String formBuilderOrgId,
-        @Parameter(
-                description = "使用者上傳的CSV檔",
-                required = true
-        )
-        @RequestParam("file") MultipartFile file) throws IOException {
+//        @Parameter(
+//                description = "使用者上傳的CSV檔",
+//                required = true
+//        )
+        @RequestPart("file")
+        MultipartFile file) throws IOException {
 
         if (file == null) {
             return new ResponseEntity<>("檔案為空",HttpStatus.INTERNAL_SERVER_ERROR);

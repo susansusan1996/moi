@@ -204,7 +204,6 @@ public class APIKeyResource {
             parameters = {@Parameter(in = ParameterIn.HEADER,
                     name = "Authorization",
                     description = "資拓私鑰加密的jwt token",
-                    required = true,
                     schema = @Schema(type = "string"))
             },
             responses = {
@@ -236,7 +235,6 @@ public class APIKeyResource {
             parameters = {@Parameter(in = ParameterIn.HEADER,
                     name = "Authorization",
                     description = "資拓私鑰加密的jwt token",
-                    required = true,
                     schema = @Schema(type = "string"))
             },
             responses = {
@@ -265,7 +263,6 @@ public class APIKeyResource {
             parameters = {@Parameter(in = ParameterIn.HEADER,
                     name = "Authorization",
                     description = "資拓私鑰加密的jwt token",
-                    required = true,
                     schema = @Schema(type = "string"))
             }
     )
