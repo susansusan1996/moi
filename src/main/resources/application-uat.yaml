@@ -111,5 +111,8 @@ sftputils:
  username: rhel
  password: 1qaz#EDC
 
+LogsLocation: /home/moi/app/aplog/
+UsageLogsLocation: /home/moi/app/usagelog/
+
 
 

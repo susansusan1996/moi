@@ -1,16 +1,59 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration scan="true" scanPeriod="60 seconds">
+
+    <!--共用-->
     <property name="Charset" value="UTF-8" />
-    <property name="FileName" value="aplog" />
-    <property name="LogsLocation" value="/home/moi/app/aplog/" />
     <property name="Format1" value="[%d{yyyy-MM-dd HH:mm:ss}][%p][%t][Line:%L][%c.%M]%m%n" />
-    <!-- appender -->
+
+    <!--aplog-->
+    <property name="FileName" value="aplog" />
+    <springProperty scope="context" name="LogsLocation" source="LogsLocation"/>
+
+    <!--使用紀錄-->
+    <springProperty scope="context" name="UsageLogsLocation" source="UsageLogsLocation"/>
+    <property name="log.size" value="1MB"/>
+    <timestamp key="date" datePattern="yyyy-MM-dd"/>
+
+    <!-- console log output -->
     <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>${Format1}</pattern>
             <charset>${Charset}</charset>
         </encoder>
     </appender>
+
+
+    <!-- usagelog file output -->
+    <turboFilter class="ch.qos.logback.classic.turbo.MDCFilter">
+        <MDCKey>usage</MDCKey>
+        <Value>v_1</Value>
+        <OnMatch>ACCEPT</OnMatch>
+        <onMismatch>NUTURAL</onMismatch>
+    </turboFilter>
+
+    <appender name="USAGE-LOG"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+<!--        <file>${UsageLogsLocation}/usageLog.log</file>-->
+            <file>${UsageLogsLocation}/usageLog_${date}.log</file>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- rollover daily -->
+            <fileNamePattern>${UsageLogsLocation}/usageLog_%d{yyyy-MM-dd}_%i.log</fileNamePattern>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>${log.size}</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
+
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <Pattern>
+                <!--                %msg@ˇ@%d{yyyy-MM-ddTHH:mm:ss.SSS}%n-->
+                %msg%n
+            </Pattern>
+        </encoder>
+    </appender>
+
+
+    <!-- log file output -->
     <appender name="fileout" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <!--log的存放路徑-->
@@ -27,12 +70,18 @@
             <MaxFileSize>100MB</MaxFileSize>
         </triggeringPolicy>
     </appender>
-    <!-- logger -->
+
+<!--    &lt;!&ndash; logger &ndash;&gt;-->
     <root level="info">
         <appender-ref ref="fileout" />
+<!--        <appender-ref ref="USAGE-LOG" />-->
         <appender-ref ref="stdout" />
     </root>
+
     <logger name="com.example" level="debug">
         <appender-ref ref="fileout" />
+    </logger>
+    <logger name="UsageLog" level="WARN" addtivity="true">
+        <appender-ref ref="USAGE-LOG"></appender-ref>
     </logger>
 </configuration>

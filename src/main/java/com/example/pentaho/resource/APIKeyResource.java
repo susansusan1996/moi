@@ -8,6 +8,7 @@ import com.example.pentaho.service.RefreshTokenService;
 import com.example.pentaho.service.SingleQueryService;
 import com.example.pentaho.service.SingleTrackQueryService;
 import com.example.pentaho.utils.AddressParser;
+import com.example.pentaho.utils.UsageUtils;
 import com.example.pentaho.utils.UserContextUtils;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,7 +25,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.text.ParseException;
 import java.util.List;
@@ -62,6 +62,8 @@ public class APIKeyResource {
 
     @Autowired
     private AddressParser  addressParser;
+
+
 
 
 
@@ -223,6 +225,7 @@ public class APIKeyResource {
                             examples = @ExampleObject(value = "BSZ7538-0")
                     )
             ) @RequestParam String addressId) {
+        UsageUtils.writeUsageLog("/api/api-key/query-track",addressId);
         return new ResponseEntity<>(singleTrackQueryService.querySingleTrack(addressId), HttpStatus.OK);
     }
 
@@ -253,6 +256,7 @@ public class APIKeyResource {
                             examples = @ExampleObject(value = "台南市東區衛國里007鄰衛國街１１４巷９弄１０號B六樓之５,臺南市(可為空),東區(可為空)")
             )) @RequestParam String address) {
         log.info("address:{}",address);
+        UsageUtils.writeUsageLog("/api/api-key/query-standard-address",address);
         return new ResponseEntity<>(addressParser.parseAddress(address,null,null),HttpStatus.OK);
     }
 
@@ -277,7 +281,10 @@ public class APIKeyResource {
                             examples = @ExampleObject(value = "台南市東區衛國里007鄰衛國街１１４巷９弄１０號B六樓之５,臺南市(可為空),東區(可為空)")
                     )
             ) @RequestParam String singleQueryStr) {
+
+        UsageUtils.writeUsageLog("/api/api-key/query-single",singleQueryStr);
         log.info("單筆查詢，參數為:{}",singleQueryStr);
+
         if(singleQueryStr.indexOf(",") >=0){
             String[] params = singleQueryStr.split(",");
             SingleQueryDTO singleQueryDTO = new SingleQueryDTO();
@@ -305,6 +312,8 @@ public class APIKeyResource {
             return ResponseEntity.ok(singleQueryService.findJsonTest(singleQueryDTO));
         }
     }
+
+
 
 
 }

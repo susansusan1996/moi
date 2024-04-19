@@ -96,3 +96,6 @@ sftputils:
   port: 22
   username: ubuntu
   private-key: D:\moi_key\moi-addr-privatekey.pem
+
+LogsLocation: D:/temp/aplog/
+UsageLogsLocation: D:/temp/usagelog/

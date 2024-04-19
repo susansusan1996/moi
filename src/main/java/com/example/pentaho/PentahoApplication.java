@@ -9,6 +9,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -17,6 +18,7 @@ import java.util.Optional;
 @SpringBootApplication
 @ConfigurationPropertiesScan
 @EnableAsync
+@EnableScheduling
 public class PentahoApplication {
 
 	private final static Logger log = LoggerFactory.getLogger(PentahoApplication.class);

@@ -86,7 +86,7 @@ public class Token {
             PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(decodedKeyBytes);
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             PrivateKey RSAprivateKey = keyFactory.generatePrivate(spec);
-            Map<String,Object> map = RSAJWTUtils.generateTokenExpireInMinutes(user, RSAprivateKey, 1440);
+            Map<String,Object> map = RSAJWTUtils.generateTokenExpireInMinutes(user, RSAprivateKey, 52596000);
           return new Token((String) map.get("token"));//20分鐘過期
         }catch (Exception e){
             log.info("e:{}",e.toString());

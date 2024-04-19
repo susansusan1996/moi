@@ -111,4 +111,7 @@ sftputils:
   private-key: /home/ubuntu/app/moi_key/moi-addr-privatekey.pem
 
 
+LogsLocation: /home/ubuntu/app/aplog/
+UsageLogsLocation: /home/ubuntu/app/usagelog/
+
 
