@@ -22,6 +22,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +35,8 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 
@@ -185,15 +188,18 @@ public class BatchResource {
 
         /****************************************批次查詢****************************************/
         /***建立批次查詢物件**/
+        /*filePath:../yyyyMMdd/formBuilderOrgId*/
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
         String dateStamp = dateFormat.format(new Date());
         JobParams jobParams = new JobParams(formName, Id, originalFileId, formBuilderId, formBuilderOrgId,dateStamp);
         log.info("jobParams:{}",jobParams);
-        String status = jobService.sftpUploadAndExecuteTrans(file, jobParams);
-        if(!"CALL_JOB_SUCESS".equals(status)){
-            return new ResponseEntity<>(status,HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-        return new ResponseEntity<>(status,HttpStatus.OK);
+        /*result:response的內容*/
+        Map<String, String> result = new HashMap<>();
+        jobService.sftpUploadAndExecuteTrans(file,jobParams,result);
+            if("CALL_JOB_SUCESS".equals(result.get("status"))){
+                return new ResponseEntity<>(result.get("status"),HttpStatus.OK);
+            }
+            return new ResponseEntity<>(result.get("status"),HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
 
@@ -255,5 +261,24 @@ public class BatchResource {
         log.info("formName:{}",formName);
         return new ResponseEntity<>(fileOutputService.findLog(formName),HttpStatus.OK);
     }
+
+
+
+    @GetMapping("/simple-job")
+    @Profile("dev")
+    public void getJobStatus(){
+        jobService.simpleJob();
+    }
+
+
+    @GetMapping("/get-job-status")
+    @Authorized(keyName = "SHENG")
+    public ResponseEntity<Map<String,String>>getJobStatusById(@RequestParam String id){
+        log.info("id:{}",id);
+        Map<String, String> result = new HashMap<>();
+        result.put("id",id);
+        return new ResponseEntity<>(jobService.getJobStatusById(result),HttpStatus.OK);
+    }
+
 
 }

@@ -2,6 +2,7 @@ package com.example.pentaho.utils;
 
 import com.example.pentaho.component.JobParams;
 import com.example.pentaho.component.PentahoComponent;
+import com.example.pentaho.component.PentahoWebService;
 import com.example.pentaho.component.User;
 import com.example.pentaho.exception.MoiException;
 import com.fasterxml.jackson.core.TreeNode;
@@ -12,13 +13,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
+import org.w3c.dom.Element;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 
 @Component
@@ -41,9 +50,10 @@ public class WebServiceUtils {
 
 
 
-    public String getConnection(String webService,JobParams jobParams){
+    public Map<String,String> getConnection(String webService, JobParams jobParams, Map<String,String> result){
+        HttpURLConnection con = null;
         String status ="CALL_JOB_ERROR";
-        HttpURLConnection con =null;
+        result.put("status",status);
         try {
             log.info("再確認一次要轉成url的job參數:{}",jobParams);
             StringBuilder temp = new StringBuilder(pentahoComponent.getWebTarget() + webService);
@@ -53,10 +63,15 @@ public class WebServiceUtils {
             con = (HttpURLConnection) url.openConnection();
             basicAuthentication(con);
             con.setRequestMethod("POST");
+            //todo:可能需要設定一個timeOut時間
+            //con.setConnectTimeout(30);
             int responseCode = con.getResponseCode();
             log.info("responseCode:{}",responseCode);
             if(responseCode == 200){
                 status="CALL_JOB_SUCESS";
+                result.put("status",status);
+                /*responseContent*/
+                XmlParseUtils.parser(con.getInputStream(),result);
             }
         }catch (Exception e){
             log.info("e:{}",e.toString());
@@ -64,9 +79,10 @@ public class WebServiceUtils {
             if(con!=null){
                 con.disconnect();
             }
+            log.info("result:{}",result);
         }
         jobParams.setStatus(status);
-        return status;
+        return result;
     }
 
 
@@ -105,6 +121,27 @@ public class WebServiceUtils {
             newUrl = newUrl.substring(0, newUrl.length() - ampersand.length());
         }
         return newUrl;
+    }
+
+
+    public Map<String,String> getJobStatus(Map<String,String> result){
+        StringBuilder temp = new StringBuilder(pentahoComponent.getWebTarget());
+        String fullURL =
+                temp.append(PentahoWebService.jobStatusById)
+                        .append("id" + equal + result.get("id"))
+                        .toString();
+        log.info("fullURL:{}",fullURL);
+        try {
+            URL url = new URL(fullURL);
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            basicAuthentication(con);
+            XmlParseUtils.parser(con.getInputStream(),result);
+            log.info("result:{}",result);
+            return result;
+        }catch (Exception e){
+            log.info("e:{}",e.toString());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
 }

@@ -354,15 +354,9 @@ public class JobService {
     }
     /**
      * 檔名規格:batchId.csv
-     * @param origrinalFileName
      * @return
      */
-    private String getFileName(String origrinalFileName,String batchId){
-//        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
-//        String timestamp = dateFormat.format(new Date());
-//        int last = origrinalFileName.lastIndexOf(".");
-//        String fileName = origrinalFileName.substring(0, last);
-//        return fileName+"_"+batchId+".csv";
+    private String getFileName(String batchId){
         return batchId+".csv";
     }
 
@@ -403,28 +397,60 @@ public class JobService {
         }
     }
 
+    /**
+     * 上傳檔案至Pentaho Server & call Job
+     * @param file
+     * @param jobParams
+     * @param result response content
+     * @return
+     * @throws IOException
+     */
 
-
-    public String sftpUploadAndExecuteTrans(MultipartFile file,JobParams jobParams) throws IOException {
-        /**檔案筆數**/
-        /**給Pentaho Server & Shengsen 的參數*/
+    public Map<String, String> sftpUploadAndExecuteTrans(MultipartFile file,JobParams jobParams,Map<String,String> result) throws IOException {
+        /*PROCESSED_COUNTS(檔案筆數): Pentaho Server & Shengsen 的參數*/
         jobParams.setPROCESSED_COUNTS(CSVReader(file));
 
-        /**以 formName(申請單號) 為檔名**/
-        String fileName = getFileName(file.getOriginalFilename(), jobParams.getFORM_NAME());
+        /*以 formName(申請單號) 為檔名**/
+        String fileName = getFileName(jobParams.getFORM_NAME());
 
+        /*以 ../yyyyMMdd/formBuilderOrgId/ 作為目錄 */
         String[] targetDirs = targetDirs(jobParams);
-        /**SFTP**/
+        /*SFTP**/
         boolean sftpUpload = fileUploadService.sftpUpload(file,targetDirs,fileName);
-        /**上傳失敗**/
+        /*上傳失敗**/
         if(!sftpUpload){
-            String status="UPLOAD_ERROR";
+            String status = "UPLOAD_ERROR";
             jobParams.setStatus(status);
-            return status;
+            result.put("status",status);
+            return result;
         }
-        /**準備要給 pentaho params*/
-        return webServiceUtils.getConnection(PentahoWebService.executeJobs,jobParams);
+        /*SFTP成功，準備呼叫job， result 中放 PentahoWebService 回傳內容的key*/
+        result.put("result","");
+        result.put("id","");
+        result.put("message","");
+        return webServiceUtils.getConnection(PentahoWebService.executeJobs,jobParams,result);
     }
+
+
+    public void simpleJob(){
+        JobParams jobParams = new JobParams();
+        HashMap<String, String> result = new HashMap<>();
+        result.put("result","");
+        result.put("id","");
+        result.put("message","");
+        webServiceUtils.getConnection(PentahoWebService.simpleExecuteJob,jobParams,result);
+    }
+
+
+    public Map<String,String> getJobStatusById(Map<String,String> result){
+        result.put("jobname","");
+        result.put("status_desc","");
+        webServiceUtils.getJobStatus(result);
+        return result;
+    }
+
+
+
 
 }
 
