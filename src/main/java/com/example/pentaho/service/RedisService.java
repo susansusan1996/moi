@@ -776,13 +776,13 @@ public class RedisService {
                                     address.getNumFlr5Id(), basementStr, address.getNumFlrPos(), address.getRoomIdSn())
                             .map(Object::toString)
                             .collect(Collectors.toList());
-                    // 將NUMFLRPOS為00000的組合也塞進去
-                    String oldPos = mappingIdMap.get("NUMFLRPOS");
-                    mappingIdStringList.add(replaceNumFlrPosWithZero(mappingIdMap));
-                    mappingIdMap.put("NUMFLRPOS", oldPos); //還原
                     mappingIdMapList.add(mappingIdMap);
                     mappingIdListCollection.add(mappingIdList);
                     mappingIdStringList.add(String.join("", mappingIdList));
+                    // 將NUMFLRPOS為00000的組合也塞進去mappingIdStringList
+                    String oldPos = mappingIdMap.get("NUMFLRPOS");
+                    mappingIdStringList.add(replaceNumFlrPosWithZero(mappingIdMap));
+                    mappingIdMap.put("NUMFLRPOS", oldPos); //還原
                 }
             }
         }
