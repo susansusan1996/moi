@@ -58,7 +58,7 @@ public class AddressParser {
     public Address parseAddress(String origninalAddress, String newAddress, Address address) {
         String input = newAddress == null ? origninalAddress : newAddress;
         //去除特殊字元
-        input = input.replaceAll("[`~!@#$%^&*()+=|{}':;',\\[\\].<>/?~！@#￥%……&*（）——+|{}【】‘；：”“’。，、？\\\\\\s]+", "");
+        input = input.replaceAll("[`~!@#$%^&*()+=|{}';',\\[\\].<>/?~！@#￥%……&*（）——+|{}【】‘”“’。，、？\\\\\\s]+", "");
         log.info("去除特殊字元後的origninalAddress:{}",input);
         if (address == null) {
             address = new Address();
@@ -66,10 +66,8 @@ public class AddressParser {
                 address.setOriginalAddress(origninalAddress);
             }
         }
-        //先把county、town撈出來，以便核對有沒有area，
-        //如果有area，就把area先去掉，
         //把area去掉之後，其餘部分再跑一次正則，把其他部分切割出來
-        input = findArea(input, address);
+//        input = findArea(input, address);
         String pattern = getPattern(); //組正則表達式
         Pattern regexPattern = Pattern.compile(pattern);
         Matcher matcher = regexPattern.matcher(input);
@@ -99,12 +97,14 @@ public class AddressParser {
                 break;
             }
         }
-        //如果有再找到area，就把area看掉，切出其他addres片段
+        //如果有再找到area，就把area砍掉，切出其他addres片段
         if(StringUtils.isNotNullOrEmpty(match)){
             address.setArea(match);
-            log.info("address.getOriginalAddress():{}",address.getOriginalAddress());
+            String originalAddress = address.getOriginalAddress();
+            log.info("originalAddress:{}",originalAddress);
             log.info("match:{}",match);
-            String newAddressString = address.getOriginalAddress().replace(match,"");
+            int lastIndex = originalAddress.lastIndexOf(match);
+            String newAddressString = originalAddress.substring(0, lastIndex) + originalAddress.substring(lastIndex + match.length());
             log.info("newAddressString:{}",newAddressString);
             address = parseAddress(null,newAddressString, address);
 //            //join_step
