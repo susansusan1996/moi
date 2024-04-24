@@ -16,7 +16,6 @@ public class KeyComponent {
     private String apPrikeyName;
 
 
-
     public String getPubkeyName() {
         return pubkeyName;
     }
@@ -39,5 +38,16 @@ public class KeyComponent {
 
     public void setApPrikeyName(String apPrikeyName) {
         this.apPrikeyName = apPrikeyName;
+    }
+
+    public String keyMapping(String keyword){
+        switch (keyword){
+            case "AP":
+                return this.apPubkeyName;
+            case "SHENG":
+                return this.pubkeyName;
+            default:
+                return "";
+        }
     }
 }
