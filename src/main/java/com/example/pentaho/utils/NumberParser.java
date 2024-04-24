@@ -3,6 +3,7 @@ package com.example.pentaho.utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -12,6 +13,12 @@ public class NumberParser {
 
     public static String replaceWithHalfWidthNumber(String input) {
         if (input != null && !input.isEmpty()) {
+            if (containsChineseNumbers(input)) {
+                log.info("含有中文數字:{}", input);
+                String newNum = chineseNumberToArabic(input);
+                log.info("含有中文數字，新字串:{}", newNum);
+                return newNum;
+            }
             Map<String, String> map = new HashMap<>();
             map.put("壹", "1");
             map.put("貳", "2");
@@ -23,16 +30,6 @@ public class NumberParser {
             map.put("捌", "8");
             map.put("玖", "9");
             map.put("零", "0");
-            map.put("一", "1");
-            map.put("二", "2");
-            map.put("三", "3");
-            map.put("四", "4");
-            map.put("五", "5");
-            map.put("六", "6");
-            map.put("七", "7");
-            map.put("八", "8");
-            map.put("九", "9");
-            map.put("十", "1");
             map.put("０", "0");
             map.put("１", "1");
             map.put("２", "2");
@@ -52,7 +49,7 @@ public class NumberParser {
                     result.append(currentChar);
                 }
             }
-            log.info("數字改為:{}", result.toString());
+            log.info("數字改為:{}", result);
             return result.toString();
         }
         return "";
@@ -60,7 +57,7 @@ public class NumberParser {
 
     //檢查有無匹配一|二|三|四|五|六|七|八|九|十
     public static boolean containsChineseNumbers(String input) {
-        String regex = ".*(一|二|三|四|五|六|七|八|九|十).*";
+        String regex = ".*(一|二|三|四|五|六|七|八|九|十|零).*";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(input);
         return matcher.matches();
@@ -81,76 +78,27 @@ public class NumberParser {
         numberMap.put('九', 9);
     }
 
+    //中文數字改阿拉伯數字
     public static String chineseNumberToArabic(String chineseNumber) {
-        int result = 0;
-        if (chineseNumber == null || chineseNumber.isEmpty()) {
-            log.error("xxxxxxxxxxxxx");
-        }
-            int temp = 0;
-            for (int i = 0; i < chineseNumber.length(); i++) {
-                char c = chineseNumber.charAt(i);
-                if (Character.isDigit(c)) {
-                    temp = c - '0';
-                } else {
-                    switch (c) {
-                        case '零':
-                            temp = 0;
-                            break;
-                        case '一':
-                            temp = 1;
-                            break;
-                        case '二':
-                        case '两':
-                            temp = 2;
-                            break;
-                        case '三':
-                            temp = 3;
-                            break;
-                        case '四':
-                            temp = 4;
-                            break;
-                        case '五':
-                            temp = 5;
-                            break;
-                        case '六':
-                            temp = 6;
-                            break;
-                        case '七':
-                            temp = 7;
-                            break;
-                        case '八':
-                            temp = 8;
-                            break;
-                        case '九':
-                            temp = 9;
-                            break;
-                        case '十':
-                            if (temp == 0) {
-                                temp = 10;
-                            } else {
-                                result += temp * 10;
-                                temp = 0;
-                            }
-                            break;
-                        case '百':
-                            result += temp * 100;
-                            temp = 0;
-                            break;
-                        default:
-                    }
+        Pattern p;
+        Matcher m;
+        for (String regex : regexMap.keySet()) {
+            p = Pattern.compile(regex);
+            m = p.matcher(chineseNumber);
+            while (m.find()) {
+                String exper = regexMap.get(regex);
+                List<String> list = new ArrayList<>();
+                for (int i = 1; i <= m.groupCount(); i++) {
+                    list.add(NumRegex.numMap.get(m.group(i)));
                 }
+                exper = MessageFormat.format(exper, list.toArray());
+                String text = m.group();
+                String value = experToValue(exper);
+                chineseNumber = chineseNumber.replace(text, value);
             }
-            result += temp;
-        return String.valueOf(result);
+        }
+        return chineseNumber;
     }
-
-
-
-    public static void main(String[] args) {
-        String chineseNumber = "八零";
-        System.out.println(replaceWithHalfWidthNumber(chineseNumber));
-    }
-
 
 
     public static String replaceWithChineseNumber(String input) {
@@ -244,4 +192,103 @@ public class NumberParser {
         paddedNumBuilder.append(numPart);
         return paddedNumBuilder.toString();
     }
+
+
+    public static String experToValue(String exper) {
+        String[] experArr = null;
+        experArr = exper.split(encodeUnicode("+"));
+
+        int value = 0;
+        for (String sExper : experArr) {
+            String[] sExperArr = sExper.split(encodeUnicode("*"));
+            value += Integer.valueOf(sExperArr[0]) * Integer.valueOf(sExperArr[1]);
+        }
+        return String.valueOf(value);
+    }
+
+    //轉換為unicode
+    private static String encodeUnicode(String gbString) {
+        char[] utfBytes = gbString.toCharArray();
+        String unicodeBytes = "";
+        for (int i : utfBytes) {
+            String hexB = Integer.toHexString(i);
+            if (hexB.length() <= 2) {
+                hexB = "00" + hexB;
+            }
+            unicodeBytes = unicodeBytes + "\\u" + hexB;
+        }
+        return unicodeBytes;
+    }
+
+
+    //一、十一、二十一、三百二十一、三百零一、二十、三百、三百二、十
+    private static final Map<String, String> regexMap = new LinkedHashMap<String, String>();
+    static {
+        //三百二十一
+        String regex = NumRegex.getNumRegex() + encodeUnicode("百") + NumRegex.getNumRegex() + encodeUnicode("十") + NumRegex.getNumRegex();
+        String exper = "{0}*100+{1}*10+{2}*1";
+        regexMap.put(regex, exper);
+        //三百零一
+        regex = NumRegex.getNumRegex() + encodeUnicode("百") + encodeUnicode("零") + NumRegex.getNumRegex();
+        exper = "{0}*100+{1}*1";
+        regexMap.put(regex, exper);
+        //三百二
+        regex = NumRegex.getNumRegex() + encodeUnicode("百") + NumRegex.getNumRegex();
+        exper = "{0}*100+{1}*10";
+        regexMap.put(regex, exper);
+        //三百
+        regex = NumRegex.getNumRegex() + encodeUnicode("百");
+        exper = "{0}*100";
+        regexMap.put(regex, exper);
+        //二十一
+        regex = NumRegex.getNumRegex() + encodeUnicode("十") + NumRegex.getNumRegex();
+        exper = "{0}*10+{1}*1";
+        regexMap.put(regex, exper);
+        //二十
+        regex = NumRegex.getNumRegex() + encodeUnicode("十");
+        exper = "{0}*10";
+        regexMap.put(regex, exper);
+        //十一
+        regex = encodeUnicode("十") + NumRegex.getNumRegex();
+        exper = "1*10+{0}*1";
+        regexMap.put(regex, exper);
+        //十
+        regex = encodeUnicode("十");
+        exper = "1*10";
+        regexMap.put(regex, exper);
+        //一
+        regex = NumRegex.getNumRegex();
+        exper = "{0}*1";
+        regexMap.put(regex, exper);
+    }
+
+    static class NumRegex {
+        public static final Map<String, String> numMap = new HashMap<String, String>();
+
+        static {
+            numMap.put("一", "1");
+            numMap.put("二", "2");
+            numMap.put("三", "3");
+            numMap.put("四", "4");
+            numMap.put("五", "5");
+            numMap.put("六", "6");
+            numMap.put("七", "7");
+            numMap.put("八", "8");
+            numMap.put("九", "9");
+        }
+
+        private static String numRegex;
+
+        public static String getNumRegex() {
+            if (numRegex == null || numRegex.length() == 0) {
+                numRegex = "([";
+                for (String s : numMap.keySet()) {
+                    numRegex += encodeUnicode(s);
+                }
+                numRegex += "])";
+            }
+            return numRegex;
+        }
+    }
+
 }
