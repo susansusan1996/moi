@@ -117,27 +117,7 @@ public class RedisService {
     }
 
 
-    /**
-     * 存refresh_token
-     */
-    public void saveRefreshToken(RefreshToken refreshToken) {
-        if (refreshToken.getToken() != null) {
-            stringRedisTemplate0.opsForValue().set(refreshToken.getId() + ":token", refreshToken.getToken());
-        }
-        if (refreshToken.getRefreshToken() != null) {
-            stringRedisTemplate0.opsForValue().set(refreshToken.getId() + ":refresh_token", refreshToken.getRefreshToken());
-        }
-        if (refreshToken.getExpiryDate() != null) {
-            stringRedisTemplate0.opsForValue().set(refreshToken.getId() + ":expiry_date", refreshToken.getExpiryDate());
-        }
-        if (refreshToken.getRefreshTokenExpiryDate() != null) {
-            stringRedisTemplate0.opsForValue().set(refreshToken.getId() + ":refresh_token_expiry_date", refreshToken.getRefreshTokenExpiryDate());
-        }
-        if (refreshToken.getReviewResult() != null) {
-            stringRedisTemplate0.opsForValue().set(refreshToken.getId() + ":review_result", refreshToken.getReviewResult());
-        }
-        stringRedisTemplate0.opsForValue().set(refreshToken.getId() + ":create_timestamp", Instant.now().toString());
-    }
+
 
     public void updateRefreshTokenByUserId(RefreshToken refreshToken) {
         if (StringUtils.isNotNullOrEmpty(refreshToken.getId())) {
@@ -149,48 +129,6 @@ public class RedisService {
             stringRedisTemplate0.opsForValue().set(refreshToken.getId() + ":create_timestamp", Instant.now().toString());
         }
     }
-
-    public void updateTokenByUserId(String id,JwtReponse response) {
-        if (StringUtils.isNotNullOrEmpty(id)) {
-            stringRedisTemplate0.opsForValue().set(id + ":token", response.getToken());
-            stringRedisTemplate0.opsForValue().set(id + ":expiry_date", response.getExpiryDate());
-            stringRedisTemplate0.opsForValue().set(id + ":create_timestamp", Instant.now().toString());
-        }
-    }
-
-
-
-    public RefreshToken findRefreshTokenByUserId(String id) {
-        RefreshToken refreshToken = new RefreshToken();
-        if (StringUtils.isNotNullOrEmpty(id)) {
-            String reviewResult = stringRedisTemplate0.opsForValue().get(id + ":review_result");
-            if ("AGREE".equals(reviewResult)) {
-                refreshToken.setId(id);
-                refreshToken.setToken(stringRedisTemplate0.opsForValue().get(id + ":token"));
-                refreshToken.setRefreshToken(stringRedisTemplate0.opsForValue().get(id + ":refresh_token"));
-                refreshToken.setExpiryDate(stringRedisTemplate0.opsForValue().get(id + ":expiry_date"));
-                refreshToken.setRefreshTokenExpiryDate(stringRedisTemplate0.opsForValue().get(id + ":refresh_token_expiry_date"));
-                refreshToken.setReviewResult(stringRedisTemplate0.opsForValue().get(id + ":review_result"));
-                return refreshToken;
-            }
-        }
-        return null;
-    }
-
-    public void deleteToken(String id, String type) {
-        if (StringUtils.isNotNullOrEmpty(id)) {
-            //判斷刪哪種token
-            if ("token".equals(type)) {
-                stringRedisTemplate0.delete(id + ":token");
-                stringRedisTemplate0.delete(id + ":expiry_date");
-            } else {
-                stringRedisTemplate0.delete(id + ":refresh_token");
-                stringRedisTemplate0.delete(id + ":refresh_token_expiry_date");
-            }
-        }
-    }
-
-
 
 
 

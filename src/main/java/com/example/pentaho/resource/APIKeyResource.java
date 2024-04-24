@@ -178,7 +178,7 @@ public class APIKeyResource {
             )
             @RequestBody RefreshToken request) {
         log.info("refreshToken:{}", request);
-        RefreshToken refreshToken = redisService.findRefreshTokenByUserId(request.getId());
+        RefreshToken refreshToken = refreshTokenService.findRefreshTokenByUserId(request.getId());
         if (refreshToken != null) {
             try {
                 if (refreshTokenService.verifyExpiration(request.getId(), refreshToken.getRefreshToken(), "refresh_token")) {

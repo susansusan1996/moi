@@ -31,7 +31,7 @@ public class ApiKeyService {
     //同時檢查token有沒有過期，有過期的話，看refresh_token有沒有過期，refresh_token沒有過期重新卷token即可
     //refresh_token有過期，整組要重建，並返回給前端
     public JwtReponse getApiKey(String userId) throws Exception {
-        RefreshToken refreshToken = redisService.findRefreshTokenByUserId(userId);
+        RefreshToken refreshToken = refreshTokenService.findRefreshTokenByUserId(userId);
         JwtReponse jwtReponse = new JwtReponse();
         if (refreshToken != null) {
             //token沒有過期
@@ -71,7 +71,10 @@ public class ApiKeyService {
         Map<String, Object> refreshTokenMap = null;
         if (refreshToken == null) {
             //refreshToken == null、fromApi，表示全新的申請
-            if (redisService.findRefreshTokenByUserId(userId) != null && !"fromApi".equals(type)) {
+            //refreshToken != null、!fromApi，表示get-api-key時，發現token過期，重產
+            if ((refreshTokenService.findRefreshTokenByUserId(userId) == null && "fromApi".equals(type)) ||
+                    (refreshTokenService.findRefreshTokenByUserId(userId) != null && !"fromApi".equals(type))
+            ) {
                 user.setTokenType("refresh_token");
                 refreshTokenMap = RSAJWTUtils.generateTokenExpireInMinutes(user, privateKey, VALID_TIME * 2);  //REFRESH_TOKEN效期先設2天
                 //token存redis
@@ -103,7 +106,7 @@ public class ApiKeyService {
         response.setExpiryDate((String) tokenMap.get("expiryDate")); //refresh_token，效期先設2天
         response.setToken((String) tokenMap.get("token"));
         //更新db裡的token、expiryDate
-        redisService.updateTokenByUserId(userId, response);
+        refreshTokenService.updateTokenByUserId(userId, response);
         return response;
     }
 
