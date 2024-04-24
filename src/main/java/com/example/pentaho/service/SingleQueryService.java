@@ -37,9 +37,6 @@ public class SingleQueryService {
     @Autowired
     private JoinStepService joinStepService;
 
-    @Autowired
-    private SetAddressService setAddressService;
-
 
 
     public String findJsonTest(SingleQueryDTO singleQueryDTO) {
