@@ -64,16 +64,16 @@ pentaho:
 
 
 directory:
-  #pentaho server IP (正式區) 8.3
+  #pentaho server IP (正式區) 8.3 username:rhel
   target: http://10.32.32.74
   #批次 原始csv存放目錄
-  receive-file-dir: /home/moi/addr/batch_data/receive/
+  receive-file-dir: /home/rhel/addr/batch_data/receive/
   #批次 zip檔存放目錄
-  send-file-dir: /home/moi/addr/batch_data/send/
+  send-file-dir: /home/rhel/addr/batch_data/send/
   #大量 原始csv存放目錄
-  big-data-receive-file-dir: /home/moi/addr/big_data/receive/
+  big-data-receive-file-dir: /home/rhel/addr/big_data/receive/
   #大量 zip檔存放目錄
-  big-data-send-file-dir: /home/moi/addr/big_data/send/
+  big-data-send-file-dir: /home/rhel/addr/big_data/send/
   #AP檔案落地暫存目錄
   local-temp-dir: /home/moi/app/temp/
   #  etl作業產出的檔案位置前綴
@@ -110,6 +110,9 @@ sftputils:
  port: 22
  username: rhel
  password: 1qaz#EDC
+
+LogsLocation: /home/moi/app/aplog/
+UsageLogsLocation: /home/moi/app/usagelog/
 
 
 

@@ -36,6 +36,7 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
           Class<?> clazz = handlerMethod.getBeanType();
           Method method = handlerMethod.getMethod();
 
+
           /**依註解取keyName**/
           /**聖森公鑰**/
           if(clazz.isAnnotationPresent(Authorized.class) || method.isAnnotationPresent(Authorized.class)){
@@ -81,7 +82,11 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
         }
 
         String RSATokenJwt = authHeader.substring(7, authHeader.length());
-            if(Token.fromRSAJWTToken(RSATokenJwt,keyName)){
+        if(Token.fromRSAJWTToken(RSATokenJwt, keyName)){
+
+            if("/api/batchForm/finished".equals(request.getRequestURI())){
+                return true;
+            }
                 User user = Token.extractUserFromRSAJWTToken(RSATokenJwt,keyName);
                 log.info("user:{}",user);
                 //判斷使用者是不是拿refresh_token
