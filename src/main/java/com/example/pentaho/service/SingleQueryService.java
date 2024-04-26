@@ -74,9 +74,9 @@ public class SingleQueryService {
         String numTypeCd = "95";
         //如果有addrRemain的話，表示有可能是"臨建特附"，要把"臨建特附"先拿掉，再PARSE一次地址
         if (StringUtils.isNotNullOrEmpty(address.getAddrRemains())) {
+            numTypeCd = getNumTypeCd(address);
             if (!"95".equals(numTypeCd)) { //臨建特附，再parse一次地址
                 log.info("臨建特附:{}", address.getOriginalAddress());
-                numTypeCd = getNumTypeCd(address);
                 address = addressParser.parseAddress(null, address.getOriginalAddress(), address);
             } else if (StringUtils.isNotNullOrEmpty(address.getContinuousNum())) { //連在一起的數字，再parse一次地址
                 address = addressParser.parseAddress(null, address.getOriginalAddress(), address);
