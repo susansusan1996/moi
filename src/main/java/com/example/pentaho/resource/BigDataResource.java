@@ -62,4 +62,6 @@ public class BigDataResource {
         throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "檔案為空");
     }
 
+
+
 }

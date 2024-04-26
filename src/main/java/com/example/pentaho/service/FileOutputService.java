@@ -47,7 +47,7 @@ public class FileOutputService {
     private ResourceUtils resourceUtils;
 
     @Autowired
-    private IbdTbAddrStatisticsOverallDevRepository ibdTbAddrStatisticsOverallDevRepository;
+    private BigDataService bigDataService;
 
     @Autowired
     private Sftp sftp;
@@ -198,8 +198,7 @@ public class FileOutputService {
      * @return List<IbdTbAddrStatisticsOverallDev>
      */
     public Integer findLog(String formName){
-        List<Integer> cnts = ibdTbAddrStatisticsOverallDevRepository.findCntByDataset(formName);
-        return cnts.isEmpty()? 0:cnts.get(0);
+        return bigDataService.findLog(formName);
     }
 
     /***
@@ -248,7 +247,7 @@ public class FileOutputService {
                 });
             }
         }
-        parts.add("id",bigDataParams.getId());
+        parts.add("id",bigDataParams.getFormId());
         parts.add("recordCounts",bigDataParams.getRecordCounts());
         parts.add("fileUri",bigDataParams.getFileUri());
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(parts, headers);
@@ -273,13 +272,13 @@ public class FileOutputService {
     public int SftpBigQueryFileAndPost(BigDataParams bigDataParams) throws IOException{
         String sourceFilePath ="";
         String fileUri = "";
-        boolean hasFile = sftpDownloadBigQueryFile(bigDataParams.getId());
+        boolean hasFile = sftpDownloadBigQueryFile(bigDataParams.getFormId());
         if(hasFile) {
             /***/
-            sourceFilePath = directories.getLocalTempDir()+bigDataParams.getId()+".zip";
-            fileUri = directories.getLocalTempDir()+bigDataParams.getId()+".zip";
+            sourceFilePath = directories.getLocalTempDir()+bigDataParams.getFormId()+".zip";
+            fileUri = directories.getLocalTempDir()+bigDataParams.getFormId()+".zip";
         }
-        Integer cnt = findLog(bigDataParams.getId());
+        Integer cnt = findLog(bigDataParams.getFormId());
         bigDataParams.setRecordCounts(cnt == null? "0":String.valueOf(cnt));
         File file = new File(fileUri);
         if (!file.exists()) {

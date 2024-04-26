@@ -3,6 +3,7 @@ package com.example.pentaho.resource;
 
 import com.example.pentaho.component.*;
 import com.example.pentaho.exception.MoiException;
+import com.example.pentaho.service.BigDataService;
 import com.example.pentaho.service.FileOutputService;
 import com.example.pentaho.service.JobService;
 import com.example.pentaho.service.SingleTrackQueryService;
@@ -19,6 +20,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import org.checkerframework.checker.units.qual.A;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,13 +33,13 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 
 
 @RestController
@@ -50,7 +52,6 @@ public class BatchResource {
     @Autowired
     private JobService jobService;
 
-
     @Autowired
     private SingleTrackQueryService singleQueryTrackService;
 
@@ -60,7 +61,12 @@ public class BatchResource {
     @Autowired
     private Directory directories;
 
+    @Autowired
+    private BigDataService bigDataService;
+
+
     private ObjectMapper objectMapper = new ObjectMapper();
+
 
 
 
@@ -259,7 +265,45 @@ public class BatchResource {
             )
             @RequestBody String formName) throws IOException {
         log.info("formName:{}",formName);
-        return new ResponseEntity<>(fileOutputService.findLog(formName),HttpStatus.OK);
+        return new ResponseEntity<>(bigDataService.findLog(formName),HttpStatus.OK);
+    }
+
+
+
+    @Operation(description = "大量查詢指定欄位",
+            parameters = {  @Parameter(in = ParameterIn.HEADER,
+                    name = "Authorization",
+                    description = "聖森私鑰加密 jwt token,body附帶userInfo={\"Id\":1,\"departName\":\"A05\"} ,departName需為代號",
+                    schema = @Schema(type = "string"))
+            })
+    @PostMapping("/bigdata-send-conditions")
+    @Authorized(keyName = "SHENG")
+    public ResponseEntity sendConditionsToBigData(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "指定欄位json;欄位作為key,Y為value(傳入指定欄位即可)",
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = BigDataParams.class)
+//                         ,examples = @ExampleObject(value = "BT202401010001")
+                    )
+            )
+            @RequestBody BigDataParams bigDataParams,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "表單編號",
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = String.class)
+                         ,examples = @ExampleObject(value = "BT202401010001")
+                    )
+            ) @RequestParam String formId){
+        log.info("表單編號:{}",formId);
+        log.info("大量查詢條件:{}",bigDataParams);
+        boolean result = isValid(bigDataParams);
+        if(result){
+             bigDataParams.setFormId(formId);
+             result = bigDataService.saveConditions(bigDataParams);
+        }
+        return result ? new ResponseEntity(HttpStatus.OK):new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
 
@@ -280,5 +324,22 @@ public class BatchResource {
         return new ResponseEntity<>(jobService.getJobStatusById(result),HttpStatus.OK);
     }
 
+
+    private boolean isValid(BigDataParams bigDataParams){
+        boolean result = false;
+        try {
+            Method[] methods = BigDataParams.class.getMethods();
+            List<Method> getterMethods = Arrays.stream(methods).filter(m -> m.getName().startsWith("get")).toList();
+            for (Method m : getterMethods) {
+                Object value = m.invoke(bigDataParams);
+                if("Y".equals(value)){
+                  result = true;
+                }
+            }
+        }catch (Exception e){
+            log.info("e:{}",e.toString());
+        }
+        return result;
+    }
 
 }
