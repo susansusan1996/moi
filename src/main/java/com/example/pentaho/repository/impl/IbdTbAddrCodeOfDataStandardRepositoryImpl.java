@@ -26,7 +26,8 @@ public class IbdTbAddrCodeOfDataStandardRepositoryImpl implements IbdTbAddrCodeO
         seqWhenEmpty.add(-1);
         Query query = Query.builder()
                 .append("SELECT ADDR_ODS.IBD_TB_ADDR_CODE_OF_DATA_STANDARD.*")
-                .append("FROM ADDR_ODS.IBD_TB_ADDR_CODE_OF_DATA_STANDARD WHERE SEQ IN (:SEQ)", seq.isEmpty() ? seqWhenEmpty: seq)
+                .append("FROM ADDR_ODS.IBD_TB_ADDR_CODE_OF_DATA_STANDARD WHERE SEQ IN (:SEQ) ", seq.isEmpty() ? seqWhenEmpty: seq)
+                .append("AND ADR_VERSION IN (SELECT MAX( ADR_VERSION ) FROM ADDR_ODS.IBD_TB_ADDR_CODE_OF_DATA_STANDARD)")
                 .build();
         log.info("query:{}", query);
         log.info("params:{}", query.getParameters());

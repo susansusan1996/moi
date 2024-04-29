@@ -44,10 +44,10 @@ public class Address {
     private String addrRemains;
     private boolean isParseSuccessed;
     private String originalAddress;
-    private String mappingId; //64碼
+    private List<String> mappingId; //64碼
     private String segmentExistNumber; //紀錄user是否有輸入每個地址片段，有:1，沒有:0
-    private LinkedHashMap<String, String> mappingIdMap;
-    private List<String> MappingIdList;
+    private List<LinkedHashMap<String, String>> mappingIdMap;
+    private List<List<String>> MappingIdList;
     private String joinStep; //地址比對代碼
     private Set<String> seqSet;
     private String numTypeCd; //臨建特附
@@ -258,13 +258,6 @@ public class Address {
         this.room = room;
     }
 
-    public String getMappingId() {
-        return mappingId;
-    }
-
-    public void setMappingId(String mappingId) {
-        this.mappingId = mappingId;
-    }
 
     public String getSegmentExistNumber() {
         return segmentExistNumber;
@@ -395,21 +388,7 @@ public class Address {
         this.seqSet = seqSet;
     }
 
-    public LinkedHashMap<String, String> getMappingIdMap() {
-        return mappingIdMap;
-    }
 
-    public void setMappingIdMap(LinkedHashMap<String, String> mappingIdMap) {
-        this.mappingIdMap = mappingIdMap;
-    }
-
-    public List<String> getMappingIdList() {
-        return MappingIdList;
-    }
-
-    public void setMappingIdList(List<String> mappingIdList) {
-        MappingIdList = mappingIdList;
-    }
 
     public String getNumTypeCd() {
         return numTypeCd;
@@ -425,6 +404,30 @@ public class Address {
 
     public void setHasRoadArea(Boolean hasRoadArea) {
         this.hasRoadArea = hasRoadArea;
+    }
+
+    public List<String> getMappingId() {
+        return mappingId;
+    }
+
+    public void setMappingId(List<String> mappingId) {
+        this.mappingId = mappingId;
+    }
+
+    public List<LinkedHashMap<String, String>> getMappingIdMap() {
+        return mappingIdMap;
+    }
+
+    public void setMappingIdMap(List<LinkedHashMap<String, String>> mappingIdMap) {
+        this.mappingIdMap = mappingIdMap;
+    }
+
+    public List<List<String>> getMappingIdList() {
+        return MappingIdList;
+    }
+
+    public void setMappingIdList(List<List<String>> mappingIdList) {
+        MappingIdList = mappingIdList;
     }
 
     @Override

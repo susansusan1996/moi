@@ -38,7 +38,7 @@ public class AddressParser {
     private final String DYNAMIC_ALLEY_PART = "|卓厝|安農新邨|吉祥園|蕭厝|泰安新村|美喬|１弄圳東|堤外|中興二村|溝邊|長埤|清水|南苑|二橫路|朝安|黃泥塘|建行新村|牛頭|永和山莊";
     private final String COUNTY = "(?<zipcode>(^\\d{5}|^\\d{3})?)(?<county>.*縣|.*市|%s)?";
     private final String TOWN = "(?<town>\\D+?(市區|鎮區|鎮市|[鄉鎮市區])|%s)?";
-    private final String VILLAGE = "(?<village>\\D+?[村里]|%s)?";
+    private final String VILLAGE = "(?<village>\\D+?(?:[村里]+|村|里)|%s)?";
     private final String NEIGHBOR = "(?<neighbor>" + ALL_CHAR + "+鄰)?";
     private final String ROAD = "(?<road>.+段|.+街|.+大道|.+路|%s)?";
     private final String LANE = "(?<lane>.+巷)?";
@@ -51,25 +51,21 @@ public class AddressParser {
     private final String NUMFLR5 = "(?<numFlr5>[之-]+" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + BASEMENT_PATTERN + ")?";
     private final String CONTINUOUS_NUM = "(?<continuousNum>[之-]+.*[樓FｆＦf])?"; //之45一樓
     private final String ROOM = "(?<room>" + ALL_CHAR + "+室)?";
-    private final String BASEMENTSTR = "(?<basementStr>地下.*層|地下|地下室|底層|屋頂|頂樓|屋頂突出物|屋頂樓|頂層)?";
+    private final String BASEMENTSTR = "(?<basementStr>屋頂突出.*層|地下.*層|地下.*樓|地下|地下室|底層|屋頂|頂樓|屋頂突出物|屋頂樓|頂層)?";
     private final String ADDRREMAINS = "(?<addrRemains>.+)?";
 
 
     public Address parseAddress(String origninalAddress, String newAddress, Address address) {
         String input = newAddress == null ? origninalAddress : newAddress;
         //去除特殊字元
-        input = input.replaceAll("[`~!@#$%^&*()+=|{}':;',\\[\\].<>/?~！@#￥%……&*（）——+|{}【】‘；：”“’。，、？\\\\\\s]+", "");
-        log.info("去除特殊字元後的origninalAddress:{}",input);
+        input = input.replaceAll("[`~!@#$%^&*()+=|{}';',\\[\\].<>/?~！@#￥%……&*（）——+|{}【】‘”“’。，、？\\\\\\s]+", "");
+        log.info("去除特殊字元後的input:{}",input);
         if (address == null) {
             address = new Address();
             if (newAddress == null) {
                 address.setOriginalAddress(origninalAddress);
             }
         }
-        //先把county、town撈出來，以便核對有沒有area，
-        //如果有area，就把area先去掉，
-        //把area去掉之後，其餘部分再跑一次正則，把其他部分切割出來
-        input = findArea(input, address);
         String pattern = getPattern(); //組正則表達式
         Pattern regexPattern = Pattern.compile(pattern);
         Matcher matcher = regexPattern.matcher(input);
@@ -99,12 +95,14 @@ public class AddressParser {
                 break;
             }
         }
-        //如果有再找到area，就把area看掉，切出其他addres片段
+        //如果有再找到area，就把area砍掉，切出其他addres片段
         if(StringUtils.isNotNullOrEmpty(match)){
             address.setArea(match);
-            log.info("address.getOriginalAddress():{}",address.getOriginalAddress());
+            String originalAddress = address.getOriginalAddress();
+            log.info("originalAddress:{}",originalAddress);
             log.info("match:{}",match);
-            String newAddressString = address.getOriginalAddress().replace(match,"");
+            int lastIndex = originalAddress.lastIndexOf(match);
+            String newAddressString = originalAddress.substring(0, lastIndex) + originalAddress.substring(lastIndex + match.length());
             log.info("newAddressString:{}",newAddressString);
             address = parseAddress(null,newAddressString, address);
 //            //join_step
@@ -165,7 +163,7 @@ public class AddressParser {
         String newVillage = String.format(VILLAGE , String.join("|",villageList));
         String newRoad = String.format(ROAD , String.join("|",roadList));
         String finalPattern = newCounty + newTown + newVillage + NEIGHBOR + newRoad + LANE + ALLEY + SUBALLEY + NUMFLR1 + NUMFLR2 + NUMFLR3 + NUMFLR4 + NUMFLR5 + CONTINUOUS_NUM + ROOM + BASEMENTSTR + ADDRREMAINS;
-        log.info("finalPattern==>{}",finalPattern);
+//        log.info("finalPattern==>{}",finalPattern);
         return finalPattern;
     }
 
@@ -210,12 +208,12 @@ public class AddressParser {
 
     private String parseBasement(String basementString, String origninalAddress, Address address) {
         String[] basemantPattern1 = {"地下層", "地下", "地下室", "底層"};
-        String[] basemantPattern2 = {".*地下.*層.*", ".*地下室.*層.*"};
-        String[] roof = {"屋頂", "頂樓", "屋頂突出物", "屋頂樓", "底層", "頂層"};
+        String[] basemantPattern2 = {".*地下.*層.*", ".*地下室.*層.*",".*地下.*樓.*","屋頂突出.*層"};
+        String[] roof1 = {"屋頂", "頂樓", "屋頂突出物", "屋頂樓", "頂層"};
         if (Arrays.asList(basemantPattern1).contains(basementString)) {
             origninalAddress = origninalAddress.replaceAll(basementString, "一樓");
             address.setBasementStr("1");
-        } else if (Arrays.asList(roof).contains(basementString)) {
+        } else if (Arrays.asList(roof1).contains(basementString)) {
             origninalAddress = origninalAddress.replaceAll(basementString, "");
             address.setBasementStr("2");
         } else {
@@ -229,7 +227,11 @@ public class AddressParser {
                     // 會組成basement:一樓/basement:二樓...
                     origninalAddress = origninalAddress.replaceAll(basementString, "basement:" + replaceWithChineseNumber(numericPart) + "樓");
                     log.info("basementString 提取數字部分:{} ", numericPart);
-                    address.setBasementStr("1");
+                    if(basementString.contains("頂")){ //屋頂突出.*層
+                        address.setBasementStr("2");
+                    }else{
+                        address.setBasementStr("1");
+                    }
                     break;
                 }
             }
