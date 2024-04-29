@@ -51,7 +51,7 @@ public class AddressParser {
     private final String NUMFLR5 = "(?<numFlr5>[之-]+" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + BASEMENT_PATTERN + ")?";
     private final String CONTINUOUS_NUM = "(?<continuousNum>[之-]+.*[樓FｆＦf])?"; //之45一樓
     private final String ROOM = "(?<room>" + ALL_CHAR + "+室)?";
-    private final String BASEMENTSTR = "(?<basementStr>地下.*層|地下|地下室|底層|屋頂|頂樓|屋頂突出物|屋頂樓|頂層)?";
+    private final String BASEMENTSTR = "(?<basementStr>屋頂突出.*層|地下.*層|地下.*樓|地下|地下室|底層|屋頂|頂樓|屋頂突出物|屋頂樓|頂層)?";
     private final String ADDRREMAINS = "(?<addrRemains>.+)?";
 
 
@@ -208,12 +208,12 @@ public class AddressParser {
 
     private String parseBasement(String basementString, String origninalAddress, Address address) {
         String[] basemantPattern1 = {"地下層", "地下", "地下室", "底層"};
-        String[] basemantPattern2 = {".*地下.*層.*", ".*地下室.*層.*"};
-        String[] roof = {"屋頂", "頂樓", "屋頂突出物", "屋頂樓", "底層", "頂層"};
+        String[] basemantPattern2 = {".*地下.*層.*", ".*地下室.*層.*",".*地下.*樓.*","屋頂突出.*層"};
+        String[] roof1 = {"屋頂", "頂樓", "屋頂突出物", "屋頂樓", "頂層"};
         if (Arrays.asList(basemantPattern1).contains(basementString)) {
             origninalAddress = origninalAddress.replaceAll(basementString, "一樓");
             address.setBasementStr("1");
-        } else if (Arrays.asList(roof).contains(basementString)) {
+        } else if (Arrays.asList(roof1).contains(basementString)) {
             origninalAddress = origninalAddress.replaceAll(basementString, "");
             address.setBasementStr("2");
         } else {
@@ -227,7 +227,11 @@ public class AddressParser {
                     // 會組成basement:一樓/basement:二樓...
                     origninalAddress = origninalAddress.replaceAll(basementString, "basement:" + replaceWithChineseNumber(numericPart) + "樓");
                     log.info("basementString 提取數字部分:{} ", numericPart);
-                    address.setBasementStr("1");
+                    if(basementString.contains("頂")){ //屋頂突出.*層
+                        address.setBasementStr("2");
+                    }else{
+                        address.setBasementStr("1");
+                    }
                     break;
                 }
             }
