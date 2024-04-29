@@ -38,7 +38,7 @@ public class AddressParser {
     private final String DYNAMIC_ALLEY_PART = "|卓厝|安農新邨|吉祥園|蕭厝|泰安新村|美喬|１弄圳東|堤外|中興二村|溝邊|長埤|清水|南苑|二橫路|朝安|黃泥塘|建行新村|牛頭|永和山莊";
     private final String COUNTY = "(?<zipcode>(^\\d{5}|^\\d{3})?)(?<county>.*縣|.*市|%s)?";
     private final String TOWN = "(?<town>\\D+?(市區|鎮區|鎮市|[鄉鎮市區])|%s)?";
-    private final String VILLAGE = "(?<village>\\D+?[村里]|%s)?";
+    private final String VILLAGE = "(?<village>\\D+?(?:[村里]+|村|里)|%s)?";
     private final String NEIGHBOR = "(?<neighbor>" + ALL_CHAR + "+鄰)?";
     private final String ROAD = "(?<road>.+段|.+街|.+大道|.+路|%s)?";
     private final String LANE = "(?<lane>.+巷)?";
@@ -59,15 +59,13 @@ public class AddressParser {
         String input = newAddress == null ? origninalAddress : newAddress;
         //去除特殊字元
         input = input.replaceAll("[`~!@#$%^&*()+=|{}';',\\[\\].<>/?~！@#￥%……&*（）——+|{}【】‘”“’。，、？\\\\\\s]+", "");
-        log.info("去除特殊字元後的origninalAddress:{}",input);
+        log.info("去除特殊字元後的input:{}",input);
         if (address == null) {
             address = new Address();
             if (newAddress == null) {
                 address.setOriginalAddress(origninalAddress);
             }
         }
-        //把area去掉之後，其餘部分再跑一次正則，把其他部分切割出來
-//        input = findArea(input, address);
         String pattern = getPattern(); //組正則表達式
         Pattern regexPattern = Pattern.compile(pattern);
         Matcher matcher = regexPattern.matcher(input);
@@ -165,7 +163,7 @@ public class AddressParser {
         String newVillage = String.format(VILLAGE , String.join("|",villageList));
         String newRoad = String.format(ROAD , String.join("|",roadList));
         String finalPattern = newCounty + newTown + newVillage + NEIGHBOR + newRoad + LANE + ALLEY + SUBALLEY + NUMFLR1 + NUMFLR2 + NUMFLR3 + NUMFLR4 + NUMFLR5 + CONTINUOUS_NUM + ROOM + BASEMENTSTR + ADDRREMAINS;
-        log.info("finalPattern==>{}",finalPattern);
+//        log.info("finalPattern==>{}",finalPattern);
         return finalPattern;
     }
 
