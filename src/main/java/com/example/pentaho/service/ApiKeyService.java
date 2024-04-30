@@ -70,10 +70,12 @@ public class ApiKeyService {
         //refresh_token
         Map<String, Object> refreshTokenMap = null;
         if (refreshToken == null) {
-            //refreshToken == null、fromApi，表示全新的申請
+            RefreshToken refreshTokenData = refreshTokenService.findRefreshTokenByUserId(userId);
+            //refreshToken == null、fromApi，表示/create-api-key過來的
             //refreshToken != null、!fromApi，表示get-api-key時，發現token過期，重產
-            if ((refreshTokenService.findRefreshTokenByUserId(userId) == null && "fromApi".equals(type)) ||
-                    (refreshTokenService.findRefreshTokenByUserId(userId) != null && !"fromApi".equals(type))
+            if ((refreshTokenData == null && "fromApi".equals(type)) ||
+                    (refreshTokenData != null && "fromApi".equals(type) && "REJECT".equals(refreshTokenData.getReviewResult()))||
+                    (refreshTokenData != null && !"fromApi".equals(type))
             ) {
                 user.setTokenType("refresh_token");
                 refreshTokenMap = RSAJWTUtils.generateTokenExpireInMinutes(user, privateKey, VALID_TIME * 2);  //REFRESH_TOKEN效期先設2天

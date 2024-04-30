@@ -115,19 +115,24 @@ public class APIKeyResource {
     @Authorized(keyName = "SHENG")
     public ResponseEntity<JwtReponse> createApiKey(@RequestParam String userId, @RequestParam String reviewResult) throws ParseException {
         JwtReponse response = new JwtReponse();
-        if ("REJECT".equals(reviewResult)) {
-            refreshTokenService.saveRefreshToken(userId, null, null, reviewResult);
-            response.setErrorResponse("已儲存被拒絕申請的使用者資訊");
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        }
-        try {
-            return new ResponseEntity<>(apiKeyService.createApiKey(userId, null, "fromApi"), HttpStatus.OK);
-        } catch (MoiException e) {
-            response.setErrorResponse(String.valueOf(e));
+        if (reviewResult.equals("REJECT") || reviewResult.equals("AGREE")){
+            if ("REJECT".equals(reviewResult)) {
+                refreshTokenService.saveRefreshToken(userId, null, null, reviewResult);
+                response.setErrorResponse("已儲存被拒絕申請的使用者資訊");
+                return new ResponseEntity<>(response, HttpStatus.OK);
+            }
+            try {
+                return new ResponseEntity<>(apiKeyService.createApiKey(userId, null, "fromApi"), HttpStatus.OK);
+            } catch (MoiException e) {
+                response.setErrorResponse(String.valueOf(e));
+                return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
+            } catch (Exception e) {
+                log.info("e:{}", e.toString());
+                throw new MoiException("generate error");
+            }
+        }else{
+            response.setErrorResponse("參數錯誤");
             return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
-        } catch (Exception e) {
-            log.info("e:{}", e.toString());
-            throw new MoiException("generate error");
         }
     }
 
@@ -181,7 +186,8 @@ public class APIKeyResource {
             @RequestBody RefreshToken request) {
         log.info("refreshToken:{}", request);
         RefreshToken refreshToken = refreshTokenService.findRefreshTokenByUserId(request.getId());
-        if (refreshToken != null) {
+        //檢查refresh_token跟id是一致的
+        if (refreshToken != null &&  refreshToken.getRefreshToken().equals(request.getRefreshToken())) {
             try {
                 if (refreshTokenService.verifyExpiration(request.getId(), refreshToken.getRefreshToken(), "refresh_token")) {
                     //refresh_token沒有過期
