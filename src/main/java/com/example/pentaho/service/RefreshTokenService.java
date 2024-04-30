@@ -15,6 +15,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -38,7 +39,7 @@ public class RefreshTokenService {
 
     public RefreshToken saveRefreshToken(String id, Map<String, Object> tokenMap, Map<String, Object> refreshTokenMap, String reviewResult) throws ParseException {
         RefreshToken refreshToken = new RefreshToken();
-        if("AGREE".equals(reviewResult)) {
+//        if("AGREE".equals(reviewResult)) {
             User user = UserContextUtils.getUserHolder();
             log.info("user:{}", user);
             refreshToken.setId(id);
@@ -48,12 +49,14 @@ public class RefreshTokenService {
                 Date refreshTokenExpiryDate = dateFormat.parse(String.valueOf(refreshTokenMap.get("expiryDate")));
                 refreshToken.setRefreshTokenExpiryDate(refreshTokenExpiryDate.toInstant().toString()); //refresh_token，效期先設2天
             }
-            refreshToken.setToken((String) tokenMap.get("token"));
-            Date expiryDate = dateFormat.parse(String.valueOf(tokenMap.get("expiryDate")));
-            refreshToken.setExpiryDate(String.valueOf(expiryDate.toInstant())); //refresh_token，效期先設1天
-            refreshToken.setReviewResult(reviewResult);
-            saveRefreshToken(refreshToken);
-        }
+            if(tokenMap != null){
+                refreshToken.setToken((String) tokenMap.get("token"));
+                Date expiryDate = dateFormat.parse(String.valueOf(tokenMap.get("expiryDate")));
+                refreshToken.setExpiryDate(String.valueOf(expiryDate.toInstant())); //refresh_token，效期先設1天
+            }
+        refreshToken.setReviewResult(reviewResult);
+        saveRefreshToken(refreshToken);
+//        }
         return refreshToken;
     }
 
@@ -125,23 +128,25 @@ public class RefreshTokenService {
      * redis存refresh_token
      */
     public void saveRefreshToken(RefreshToken refreshToken) {
-        if (refreshToken.getToken() != null) {
-            stringRedisTemplate0.opsForValue().set(refreshToken.getId() + ":token", refreshToken.getToken());
+        String id = refreshToken.getId();
+        Map<String, String> valuesToSet = new HashMap<>();
+        valuesToSet.put("token", refreshToken.getToken());
+        valuesToSet.put("refresh_token", refreshToken.getRefreshToken());
+        valuesToSet.put("expiry_date", refreshToken.getExpiryDate());
+        valuesToSet.put("refresh_token_expiry_date", refreshToken.getRefreshTokenExpiryDate());
+        valuesToSet.put("review_result", refreshToken.getReviewResult());
+        for (Map.Entry<String, String> entry : valuesToSet.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            if (value != null) {
+                stringRedisTemplate0.opsForValue().set(id + ":" + key, value);
+            } else {
+                stringRedisTemplate0.delete(id + ":" + key);
+            }
         }
-        if (refreshToken.getRefreshToken() != null) {
-            stringRedisTemplate0.opsForValue().set(refreshToken.getId() + ":refresh_token", refreshToken.getRefreshToken());
-        }
-        if (refreshToken.getExpiryDate() != null) {
-            stringRedisTemplate0.opsForValue().set(refreshToken.getId() + ":expiry_date", refreshToken.getExpiryDate());
-        }
-        if (refreshToken.getRefreshTokenExpiryDate() != null) {
-            stringRedisTemplate0.opsForValue().set(refreshToken.getId() + ":refresh_token_expiry_date", refreshToken.getRefreshTokenExpiryDate());
-        }
-        if (refreshToken.getReviewResult() != null) {
-            stringRedisTemplate0.opsForValue().set(refreshToken.getId() + ":review_result", refreshToken.getReviewResult());
-        }
-        stringRedisTemplate0.opsForValue().set(refreshToken.getId() + ":create_timestamp", Instant.now().toString());
+        stringRedisTemplate0.opsForValue().set(id + ":create_timestamp", Instant.now().toString());
     }
+
 
 
     public void updateTokenByUserId(String id, JwtReponse response) {
