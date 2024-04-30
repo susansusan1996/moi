@@ -187,8 +187,6 @@ public class FileOutputService {
             sftp.disconnect();
         }
         jobParams.setStatus(status);
-        /*送出之前DB更新一下*/
-        jobService.updateJobStatus(jobParams);
 
         BatchFormParams batchFormParams = new BatchFormParams(jobParams.getBATCH_ID(), jobParams.getBATCHFORM_ORIGINAL_FILE_ID(), String.valueOf(jobParams.getPROCESSED_COUNTS()), jobParams.getStatus(), null);
         log.info("給聖森更新狀態的參數:{}",batchFormParams );

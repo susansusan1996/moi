@@ -315,41 +315,6 @@ public class BatchResource {
 
 
 
-    @GetMapping("/simple-job")
-    @Profile("dev")
-    public void simpleJob(){
-        jobService.simpleJob();
-    }
-
-
-    @PostMapping("/simple-job-finished")
-    @Profile("dev")
-    public void simpleJobFinished(@RequestBody String requestBody) throws JsonProcessingException {
-        /**解析requestBody中的參數**/
-        ObjectNode jsonObject = objectMapper.createObjectNode();
-        String[] params = requestBody.split("&");
-        for (String param : params) {
-            String[] keyValue = param.split("=");
-            String key = keyValue[0];
-            String value = keyValue.length > 1 ? keyValue[1] : "";
-            jsonObject.put(key, value);
-        }
-        log.info("jsonObject:{}",jsonObject.toString());
-        JobParams jobParams1 = objectMapper.readValue(jsonObject.toString(), JobParams.class);
-        log.info("jobParams1:{}",jobParams1);
-        jobService.simpleJobFinished(jobParams1);
-    }
-
-
-    @GetMapping("/get-job-status")
-    @Authorized(keyName = "SHENG")
-    public ResponseEntity<Map<String,String>>getJobStatusById(@RequestParam String id){
-        log.info("jobId:{}",id);
-        Map<String, String> result = PentahoWebService.jobsResponse;
-        result.put("id",id);
-        return new ResponseEntity<>(jobService.getJobStatusById(result),HttpStatus.OK);
-    }
-
 
     /**
      * 確認至少有指定一個欄位
@@ -372,6 +337,12 @@ public class BatchResource {
             log.info("e:{}",e.toString());
         }
         return result;
+    }
+
+    @GetMapping("/simple-job")
+    @Profile("dev")
+    public void simpleJob(){
+        jobService.simpleJob();
     }
 
 }
