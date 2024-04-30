@@ -8,6 +8,8 @@ import com.example.pentaho.service.FileOutputService;
 import com.example.pentaho.service.JobService;
 import com.example.pentaho.service.SingleTrackQueryService;
 import com.example.pentaho.utils.FileUtils;
+import com.example.pentaho.utils.StringUtils;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.jcraft.jsch.SftpException;
@@ -20,7 +22,6 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import org.checkerframework.checker.units.qual.A;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -39,7 +41,6 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
 
 
 @RestController
@@ -158,10 +159,10 @@ public class BatchResource {
                 required = true,
                 schema = @Schema(type = "string"))
         @RequestParam("formBuilderOrgId") String formBuilderOrgId,
-//        @Parameter(
-//                description = "使用者上傳的CSV檔",
-//                required = true
-//        )
+        @Parameter(
+                description = "使用者上傳的CSV檔",
+                required = true
+        )
         @RequestPart("file")
         MultipartFile file) throws IOException {
 
@@ -216,6 +217,7 @@ public class BatchResource {
     }
 
     public void queryBatchTrack(String Id,String originalFileId,String formName,String fileContent) throws IOException {
+        /*default:processedCount=0,status=SYS_FAILED*/
         SingleBatchQueryParams singleBatchQueryParams = new SingleBatchQueryParams(Id, originalFileId, "0", "SYS_FAILED", formName);
         singleQueryTrackService.queryBatchTrack(fileContent, singleBatchQueryParams);
     }
@@ -260,7 +262,7 @@ public class BatchResource {
                     required = true,
                     content = @Content(
                             schema = @Schema(implementation = String.class),
-                            examples = @ExampleObject(value = "BT202401010001")
+                            examples = @ExampleObject(value = "BQ202401010001")
                     )
             )
             @RequestBody String formName) throws IOException {
@@ -280,57 +282,87 @@ public class BatchResource {
     @Authorized(keyName = "SHENG")
     public ResponseEntity sendConditionsToBigData(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "指定欄位json;欄位作為key,Y為value(傳入指定欄位即可)",
+                    description = "(1) formId + formBuilder + 指定欄位 json ,\n"+
+                                  "(2) formId,formBuilder 不得為空，且至少指定一個欄位 ,\n"+
+                                  "(3) 指定欄位格式:欄位名為key,Y為value \n",
                     required = true,
                     content = @Content(
                             schema = @Schema(implementation = BigDataParams.class)
-//                         ,examples = @ExampleObject(value = "BT202401010001")
+                         ,examples = @ExampleObject(value = "{\n" +
+                            " \"formId\": \"BQ202401010001\",\n" +
+                            " \"userId\": \"formBuilder\",\n" +
+                            "  \"alley\": \"Y\", \n" +
+                            "  \"village\": \"Y\" \n" +
+                            "}")
                     )
             )
-            @RequestBody BigDataParams bigDataParams,
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "表單編號",
-                    required = true,
-                    content = @Content(
-                            schema = @Schema(implementation = String.class)
-                         ,examples = @ExampleObject(value = "BT202401010001")
-                    )
-            ) @RequestParam String formId){
-        log.info("表單編號:{}",formId);
+            @RequestBody BigDataParams bigDataParams
+            ){
         log.info("大量查詢條件:{}",bigDataParams);
-        boolean result = isValid(bigDataParams);
-        if(result){
-             bigDataParams.setFormId(formId);
-             result = bigDataService.saveConditions(bigDataParams);
+        if(StringUtils.isNullOrEmpty(bigDataParams.getUserId()) || StringUtils.isNullOrEmpty(bigDataParams.getFormId())){
+            return new ResponseEntity("表單編號、申請者Id皆不得為空",HttpStatus.FORBIDDEN);
         }
-        return result ? new ResponseEntity(HttpStatus.OK):new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
+
+        boolean result = isValid(bigDataParams);
+        if(!result){
+            return new ResponseEntity("至少指定一欄位",HttpStatus.FORBIDDEN);
+        }
+
+        result = bigDataService.saveConditions(bigDataParams);
+
+        return result ? new ResponseEntity("成功",HttpStatus.OK):new ResponseEntity("發生錯誤",HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
 
 
     @GetMapping("/simple-job")
     @Profile("dev")
-    public void getJobStatus(){
+    public void simpleJob(){
         jobService.simpleJob();
+    }
+
+
+    @PostMapping("/simple-job-finished")
+    @Profile("dev")
+    public void simpleJobFinished(@RequestBody String requestBody) throws JsonProcessingException {
+        /**解析requestBody中的參數**/
+        ObjectNode jsonObject = objectMapper.createObjectNode();
+        String[] params = requestBody.split("&");
+        for (String param : params) {
+            String[] keyValue = param.split("=");
+            String key = keyValue[0];
+            String value = keyValue.length > 1 ? keyValue[1] : "";
+            jsonObject.put(key, value);
+        }
+        log.info("jsonObject:{}",jsonObject.toString());
+        JobParams jobParams1 = objectMapper.readValue(jsonObject.toString(), JobParams.class);
+        log.info("jobParams1:{}",jobParams1);
+        jobService.simpleJobFinished(jobParams1);
     }
 
 
     @GetMapping("/get-job-status")
     @Authorized(keyName = "SHENG")
     public ResponseEntity<Map<String,String>>getJobStatusById(@RequestParam String id){
-        log.info("id:{}",id);
-        Map<String, String> result = new HashMap<>();
+        log.info("jobId:{}",id);
+        Map<String, String> result = PentahoWebService.jobsResponse;
         result.put("id",id);
         return new ResponseEntity<>(jobService.getJobStatusById(result),HttpStatus.OK);
     }
 
 
+    /**
+     * 確認至少有指定一個欄位
+     * @param bigDataParams
+     * @return
+     */
     private boolean isValid(BigDataParams bigDataParams){
         boolean result = false;
         try {
             Method[] methods = BigDataParams.class.getMethods();
             List<Method> getterMethods = Arrays.stream(methods).filter(m -> m.getName().startsWith("get")).toList();
             for (Method m : getterMethods) {
+                log.info("method:{}",m.getName());
                 Object value = m.invoke(bigDataParams);
                 if("Y".equals(value)){
                   result = true;
