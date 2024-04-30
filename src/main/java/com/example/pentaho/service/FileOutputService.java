@@ -2,7 +2,6 @@ package com.example.pentaho.service;
 
 import com.example.pentaho.component.*;
 import com.example.pentaho.exception.MoiException;
-import com.example.pentaho.repository.IbdTbAddrStatisticsOverallDevRepository;
 import com.example.pentaho.utils.ResourceUtils;
 import com.example.pentaho.utils.custom.Sftp;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,7 +25,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
 import java.nio.file.Path;
-import java.util.List;
 import java.util.UUID;
 
 
@@ -48,6 +46,9 @@ public class FileOutputService {
 
     @Autowired
     private BigDataService bigDataService;
+
+    @Autowired
+    private JobService jobService;
 
     @Autowired
     private Sftp sftp;
@@ -186,6 +187,7 @@ public class FileOutputService {
             sftp.disconnect();
         }
         jobParams.setStatus(status);
+
         BatchFormParams batchFormParams = new BatchFormParams(jobParams.getBATCH_ID(), jobParams.getBATCHFORM_ORIGINAL_FILE_ID(), String.valueOf(jobParams.getPROCESSED_COUNTS()), jobParams.getStatus(), null);
         log.info("給聖森更新狀態的參數:{}",batchFormParams );
         postBatchFormRequest("/batchForm/systemUpdate",batchFormParams,sourceFilePath);
@@ -247,7 +249,7 @@ public class FileOutputService {
                 });
             }
         }
-        parts.add("id",bigDataParams.getFormId());
+        parts.add("id",bigDataParams.getId());
         parts.add("recordCounts",bigDataParams.getRecordCounts());
         parts.add("fileUri",bigDataParams.getFileUri());
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(parts, headers);
@@ -272,13 +274,13 @@ public class FileOutputService {
     public int SftpBigQueryFileAndPost(BigDataParams bigDataParams) throws IOException{
         String sourceFilePath ="";
         String fileUri = "";
-        boolean hasFile = sftpDownloadBigQueryFile(bigDataParams.getFormId());
+        boolean hasFile = sftpDownloadBigQueryFile(bigDataParams.getId());
         if(hasFile) {
             /***/
-            sourceFilePath = directories.getLocalTempDir()+bigDataParams.getFormId()+".zip";
-            fileUri = directories.getLocalTempDir()+bigDataParams.getFormId()+".zip";
+            sourceFilePath = directories.getLocalTempDir()+bigDataParams.getId()+".zip";
+            fileUri = directories.getLocalTempDir()+bigDataParams.getId()+".zip";
         }
-        Integer cnt = findLog(bigDataParams.getFormId());
+        Integer cnt = findLog(bigDataParams.getId());
         bigDataParams.setRecordCounts(cnt == null? "0":String.valueOf(cnt));
         File file = new File(fileUri);
         if (!file.exists()) {

@@ -5,8 +5,22 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class BigDataParams {
 
 
+    /**
+     * 流水號
+     * */
+    @JsonProperty("id")
+    private String id;
+
+
+    /**
+     * 流水號
+     * */
     @JsonProperty("formId")
     private String formId;
+
+
+    @JsonProperty("userId")
+    private String userId;
 
     @JsonProperty("recordCounts")
     private String recordCounts;
@@ -97,22 +111,22 @@ public class BigDataParams {
     public BigDataParams() {
     }
 
-    public BigDataParams(String formId) {
-        this.formId = formId;
+    public BigDataParams(String id) {
+        this.id = id;
     }
 
-    public BigDataParams(String formId, String recordCounts, String fileUri) {
-        this.formId = formId;
+    public BigDataParams(String id, String recordCounts, String fileUri) {
+        this.id = id;
         this.recordCounts = recordCounts;
         this.fileUri = fileUri;
     }
 
-    public String getFormId() {
-        return formId;
+    public String getId() {
+        return id;
     }
 
-    public void setFormId(String formId) {
-        this.formId = formId;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getRecordCounts() {
@@ -323,10 +337,28 @@ public class BigDataParams {
         this.integrity = integrity;
     }
 
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public String getFormId() {
+        return formId;
+    }
+
+    public void setFormId(String formId) {
+        this.formId = formId;
+    }
+
     @Override
     public String toString() {
         return "BigDataParams{" +
-                "id='" + formId + '\'' +
+                "id='" + id + '\'' +
+                ", formId='" + formId + '\'' +
+                ", userId='" + userId + '\'' +
                 ", recordCounts='" + recordCounts + '\'' +
                 ", fileUri='" + fileUri + '\'' +
                 ", county='" + county + '\'' +
