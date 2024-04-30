@@ -1,7 +1,7 @@
 package com.example.pentaho.service;
 
 import com.example.pentaho.component.BigDataParams;
-import com.example.pentaho.repository.BigDataConditionRepository;
+import com.example.pentaho.repository.ColumnSelectionRepository;
 import com.example.pentaho.repository.IbdTbAddrStatisticsOverallDevRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +23,7 @@ public class BigDataService {
 
 
     @Autowired
-    private BigDataConditionRepository bigDataConditionRepository;
+    private ColumnSelectionRepository columnSelectionRepository;
 
 
     /**
@@ -37,7 +37,7 @@ public class BigDataService {
     }
 
     public boolean saveConditions(BigDataParams bigDataParams){
-        int cnt = bigDataConditionRepository.saveConditions(bigDataParams);
+        int cnt = columnSelectionRepository.saveConditions(bigDataParams);
         if(cnt > 0){
             return true;
         }
