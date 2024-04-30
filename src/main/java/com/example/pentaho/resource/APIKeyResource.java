@@ -184,7 +184,8 @@ public class APIKeyResource {
             @RequestBody RefreshToken request) {
         log.info("refreshToken:{}", request);
         RefreshToken refreshToken = refreshTokenService.findRefreshTokenByUserId(request.getId());
-        if (refreshToken != null) {
+        //檢查refresh_token跟id是一致的
+        if (refreshToken != null &&  refreshToken.getRefreshToken().equals(request.getRefreshToken())) {
             try {
                 if (refreshTokenService.verifyExpiration(request.getId(), refreshToken.getRefreshToken(), "refresh_token")) {
                     //refresh_token沒有過期
