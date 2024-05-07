@@ -2,7 +2,10 @@ package com.example.pentaho.utils;
 
 import com.example.pentaho.component.UsageLog;
 import com.example.pentaho.component.UsageLogDTO;
+import com.example.pentaho.component.UsageLogReport;
 import com.example.pentaho.repository.impl.UsageLogRepositoryImpl;
+//import net.sf.jasperreports.engine.*;
+//import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,10 +18,7 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 @Service
 @Transactional
@@ -94,7 +94,33 @@ public class UsageLogService {
         return Files.readAllBytes(new File(filePath).toPath());
     }
 
-    public List<UsageLog> getUsageLogs(UsageLogDTO usageLogDTO){
-        return usageLogRepository.getUsageLogs(usageLogDTO);
+    public List<UsageLog> getUsageLogsByParams(UsageLogDTO usageLogDTO){
+        return usageLogRepository.getUsageLogsByParams(usageLogDTO);
     }
+
+    public List<UsageLogReport> getUsageLogs(){
+        return usageLogRepository.getUsageLog();
+    }
+
+//    public byte[] getJasperReportContent(List<UsageLog> usageLog, String month){
+//        try {
+//            File file = new File("D:\\project\\moi_bigData_only\\moi\\src\\main\\resources\\jasperreport\\moi.jrxml");
+//            JasperReport jasperReport = JasperCompileManager.compileReport("D:\\project\\moi_bigData_only\\moi\\src\\main\\resources\\jasperreport\\moi.jrxml");
+//
+//            //Set report data
+//        JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(usageLog);
+//        Map<String, Object> parameters = new HashMap<>();
+//        parameters.put("mingoYr", month);
+//
+//            //Fill report
+//        JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters,dataSource);
+//
+//            byte[] reportContent = JasperExportManager.exportReportToPdf(jasperPrint);
+//            return reportContent;
+//        }catch (Exception e){
+//            log.info("e:{}",e.toString());
+//            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+//        }
+//    }
+
 }
