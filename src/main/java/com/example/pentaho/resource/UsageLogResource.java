@@ -63,7 +63,7 @@ public class UsageLogResource {
                             description = "聖森私鑰加密 jwt token,body附帶userInfo={\"Id\":1,\"departName\":\"A05\"} ,departName需為代號",
                             schema = @Schema(type = "string"))
             })
-    @PostMapping("/get-usagelogs")
+    @GetMapping("/get-usagelogs")
     @Authorized(keyName = "SHENG")
     public ResponseEntity<List<UsageLogReport>> getUasgeLogs() {
         return new ResponseEntity<>(usageLogService.getUsageLogs(), HttpStatus.OK);
@@ -71,8 +71,8 @@ public class UsageLogResource {
 
 
     @GetMapping("/get-usagelog-file")
-    @Authorized(keyName = "SHENG")
-    public ResponseEntity<Resource> downloadFile(@RequestParam String fileType){
+//    @Authorized(keyName = "SHENG")
+    public void downloadFile(@RequestParam String fileType){
         log.info("檔案類型:{}",fileType);
 //        List ussages = new ArrayList() {{
 //            add(new UsageLog());
@@ -90,7 +90,7 @@ public class UsageLogResource {
 //                .body(resource);
 //    }
         try{
-            JasperReport jasperReport = JasperCompileManager.compileReport("D:\\project\\moi_bigData_only\\moi\\src\\main\\resources\\moi.jrxml");
+            JasperReport jasperReport = JasperCompileManager.compileReport("D:\\project\\moi_bigData_only\\moi\\src\\main\\resources\\jasperreport\\moi.jrxml");
 
             /***/
             SimpleDateFormat yyyyy = new SimpleDateFormat("yyyyy");
@@ -100,24 +100,28 @@ public class UsageLogResource {
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("mingoYr",mingoYr);
 
-            JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters);
+            JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters,new JREmptyDataSource());
             byte[] reportContent = JasperExportManager.exportReportToPdf(jasperPrint);
             ByteArrayResource resource = new ByteArrayResource(reportContent);
-            return ResponseEntity.ok()
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .contentLength(resource.contentLength())
-                    .header(HttpHeaders.CONTENT_DISPOSITION,
-                            ContentDisposition.attachment()
-                                    .filename("item-report.pdf")
-                                    .build().toString())
-                    .body(resource);
+
+            String desFilePath = "C:\\Users\\2212009\\test.pdf";
+            // 输出文档
+            JasperExportManager.exportReportToPdfFile(jasperPrint, desFilePath);
+//            return ResponseEntity.ok()
+//                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+//                    .contentLength(resource.contentLength())
+//                    .header(HttpHeaders.CONTENT_DISPOSITION,
+//                            ContentDisposition.attachment()
+//                                    .filename("item-report.pdf")
+//                                    .build().toString())
+//                    .body(resource);
 //        HttpHeaders headers = new HttpHeaders();
 //        headers.setContentType(MediaType.APPLICATION_PDF);
 //        headers.setContentDispositionFormData("filename", "employees-details.pdf");
 //        return new ResponseEntity<byte[]>(JasperExportManager.exportReportToPdf(jasperPrint), headers, HttpStatus.OK);
         } catch (Exception e) {
           log.info("e:{}",e.toString());
-          return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+//          return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

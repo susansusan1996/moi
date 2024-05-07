@@ -13,8 +13,8 @@
 		<band height="80" splitType="Stretch">
 			<staticText>
 				<reportElement x="20" y="10" width="160" height="40" uuid="74f17f6f-44d0-4295-a633-daeae4049503"/>
-				<textElement markup="none">
-					<font fontName="標楷體" size="12"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="kaiu" size="12"/>
 					<paragraph lineSpacing="Single"/>
 				</textElement>
 				<text><![CDATA[系統：內政部地址編碼系統
@@ -22,8 +22,8 @@
 			</staticText>
 			<textField textAdjust="ScaleFont">
 				<reportElement x="20" y="50" width="160" height="30" uuid="783af96b-f71c-48b3-882f-bfc45b41696c"/>
-				<textElement markup="none">
-					<font fontName="標楷體" size="12"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="&#xD;&#xA;kaiu" size="12"/>
 					<paragraph lineSpacing="Single"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$P{mingoYr}]]></textFieldExpression>
