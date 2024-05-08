@@ -13,23 +13,20 @@ public class NumberParser {
 
     public static String replaceWithHalfWidthNumber(String input) {
         if (input != null && !input.isEmpty()) {
-            if (containsChineseNumbers(input)) {
+            if (containsLittleChineseNumbers(input)) {
                 log.info("含有中文數字:{}", input);
-                String newNum = chineseNumberToArabic(input);
+                String newNum = LittleDigitConvert.convertToDigit(input);
+                newNum = assembleString(input,newNum);
                 log.info("含有中文數字，新字串:{}", newNum);
+                return newNum;
+            } else if (containsBigChineseNumbers(input)) {
+                log.info("含有大寫中文數字:{}", input);
+                String newNum = BigDigitConvert.convertToDigit(input);
+                newNum = assembleString(input,newNum);
+                log.info("含有大寫中文數字，新字串:{}", newNum);
                 return newNum;
             }
             Map<String, String> map = new HashMap<>();
-            map.put("壹", "1");
-            map.put("貳", "2");
-            map.put("叁", "3");
-            map.put("肆", "4");
-            map.put("伍", "5");
-            map.put("陸", "6");
-            map.put("柒", "7");
-            map.put("捌", "8");
-            map.put("玖", "9");
-            map.put("零", "0");
             map.put("０", "0");
             map.put("１", "1");
             map.put("２", "2");
@@ -55,9 +52,17 @@ public class NumberParser {
         return "";
     }
 
-    //檢查有無匹配一|二|三|四|五|六|七|八|九|十
-    public static boolean containsChineseNumbers(String input) {
+    //檢查有無匹配國字大小寫數字
+    public static boolean containsLittleChineseNumbers(String input) {
         String regex = ".*(一|二|三|四|五|六|七|八|九|十|零).*";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(input);
+        return matcher.matches();
+    }
+
+
+    public static boolean containsBigChineseNumbers(String input) {
+        String regex = ".*(壹|貳|叁|肆|伍|陸|柒|捌|玖|拾|佰).*";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(input);
         return matcher.matches();
@@ -288,6 +293,33 @@ public class NumberParser {
                 numRegex += "])";
             }
             return numRegex;
+        }
+
+    }
+
+    private static String assembleString(String input, String newNum){
+        // 匹配中文数字
+        Matcher numMatcher = Pattern.compile("[零壹貳叁肆伍陸柒捌玖拾佰一二三四五六七八九十百]+").matcher(input);
+        if (numMatcher.find()) {
+            log.info("numMatcher:{}",numMatcher);
+            // 获取第一个匹配的数字的位置
+            int numStart = numMatcher.start();
+
+            // 从原始字符串中截取数字前面的部分
+            String prefix = input.substring(0, numStart);
+
+            // 从原始字符串中截取数字后面的部分
+            String suffix = input.substring(numStart + numMatcher.group().length());
+
+            // 构建新的字符串
+            StringBuilder result = new StringBuilder();
+            result.append(prefix); // 添加数字前面的部分
+            result.append(newNum); // 添加转换后的数字部分
+            result.append(suffix); // 添加数字后面的部分
+
+            return result.toString();
+        } else {
+            return newNum;
         }
     }
 

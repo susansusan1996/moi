@@ -34,7 +34,7 @@ public class AddressParser {
     private AliasRepository aliasRepository;
 
     private final String BASEMENT_PATTERN = "basement:[一二三四五六七八九十百千]+樓"; //經過一次PARSE之後，如果有地下或屋頂，都會被改為basement:開頭
-    private final String ALL_CHAR = "[0-9A-ZＡ-Ｚ\\uFF10-\\uFF19零一二三四五六七八九十百千甲乙丙丁戊己庚]";
+    private final String ALL_CHAR = "[0-9A-ZＡ-Ｚ\\uFF10-\\uFF19零一二三四五六七八九十百千甲乙丙丁戊己庚壹貳叁肆伍陸柒捌玖拾佰]";
     private final String DYNAMIC_ALLEY_PART = "|卓厝|安農新邨|吉祥園|蕭厝|泰安新村|美喬|１弄圳東|堤外|中興二村|溝邊|長埤|清水|南苑|二橫路|朝安|黃泥塘|建行新村|牛頭|永和山莊";
     private final String COUNTY = "(?<zipcode>(^\\d{5}|^\\d{3})?)(?<county>.*縣|.*市|%s)?";
     private final String TOWN = "(?<town>\\D+?(市區|鎮區|鎮市|[鄉鎮市區])|%s)?";
@@ -77,8 +77,8 @@ public class AddressParser {
 
 
     //切出找不到的area
-    public Address parseNotFoundArea(Address address) {
-        log.info("切不出地名，再切一次:{}", address.getAddrRemains());
+    public Address parseArea(Address address) {
+        log.info("從remains切地名:{}", address.getAddrRemains());
         String[] regexArray = {
                 "^[^0-9０-９]+;", // 第一個規則
                 "^[^0-9０-９一二三四五六七八九十]+[一二三四五六七八九十]+[^0-9０-９一二三四五六七八九十]*;", // 第二個規則
@@ -95,7 +95,7 @@ public class AddressParser {
                 break;
             }
         }
-        //如果有再找到area，就把area砍掉，切出其他addres片段
+        //如果有再找到area，就把area砍掉，切出其他address片段
         if(StringUtils.isNotNullOrEmpty(match)){
             address.setArea(match);
             String originalAddress = address.getOriginalAddress();
@@ -105,8 +105,7 @@ public class AddressParser {
             String newAddressString = originalAddress.substring(0, lastIndex) + originalAddress.substring(lastIndex + match.length());
             log.info("newAddressString:{}",newAddressString);
             address = parseAddress(null,newAddressString, address);
-//            //join_step
-//            address.setJoinStep("JC211");
+
         }
         log.info("切不出地名，再切一次的新address:{}",address);
         return address;
