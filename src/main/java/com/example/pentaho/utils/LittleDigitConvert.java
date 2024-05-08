@@ -79,8 +79,8 @@ public class LittleDigitConvert {
     }
 
     /**
-     * 大写汉字转阿拉伯数字
-     * @param upper 待转换大写数字汉字
+     * 小寫中文轉阿拉伯數字
+     * @param upper 待轉換的小寫中文
      * @return
      */
     public static String convertToDigit(String upper){

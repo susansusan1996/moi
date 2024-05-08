@@ -7,7 +7,7 @@ import java.util.Map;
 
 public class BigDigitConvert {
 
-    private static final char[] UPPER = {'零','壹','貳','叁','肆','伍','陸','柒','捌','玖'};
+    private static final char[] UPPER = {'零','壹','貳','參','肆','伍','陸','柒','捌','玖'};
     private static final char[] NUIT = {'拾','佰'};
     private static final char[] DIGIT = {'0','1','2','3','4','5','6','7','8','9'};
     private static final Map<Character, Character> mapU = new HashMap<Character, Character>();
