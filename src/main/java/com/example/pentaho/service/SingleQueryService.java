@@ -57,9 +57,16 @@ public class SingleQueryService {
         //找seq
         address = findSeqByMappingIdAndJoinStep(address);
         Set<String> seqSet = address.getSeqSet();
-        if(!seqSet.isEmpty()){
+        if (!seqSet.isEmpty()) {
             log.info("seq:{}", seqSet);
-            list = ibdTbAddrCodeOfDataStandardRepository.findBySeq(seqSet.stream().map(Integer::parseInt).collect(Collectors.toList()));
+            //檢查是否history(歷史門牌)，2的話就是history
+            if ('2' == address.getJoinStep().charAt(3)) {
+                log.info("歷史門牌!");
+                List<String> addressIdList = ibdTbIhChangeDoorplateHisRepository.findByHistorySeq(seqSet.stream().toList());
+                list = ibdTbAddrCodeOfDataStandardRepository.findByAddressId(addressIdList);
+            } else {
+                list = ibdTbAddrCodeOfDataStandardRepository.findBySeq(seqSet.stream().map(Integer::parseInt).collect(Collectors.toList()));
+            }
             //放地址比對代碼
             Address finalAddress = address;
             list.forEach(IbdTbAddrDataRepositoryNewdto -> IbdTbAddrDataRepositoryNewdto.setJoinStep(finalAddress.getJoinStep()));

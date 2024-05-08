@@ -33,4 +33,18 @@ public class IbdTbAddrCodeOfDataStandardRepositoryImpl implements IbdTbAddrCodeO
         log.info("params:{}", query.getParameters());
         return sqlExecutor.queryForList(query, IbdTbAddrCodeOfDataStandardDTO.class);
     }
+
+    @Override
+    public List<IbdTbAddrCodeOfDataStandardDTO> findByAddressId(List<String> addressId) {
+        List<String> addressIdWhenEmpty = new ArrayList<>();
+        addressIdWhenEmpty.add("xx");
+        Query query = Query.builder()
+                .append("SELECT ADDR_ODS.IBD_TB_ADDR_CODE_OF_DATA_STANDARD.*")
+                .append("FROM ADDR_ODS.IBD_TB_ADDR_CODE_OF_DATA_STANDARD WHERE ADDRESS_ID IN (:ADDRESS_ID) ", addressId.isEmpty() ? addressIdWhenEmpty: addressId)
+                .append("AND ADR_VERSION IN (SELECT MAX( ADR_VERSION ) FROM ADDR_ODS.IBD_TB_ADDR_CODE_OF_DATA_STANDARD)")
+                .build();
+        log.info("query:{}", query);
+        log.info("params:{}", query.getParameters());
+        return sqlExecutor.queryForList(query, IbdTbAddrCodeOfDataStandardDTO.class);
+    }
 }
