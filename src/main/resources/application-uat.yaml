@@ -38,13 +38,13 @@ spring:
           max-idle: 8 # 连接池中的最大空闲连接 默认 8
           min-idle: 0 # 连接池中的最小空闲连接 默认 0
   datasource:
-    jdbc-url: jdbc:vertica://10.32.32.71:5433/vdb
+    jdbc-url: jdbc:vertica://10.32.32.200:5433/vdb
     username: M_ETL_ADDR_0001
     password: 1qaz@WSX
     driver-class-name: com.vertica.jdbc.Driver
     hikari:
       driver-class-name: io.opentracing.contrib.jdbc.TracingDriver
-      jdbc-url: jdbc:vertica://10.32.32.71:5433/vdb
+      jdbc-url: jdbc:vertica://10.32.32.200:5433/vdb
       poolName: Hikari
       auto-commit: false
       data-source-properties:
