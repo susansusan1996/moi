@@ -10,10 +10,6 @@ import java.text.SimpleDateFormat;
 @Component
 public class UsageLogReport {
 
-
-//    @JsonProperty("dateTime")
-//    private Timestamp dateTime;
-
     @JsonProperty("dateTime")
     private String dateTime;
 

@@ -1,6 +1,7 @@
 package com.example.pentaho.component;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 public class BigDataParams {
 
@@ -19,6 +20,9 @@ public class BigDataParams {
     private String formId;
 
 
+    @JsonProperty("formName")
+    private String formName;
+
     @JsonProperty("userId")
     private String userId;
 
@@ -28,6 +32,15 @@ public class BigDataParams {
 
     @JsonProperty("fileUri")
     private String fileUri;
+
+
+    @JsonProperty("addrId")
+    private String addrId;
+
+
+    @JsonProperty("address")
+    private String address;
+
 
     //COUNTY
     @JsonProperty("county")
@@ -43,8 +56,8 @@ public class BigDataParams {
 
 
     //NEIGHBOR_CD
-    @JsonProperty("neighborCd")
-    private String neighborCd;
+    @JsonProperty("neighbor")
+    private String neighbor;
 
     //ROAD
     @JsonProperty("road")
@@ -59,8 +72,8 @@ public class BigDataParams {
     @JsonProperty("alley")
     private String alley;
     //SUBALLEY
-    @JsonProperty("suballey")
-    private String suballey;
+    @JsonProperty("subAlley")
+    private String subAlley;
     //NUM_TYPE
     @JsonProperty("numType")
     private String numType;
@@ -76,6 +89,9 @@ public class BigDataParams {
     //Y
     @JsonProperty("y")
     private String y;
+
+    @JsonProperty("z")
+    private String z;
     //VERSION
     @JsonProperty("version")
     private String version;
@@ -83,8 +99,8 @@ public class BigDataParams {
     @JsonProperty("townSn")
     private String townSn;
     //GEO_HASH
-    @JsonProperty("geoHash")
-    private String geoHash;
+    @JsonProperty("geohashCode")
+    private String geohashCode;
     //ROAD_ID
     @JsonProperty("roadId")
     private String roadId;
@@ -169,12 +185,12 @@ public class BigDataParams {
         this.village = village;
     }
 
-    public String getNeighborCd() {
-        return neighborCd;
+    public String getNeighbor() {
+        return neighbor;
     }
 
-    public void setNeighborCd(String neighborCd) {
-        this.neighborCd = neighborCd;
+    public void setNeighbor(String neighbor) {
+        this.neighbor = neighbor;
     }
 
     public String getRoad() {
@@ -209,12 +225,12 @@ public class BigDataParams {
         this.alley = alley;
     }
 
-    public String getSuballey() {
-        return suballey;
+    public String getSubAlley() {
+        return subAlley;
     }
 
-    public void setSuballey(String suballey) {
-        this.suballey = suballey;
+    public void setSubAlley(String subAlley) {
+        this.subAlley = subAlley;
     }
 
     public String getNumType() {
@@ -273,12 +289,12 @@ public class BigDataParams {
         this.townSn = townSn;
     }
 
-    public String getGeoHash() {
-        return geoHash;
+    public String getGeohashCode() {
+        return geohashCode;
     }
 
-    public void setGeoHash(String geoHash) {
-        this.geoHash = geoHash;
+    public void setGeohashCode(String geohashCode) {
+        this.geohashCode = geohashCode;
     }
 
     public String getRoadId() {
@@ -353,31 +369,67 @@ public class BigDataParams {
         this.formId = formId;
     }
 
+    public String getZ() {
+        return z;
+    }
+
+    public void setZ(String z) {
+        this.z = z;
+    }
+
+    public String getFormName() {
+        return formName;
+    }
+
+    public void setFormName(String formName) {
+        this.formName = formName;
+    }
+
+    public String getAddrId() {
+        return addrId;
+    }
+
+    public void setAddrId(String addrId) {
+        this.addrId = addrId;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
     @Override
     public String toString() {
         return "BigDataParams{" +
                 "id='" + id + '\'' +
                 ", formId='" + formId + '\'' +
+                ", formName='" + formName + '\'' +
                 ", userId='" + userId + '\'' +
                 ", recordCounts='" + recordCounts + '\'' +
                 ", fileUri='" + fileUri + '\'' +
+                ", addrId='" + addrId + '\'' +
+                ", address='" + address + '\'' +
                 ", county='" + county + '\'' +
                 ", town='" + town + '\'' +
                 ", village='" + village + '\'' +
-                ", neighborCd='" + neighborCd + '\'' +
+                ", neighbor='" + neighbor + '\'' +
                 ", road='" + road + '\'' +
                 ", area='" + area + '\'' +
                 ", lane='" + lane + '\'' +
                 ", alley='" + alley + '\'' +
-                ", suballey='" + suballey + '\'' +
+                ", subAlley='" + subAlley + '\'' +
                 ", numType='" + numType + '\'' +
                 ", numFlr='" + numFlr + '\'' +
                 ", room='" + room + '\'' +
                 ", x='" + x + '\'' +
                 ", y='" + y + '\'' +
+                ", z='" + z + '\'' +
                 ", version='" + version + '\'' +
                 ", townSn='" + townSn + '\'' +
-                ", geoHash='" + geoHash + '\'' +
+                ", geohashCode='" + geohashCode + '\'' +
                 ", roadId='" + roadId + '\'' +
                 ", roadIdDt='" + roadIdDt + '\'' +
                 ", postCode='" + postCode + '\'' +

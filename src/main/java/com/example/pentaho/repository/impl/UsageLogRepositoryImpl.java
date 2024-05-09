@@ -71,14 +71,18 @@ public class UsageLogRepositoryImpl implements UsageLogRepository {
     }
 
     @Override
-    public List<UsageLogReport> getUsageLog() {
+    public List<UsageLogReport> getUsageLog(UsageLogDTO usageLogDTO) {
+        String startDate ="\'" + usageLogDTO.getDataDateStart() + " 00:00:00'";
+        String endDate ="\'" + usageLogDTO.getDataDateEnd() + " 24:00:00'";
+
         Query query = Query.builder().append("with cnt_result as (\n" +
-                "select\n" +
+                "select \n" +
                 " cast(dateTimeTrace as DATE) as date_time,\n" +
                 " uri,\n" +
                 " count(*) api_cnt\n" +
-                "from addr_ods.USAGE_LOG\n" +
-                "group by 1,2\n" +
+                "from addr_ods.USAGE_LOG \n")
+                .append("where dateTimeTrace between cast(" + startDate + " as datetime) AND cast( " + endDate + " as datetime) ")
+                .append("group by 1,2\n" +
                 ")\n" +
                 " \n" +
                 "select a.date_time, \"query_single\", \"query_standard_address\", \"query_track\"\n" +
@@ -90,7 +94,9 @@ public class UsageLogRepositoryImpl implements UsageLogRepository {
                 " on a.date_time = b.date_time\n" +
                 "left join (select date_time, api_cnt as 'query_track'\n" +
                 " from cnt_result where uri = '/api/api-key/query-track') c\n" +
-                " on a.date_time = c.date_time").build();
+                " on a.date_time = c.date_time \n" +
+                " order by 1").build();
+        logger.info("query:{}",query);
         return sqlExecutor.queryForList(query, UsageLogReport.class);
     }
 }

@@ -15,5 +15,5 @@ public interface UsageLogRepository {
 
     List<UsageLog> getUsageLogsByParams(UsageLogDTO usageLogDTO);
 
-    List<UsageLogReport> getUsageLog();
+    List<UsageLogReport> getUsageLog(UsageLogDTO usageLogDTO);
 }
