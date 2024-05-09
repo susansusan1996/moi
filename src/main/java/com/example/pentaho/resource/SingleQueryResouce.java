@@ -52,9 +52,8 @@ public class SingleQueryResouce {
 
     }
 
-    /**
-     * 找出地址相對應的json資訊
-     */
+
+
     @Operation(description = "單筆查詢",
             parameters = {
                     @Parameter(in = ParameterIn.HEADER,
@@ -64,8 +63,7 @@ public class SingleQueryResouce {
                             schema = @Schema(type = "string"))}
     )
     @PostMapping("/query-single")
-    @Authorized(keyName = "SHENG")
-    public ResponseEntity<String> queryAddressJson(
+    public ResponseEntity<List<IbdTbAddrCodeOfDataStandardDTO>> queryAddress(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "單筆查詢，request body 要帶 json，需包含:originalAddress、county(可為空)、town(可為空)。具體資料格式如下:",
                     required = true,
@@ -74,17 +72,10 @@ public class SingleQueryResouce {
                             examples = @ExampleObject(value = "{\"originalAddress\":\"台南市東區衛國里007鄰衛國街１１４巷９弄１０號B六樓之５\",\"county\":\"臺南市(可為空)\",\"town\":\"東區(可為空)\"}")
                     )
             )
-            @RequestBody SingleQueryDTO singleQueryDTO) {
-        log.info("單筆查詢，參數為:{}", singleQueryDTO);
-        return ResponseEntity.ok(singleQueryService.findJsonTest(singleQueryDTO));
-    }
-
-
-    @PostMapping("/query-single-test")
-    @Hidden
-    public ResponseEntity<List<IbdTbAddrCodeOfDataStandardDTO>> queryAddress(@RequestBody String originalString) throws NoSuchFieldException, IllegalAccessException {
+            @RequestBody SingleQueryDTO singleQueryDTO
+    ) throws NoSuchFieldException, IllegalAccessException {
 //        try {
-            return ResponseEntity.ok(singleQueryService.findJson(originalString));
+            return ResponseEntity.ok(singleQueryService.findJson(singleQueryDTO));
 //        } catch (Exception e) {
 //            log.info("無法解析地址:{}", e.getMessage());
 //            return ResponseEntity.ok("無法解析地址");

@@ -49,17 +49,24 @@ public class SingleQueryService {
         return redisService.findByKey(null, "1066693", null);
     }
 
-    public List<IbdTbAddrCodeOfDataStandardDTO> findJson(String originalString) throws NoSuchFieldException, IllegalAccessException {
+    public List<IbdTbAddrCodeOfDataStandardDTO> findJson(SingleQueryDTO singleQueryDTO) throws NoSuchFieldException, IllegalAccessException {
         List<IbdTbAddrCodeOfDataStandardDTO> list = new ArrayList<>();
         //切地址+找mappingId
-        Address address = parseAddressAndfindMappingId(originalString);
+        Address address = parseAddressAndfindMappingId(singleQueryDTO.getOriginalAddress());
         log.info("mappingId:{}", address.getMappingId());
         //找seq
         address = findSeqByMappingIdAndJoinStep(address);
         Set<String> seqSet = address.getSeqSet();
-        if(!seqSet.isEmpty()){
+        if (!seqSet.isEmpty()) {
             log.info("seq:{}", seqSet);
-            list = ibdTbAddrCodeOfDataStandardRepository.findBySeq(seqSet.stream().map(Integer::parseInt).collect(Collectors.toList()));
+            //檢查是否history(歷史門牌)，2的話就是history
+            if ('2' == address.getJoinStep().charAt(3)) {
+                log.info("歷史門牌!");
+                List<String> addressIdList = ibdTbIhChangeDoorplateHisRepository.findByHistorySeq(seqSet.stream().toList());
+                list = ibdTbAddrCodeOfDataStandardRepository.findByAddressId(addressIdList);
+            } else {
+                list = ibdTbAddrCodeOfDataStandardRepository.findBySeq(seqSet.stream().map(Integer::parseInt).collect(Collectors.toList()));
+            }
             //放地址比對代碼
             Address finalAddress = address;
             list.forEach(IbdTbAddrDataRepositoryNewdto -> IbdTbAddrDataRepositoryNewdto.setJoinStep(finalAddress.getJoinStep()));
@@ -82,7 +89,7 @@ public class SingleQueryService {
                 address = addressParser.parseAddress(null, address.getOriginalAddress(), address);
             } else {
                 //有可能是地址沒有切出來導致有remain
-                address = addressParser.parseNotFoundArea(address);
+                address = addressParser.parseArea(address);
             }
             address.setNumTypeCd(numTypeCd);
         } else {
@@ -508,53 +515,61 @@ public class SingleQueryService {
         }
     }
 
-    //因為town、village、road、area可能會有同名，但不同代碼的狀況，要組出不同的mappingId
+    //因為county、town、village、road、area、lane可能會有同名，但不同代碼的狀況，要組出不同的mappingId
     private void assembleMultiMappingId(Address address) {
         String numTypeCd = address.getNumTypeCd(); //臨建特附
         String basementStr = address.getBasementStr() == null ? "0" : address.getBasementStr();
+        List<String> countys = new ArrayList<>();
         List<String> townCds = new ArrayList<>();
         List<String> villageCds = new ArrayList<>();
         List<String> roadAreaCds = new ArrayList<>();
+        List<String> lanes = new ArrayList<>();
+        countys.addAll(splitAndAddToList(address.getCountyCd()));
         townCds.addAll(splitAndAddToList(address.getTownCd()));
         villageCds.addAll(splitAndAddToList(address.getVillageCd()));
         roadAreaCds.addAll(splitAndAddToList(address.getRoadAreaSn()));
+        lanes.addAll(splitAndAddToList(address.getLaneCd())); // Add lanes here
         List<LinkedHashMap<String, String>> mappingIdMapList = new ArrayList<>();
         List<List<String>> mappingIdListCollection = new ArrayList<>();
         List<String> mappingIdStringList = new ArrayList<>();
-        for (String townCd : townCds) {
-            for (String villageCd : villageCds) {
-                for (String roadAreaCd : roadAreaCds) {
-                    LinkedHashMap<String, String> mappingIdMap = new LinkedHashMap<>();
-                    mappingIdMap.put("COUNTY", address.getCountyCd());
-                    mappingIdMap.put("TOWN", townCd);
-                    mappingIdMap.put("VILLAGE", villageCd);//里
-                    mappingIdMap.put("NEIGHBOR", address.getNeighborCd());
-                    mappingIdMap.put("ROADAREA", roadAreaCd);
-                    mappingIdMap.put("LANE", address.getLaneCd());//巷
-                    mappingIdMap.put("ALLEY", address.getAlleyIdSn());//弄
-                    mappingIdMap.put("NUMTYPE", numTypeCd);
-                    mappingIdMap.put("NUM_FLR_1", address.getNumFlr1Id());
-                    mappingIdMap.put("NUM_FLR_2", address.getNumFlr2Id());
-                    mappingIdMap.put("NUM_FLR_3", address.getNumFlr3Id());
-                    mappingIdMap.put("NUM_FLR_4", address.getNumFlr4Id());
-                    mappingIdMap.put("NUM_FLR_5", address.getNumFlr5Id());
-                    mappingIdMap.put("BASEMENT", basementStr);
-                    mappingIdMap.put("NUMFLRPOS", address.getNumFlrPos());
-                    mappingIdMap.put("ROOM", address.getRoomIdSn());
-                    List<String> mappingIdList = Stream.of(
-                                    address.getCountyCd(), townCd, villageCd, address.getNeighborCd(),
-                                    roadAreaCd, address.getLaneCd(), address.getAlleyIdSn(), numTypeCd,
-                                    address.getNumFlr1Id(), address.getNumFlr2Id(), address.getNumFlr3Id(), address.getNumFlr4Id(),
-                                    address.getNumFlr5Id(), basementStr, address.getNumFlrPos(), address.getRoomIdSn())
-                            .map(Object::toString)
-                            .collect(Collectors.toList());
-                    mappingIdMapList.add(mappingIdMap);
-                    mappingIdListCollection.add(mappingIdList);
-                    mappingIdStringList.add(String.join("", mappingIdList));
-                    // 將NUMFLRPOS為00000的組合也塞進去mappingIdStringList
-                    String oldPos = mappingIdMap.get("NUMFLRPOS");
-                    mappingIdStringList.add(replaceNumFlrPosWithZero(mappingIdMap));
-                    mappingIdMap.put("NUMFLRPOS", oldPos); //還原
+        for (String countyCd : countys) {
+            for (String townCd : townCds) {
+                for (String villageCd : villageCds) {
+                    for (String roadAreaCd : roadAreaCds) {
+                        for (String laneCd : lanes) { // Add this loop for lanes
+                            LinkedHashMap<String, String> mappingIdMap = new LinkedHashMap<>();
+                            mappingIdMap.put("COUNTY", countyCd);
+                            mappingIdMap.put("TOWN", townCd);
+                            mappingIdMap.put("VILLAGE", villageCd);//里
+                            mappingIdMap.put("NEIGHBOR", address.getNeighborCd());
+                            mappingIdMap.put("ROADAREA", roadAreaCd);
+                            mappingIdMap.put("LANE", laneCd);
+                            mappingIdMap.put("ALLEY", address.getAlleyIdSn());//弄
+                            mappingIdMap.put("NUMTYPE", numTypeCd);
+                            mappingIdMap.put("NUM_FLR_1", address.getNumFlr1Id());
+                            mappingIdMap.put("NUM_FLR_2", address.getNumFlr2Id());
+                            mappingIdMap.put("NUM_FLR_3", address.getNumFlr3Id());
+                            mappingIdMap.put("NUM_FLR_4", address.getNumFlr4Id());
+                            mappingIdMap.put("NUM_FLR_5", address.getNumFlr5Id());
+                            mappingIdMap.put("BASEMENT", basementStr);
+                            mappingIdMap.put("NUMFLRPOS", address.getNumFlrPos());
+                            mappingIdMap.put("ROOM", address.getRoomIdSn());
+                            List<String> mappingIdList = Stream.of(
+                                            countyCd, townCd, villageCd, address.getNeighborCd(),
+                                            roadAreaCd, laneCd, address.getAlleyIdSn(), numTypeCd,
+                                            address.getNumFlr1Id(), address.getNumFlr2Id(), address.getNumFlr3Id(), address.getNumFlr4Id(),
+                                            address.getNumFlr5Id(), basementStr, address.getNumFlrPos(), address.getRoomIdSn())
+                                    .map(Object::toString)
+                                    .collect(Collectors.toList());
+                            mappingIdMapList.add(mappingIdMap);
+                            mappingIdListCollection.add(mappingIdList);
+                            mappingIdStringList.add(String.join("", mappingIdList));
+                            // 將NUMFLRPOS為00000的組合也塞進去mappingIdStringList
+                            String oldPos = mappingIdMap.get("NUMFLRPOS");
+                            mappingIdStringList.add(replaceNumFlrPosWithZero(mappingIdMap));
+                            mappingIdMap.put("NUMFLRPOS", oldPos); //還原
+                        }
+                    }
                 }
             }
         }
