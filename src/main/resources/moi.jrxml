@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.2.final using JasperReports Library version 6.21.2-8434a0bd7c3bbc37cbf916f2968d35e4b165821a  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="moi_text" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="3bb0be0d-436d-4429-8045-91f1aa962155">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="One Empty Record"/>
+	<parameter name="mingoYr" class="java.lang.String"/>
+	<parameter name="month" class="java.lang.String"/>
+	<parameter name="formId" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[]]>
+	</queryString>
+	<field name="dateTime" class="java.lang.String"/>
+	<field name="querySingle" class="java.math.BigDecimal"/>
+	<field name="queryStandardAddress" class="java.math.BigDecimal"/>
+	<field name="queryTrack" class="java.math.BigDecimal"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="140" splitType="Stretch">
+			<property name="com.jaspersoft.studio.unit.height" value="px"/>
+			<staticText>
+				<reportElement x="20" y="10" width="240" height="40" uuid="74f17f6f-44d0-4295-a633-daeae4049503"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="標楷體" size="12"/>
+					<paragraph lineSpacing="Single" lineSpacingSize="0.0"/>
+				</textElement>
+				<text><![CDATA[系統：內政部地址編碼系統
+主題：API使用次數]]></text>
+			</staticText>
+			<textField textAdjust="ScaleFont">
+				<reportElement x="20" y="50" width="240" height="20" uuid="783af96b-f71c-48b3-882f-bfc45b41696c"/>
+				<textElement textAlignment="Left" verticalAlignment="Top">
+					<font fontName="標楷體" size="12" isItalic="false"/>
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<textFieldExpression><![CDATA["時間："+$P{mingoYr} +"/"+$P{month}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="80" width="554" height="60" uuid="655b8ba5-cb58-4baa-bedb-138baad86f59"/>
+				<box>
+					<pen lineWidth="1.0" lineStyle="Solid"/>
+				</box>
+				<textElement textAlignment="Justified" verticalAlignment="Middle"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="130" y="90" width="100" height="30" uuid="98b75512-78a1-420c-9002-938ed3238eba"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="標楷體"/>
+				</textElement>
+				<text><![CDATA[API1
+( 次 )]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="270" y="90" width="100" height="30" uuid="18d9fe2f-1689-4a47-93b8-488acf2fad58"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="標楷體"/>
+				</textElement>
+				<text><![CDATA[API2
+( 次 )]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="420" y="90" width="100" height="30" uuid="9f29a4c7-1386-4203-83ee-65a4e565fbbb"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="標楷體"/>
+				</textElement>
+				<text><![CDATA[API3
+( 次 )]]></text>
+			</staticText>
+			<textField textAdjust="ScaleFont">
+				<reportElement x="400" y="10" width="140" height="24" uuid="539f3ef9-2a79-4169-b405-a7bd70558c99"/>
+				<box>
+					<pen lineWidth="0.8" lineStyle="Solid"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="標楷體"/>
+				</textElement>
+				<textFieldExpression><![CDATA["表單編號："+ $P{formId}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<detail>
+		<band height="30" splitType="Stretch">
+			<property name="com.jaspersoft.studio.unit.height" value="px"/>
+			<textField textAdjust="ScaleFont" isBlankWhenNull="true">
+				<reportElement x="0" y="0" width="102" height="30" isRemoveLineWhenBlank="true" uuid="5e4f658c-9dcb-431b-8a77-25b4b27e0135"/>
+				<box>
+					<pen lineWidth="1.0" lineStyle="Solid"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="標楷體"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{dateTime}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="ScaleFont" isBlankWhenNull="true">
+				<reportElement x="400" y="0" width="154" height="30" isRemoveLineWhenBlank="true" uuid="3639a84e-1586-4076-b161-43c5ebe3b93d"/>
+				<box>
+					<pen lineWidth="1.0" lineStyle="Solid"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="標楷體"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{queryTrack}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="ScaleFont" isBlankWhenNull="true">
+				<reportElement x="251" y="0" width="149" height="30" isRemoveLineWhenBlank="true" uuid="3c8d5b89-348c-4b81-8a32-2c15ca662bc0"/>
+				<box>
+					<pen lineWidth="1.0" lineStyle="Solid"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="標楷體"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{queryStandardAddress}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="ScaleFont" isBlankWhenNull="true">
+				<reportElement x="102" y="0" width="149" height="30" isRemoveLineWhenBlank="true" uuid="47f6b3bc-586d-4c14-9398-10ddb54eff30"/>
+				<box>
+					<pen lineWidth="1.0" lineStyle="Solid"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="標楷體"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{querySingle}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>

@@ -197,6 +197,24 @@
 			<systemPath>${basedir}/src/main/resources/lib/custom-persistence-1.1.0.jar</systemPath>
 		</dependency>
 
+		<!--itext-2.1.7.js8-->
+		<dependency>
+			<groupId>com.lowagie</groupId>
+			<artifactId>itext</artifactId>
+			<version>1.0.0</version>
+			<systemPath>${basedir}/src/main/resources/lib/itext-2.1.7.js8.jar</systemPath>
+			<scope>system</scope>
+		</dependency>
+
+		<!--jasperreports-fonts-6.1.1.jar-->
+		<dependency>
+			<groupId>net.sf</groupId>
+			<artifactId>jasperreports</artifactId>
+			<version>1.0.0</version>
+			<systemPath>${basedir}/src/main/resources/lib/jasperreports-fonts-6.1.1.jar</systemPath>
+			<scope>system</scope>
+		</dependency>
+
 		<dependency>
 			<groupId>com.zaxxer</groupId>
 			<artifactId>HikariCP</artifactId>
@@ -244,17 +262,42 @@
 		</dependency>
 
 
+<!--		<dependency>-->
+<!--			<groupId>net.sf.jasperreports</groupId>-->
+<!--			<artifactId>jasperreports</artifactId>-->
+<!--			<version>6.20.5</version>-->
+<!--			<exclusions>-->
+<!--				<exclusion>-->
+<!--					<artifactId>commons-logging</artifactId>-->
+<!--					<groupId>commons-logging</groupId>-->
+<!--				</exclusion>-->
+<!--			</exclusions>-->
+<!--		</dependency>-->
 
 
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
 
-
+		<!-- jasperreport -->
+		<dependency>
+			<groupId>net.sf.jasperreports</groupId>
+			<artifactId>jasperreports</artifactId>
+			<version>6.16.0</version>
+			<exclusions>
+				<exclusion>
+					<!-- itext 使用jar -->
+					<groupId>com.lowagie</groupId>
+					<artifactId>itext</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
 	</dependencies>
-
-
-
 
 	<build>
 		<plugins>
+			<!--Maven-->
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
@@ -263,11 +306,75 @@
 					<includeSystemScope>true</includeSystemScope>
 				</configuration>
 			</plugin>
+
+			<!--sonarsource-->
 			<plugin>
 				<groupId>org.sonarsource.scanner.maven</groupId>
 				<artifactId>sonar-maven-plugin</artifactId>
 				<version>3.11.0.3922</version>
 			</plugin>
+
+			<!--helper-->
+<!--			<plugin>-->
+<!--				<groupId>org.codehaus.mojo</groupId>-->
+<!--				<artifactId>build-helper-maven-plugin</artifactId>-->
+<!--				<version>3.2.0</version>-->
+<!--				<executions>-->
+<!--					<execution>-->
+<!--						<id>add-jasperreports-reports</id>-->
+<!--						<phase>validate</phase>-->
+<!--						<goals>-->
+<!--							<goal>add-resource</goal>-->
+<!--						</goals>-->
+<!--						<configuration>-->
+<!--							<resources>-->
+<!--								<resource>-->
+<!--									<directory>src/main/resources/jasperreport</directory>-->
+<!--									<targetPath>META-INF/jasperreport</targetPath>-->
+<!--								</resource>-->
+<!--							</resources>-->
+<!--						</configuration>-->
+<!--					</execution>-->
+<!--				</executions>-->
+<!--			</plugin>-->
+
+			<!--JasperReport-->
+<!--			<plugin>-->
+<!--				<groupId>com.alexnederlof</groupId>-->
+<!--				<artifactId>jasperreports-plugin</artifactId>-->
+<!--				<version>2.8</version>-->
+<!--				<executions>-->
+<!--					<execution>-->
+<!--						<id>compile-jasperreports-reports</id>-->
+<!--						<phase>compile</phase>-->
+<!--						<goals>-->
+<!--							<goal>jasper</goal>-->
+<!--						</goals>-->
+<!--					</execution>-->
+<!--				</executions>-->
+<!--				<configuration>-->
+<!--					<outputDirectory>${project.build.outputDirectory}/META-INF/jasperreport</outputDirectory>-->
+<!--					<failOnMissingSourceDirectory>false</failOnMissingSourceDirectory>-->
+<!--				</configuration>-->
+<!--				<dependencies>-->
+<!--					<dependency>-->
+<!--						<groupId>net.sf.barcode4j</groupId>-->
+<!--						<artifactId>barcode4j</artifactId>-->
+<!--						<version>2.1</version>-->
+<!--					</dependency>-->
+<!--					<dependency>-->
+<!--						<groupId>net.sf.jasperreports</groupId>-->
+<!--						<artifactId>jasperreports</artifactId>-->
+<!--						<version>6.16.0</version>-->
+<!--						<exclusions>-->
+<!--							<exclusion>-->
+<!--								<groupId>com.lowagie</groupId>-->
+<!--								<artifactId>itext</artifactId>-->
+<!--							</exclusion>-->
+<!--						</exclusions>-->
+<!--					</dependency>-->
+<!--				</dependencies>-->
+<!--			</plugin>-->
 		</plugins>
 	</build>
 	<repositories>

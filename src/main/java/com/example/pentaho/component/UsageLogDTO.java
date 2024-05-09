@@ -13,9 +13,23 @@ public class UsageLogDTO {
     private List<String> ips;
     private List<String> uris;
     private List<String> userIds;
+
+
+
+    @Schema(description = "時間起", example = "2024-04-01")
     private String dataDateStart;
+
+    @Schema(description = "時間迄", example = "2024-04-30")
     private String dataDateEnd;
 
+
+    public UsageLogDTO() {
+    }
+
+    public UsageLogDTO(String dataDateStart, String dataDateEnd) {
+        this.dataDateStart = dataDateStart;
+        this.dataDateEnd = dataDateEnd;
+    }
 
     public List<String> getIps() {
         return ips;

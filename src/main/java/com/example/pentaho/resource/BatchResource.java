@@ -9,8 +9,10 @@ import com.example.pentaho.service.JobService;
 import com.example.pentaho.service.SingleTrackQueryService;
 import com.example.pentaho.utils.FileUtils;
 import com.example.pentaho.utils.StringUtils;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.jcraft.jsch.SftpException;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -48,8 +50,10 @@ import java.util.concurrent.CompletableFuture;
 @SecurityRequirement(name = "Authorization")
 public class BatchResource {
 
-    private static Logger log = LoggerFactory.getLogger(BatchResource.class);
+    private final static Logger log = LoggerFactory.getLogger(BatchResource.class);
 
+
+    private final static ObjectMapper objectMapper = new ObjectMapper();
     @Autowired
     private JobService jobService;
 
@@ -66,7 +70,7 @@ public class BatchResource {
     private BigDataService bigDataService;
 
 
-    private ObjectMapper objectMapper = new ObjectMapper();
+
 
 
 
@@ -282,34 +286,25 @@ public class BatchResource {
     @Authorized(keyName = "SHENG")
     public ResponseEntity sendConditionsToBigData(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "(1) formId + formBuilder + 指定欄位 json ,\n"+
-                                  "(2) formId,formBuilder 不得為空，且至少指定一個欄位 ,\n"+
-                                  "(3) 指定欄位格式:欄位名為key,Y為value \n",
+                    description = "(1) userId + formId + formName + showFields(指定欄位) json ,\n"+
+                                  "(2) userId + formId + formName 不得為空，且showFields至少指定一個欄位 ,\n",
                     required = true,
                     content = @Content(
-                            schema = @Schema(implementation = BigDataParams.class)
-                         ,examples = @ExampleObject(value = "{\n" +
-                            " \"formId\": \"BQ202401010001\",\n" +
-                            " \"userId\": \"formBuilder\",\n" +
-                            "  \"alley\": \"Y\", \n" +
-                            "  \"village\": \"Y\" \n" +
-                            "}")
+                            schema = @Schema(implementation = ColumnSelection.class)
                     )
             )
-            @RequestBody BigDataParams bigDataParams
+            @RequestBody ColumnSelection columnSelection
             ){
-        log.info("大量查詢條件:{}",bigDataParams);
-        if(StringUtils.isNullOrEmpty(bigDataParams.getUserId()) || StringUtils.isNullOrEmpty(bigDataParams.getFormId())){
-            return new ResponseEntity("表單編號、申請者Id皆不得為空",HttpStatus.FORBIDDEN);
+        log.info("大量查詢條件:{}",columnSelection);
+        if(StringUtils.isNullOrEmpty(columnSelection.getUserId()) || StringUtils.isNullOrEmpty(columnSelection.getFormId()) || StringUtils.isNullOrEmpty(columnSelection.getFormName())){
+            return new ResponseEntity("申請者Id、表單Id、表單編號皆不得為空",HttpStatus.FORBIDDEN);
         }
 
-        boolean result = isValid(bigDataParams);
-        if(!result){
-            return new ResponseEntity("至少指定一欄位",HttpStatus.FORBIDDEN);
-        }
-
-        result = bigDataService.saveConditions(bigDataParams);
-
+        BigDataParams bigDataParams = isValid(columnSelection.getShowFields());
+        bigDataParams.setUserId(columnSelection.getUserId());
+        bigDataParams.setFormId(columnSelection.getFormId());
+        log.info("bigDataParams:{}",bigDataParams);
+        boolean result = bigDataService.saveConditions(bigDataParams);
         return result ? new ResponseEntity("成功",HttpStatus.OK):new ResponseEntity("發生錯誤",HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
@@ -318,25 +313,40 @@ public class BatchResource {
 
     /**
      * 確認至少有指定一個欄位
-     * @param bigDataParams
-     * @return
-     */
-    private boolean isValid(BigDataParams bigDataParams){
-        boolean result = false;
+     *
+     *
+     * */
+    private BigDataParams isValid(String[] showField){
+        if(showField.length <= 0 ){
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,"至少指定一個欄位");
+        }
+
+        Map<String, String> object = new HashMap<>();
+        for(String key:showField){
+            object.put(key,"Y");
+        }
+
+
         try {
-            Method[] methods = BigDataParams.class.getMethods();
-            List<Method> getterMethods = Arrays.stream(methods).filter(m -> m.getName().startsWith("get")).toList();
-            for (Method m : getterMethods) {
-                log.info("method:{}",m.getName());
-                Object value = m.invoke(bigDataParams);
-                if("Y".equals(value)){
-                  result = true;
-                }
-            }
+            String json = objectMapper.writeValueAsString(object);
+            BigDataParams bigDataParams = objectMapper.readValue(json, BigDataParams.class);
+//            Method[] methods = BigDataParams.class.getMethods();
+//            List<Method> getterMethods = Arrays.stream(methods).filter(m -> m.getName().startsWith("get")).toList();
+//            for (Method m : getterMethods) {
+//                log.info("method:{}",m.getName());
+//                Object value = m.invoke(object);
+//                if("Y".equals(value)){
+//                  result = true;
+//                }
+//            }
+            return bigDataParams;
+        }catch (UnrecognizedPropertyException e){
+            log.info("e:{}",e.toString());
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,"請確認欄位名稱是否正確");
         }catch (Exception e){
             log.info("e:{}",e.toString());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return result;
     }
 
     @GetMapping("/simple-job")

@@ -4,6 +4,7 @@ import com.cht.commons.persistence.query.Query;
 import com.cht.commons.persistence.query.SqlExecutor;
 import com.example.pentaho.component.UsageLog;
 import com.example.pentaho.component.UsageLogDTO;
+import com.example.pentaho.component.UsageLogReport;
 import com.example.pentaho.repository.UsageLogRepository;
 import com.example.pentaho.utils.StringUtils;
 import org.slf4j.Logger;
@@ -49,7 +50,7 @@ public class UsageLogRepositoryImpl implements UsageLogRepository {
     }
 
     @Override
-    public List<UsageLog> getUsageLogs(UsageLogDTO usageLogDTO) {
+    public List<UsageLog> getUsageLogsByParams(UsageLogDTO usageLogDTO) {
         boolean useUserId = usageLogDTO.getUserIds() != null && !usageLogDTO.getUserIds().isEmpty();
         boolean useUri =  usageLogDTO.getUris() != null &&!usageLogDTO.getUris().isEmpty();
         boolean useIps = usageLogDTO.getIps() != null && !usageLogDTO.getIps().isEmpty();
@@ -67,5 +68,35 @@ public class UsageLogRepositoryImpl implements UsageLogRepository {
         logger.info("sql:{}",query);
         logger.info("params:{}",query.getParameters());
         return sqlExecutor.queryForList(query,UsageLog.class);
+    }
+
+    @Override
+    public List<UsageLogReport> getUsageLog(UsageLogDTO usageLogDTO) {
+        String startDate ="\'" + usageLogDTO.getDataDateStart() + " 00:00:00'";
+        String endDate ="\'" + usageLogDTO.getDataDateEnd() + " 24:00:00'";
+
+        Query query = Query.builder().append("with cnt_result as (\n" +
+                "select \n" +
+                " cast(dateTimeTrace as DATE) as date_time,\n" +
+                " uri,\n" +
+                " count(*) api_cnt\n" +
+                "from addr_ods.USAGE_LOG \n")
+                .append("where dateTimeTrace between cast(" + startDate + " as datetime) AND cast( " + endDate + " as datetime) ")
+                .append("group by 1,2\n" +
+                ")\n" +
+                " \n" +
+                "select a.date_time, \"query_single\", \"query_standard_address\", \"query_track\"\n" +
+                "from\n" +
+                " (select date_time, api_cnt as 'query_single'\n" +
+                " from cnt_result where uri = '/api/api-key/query-single') a\n" +
+                "left join (select date_time, api_cnt as 'query_standard_address'\n" +
+                "from cnt_result where uri = '/api/api-key/query-standard-address') b\n" +
+                " on a.date_time = b.date_time\n" +
+                "left join (select date_time, api_cnt as 'query_track'\n" +
+                " from cnt_result where uri = '/api/api-key/query-track') c\n" +
+                " on a.date_time = c.date_time \n" +
+                " order by 1").build();
+        logger.info("query:{}",query);
+        return sqlExecutor.queryForList(query, UsageLogReport.class);
     }
 }
