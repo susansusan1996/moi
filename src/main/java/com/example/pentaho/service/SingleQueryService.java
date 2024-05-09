@@ -49,10 +49,10 @@ public class SingleQueryService {
         return redisService.findByKey(null, "1066693", null);
     }
 
-    public List<IbdTbAddrCodeOfDataStandardDTO> findJson(String originalString) throws NoSuchFieldException, IllegalAccessException {
+    public List<IbdTbAddrCodeOfDataStandardDTO> findJson(SingleQueryDTO singleQueryDTO) throws NoSuchFieldException, IllegalAccessException {
         List<IbdTbAddrCodeOfDataStandardDTO> list = new ArrayList<>();
         //切地址+找mappingId
-        Address address = parseAddressAndfindMappingId(originalString);
+        Address address = parseAddressAndfindMappingId(singleQueryDTO.getOriginalAddress());
         log.info("mappingId:{}", address.getMappingId());
         //找seq
         address = findSeqByMappingIdAndJoinStep(address);
