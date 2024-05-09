@@ -51,8 +51,10 @@ public class SingleQueryService {
 
     public List<IbdTbAddrCodeOfDataStandardDTO> findJson(SingleQueryDTO singleQueryDTO) throws NoSuchFieldException, IllegalAccessException {
         List<IbdTbAddrCodeOfDataStandardDTO> list = new ArrayList<>();
+        //刪除使用者重複input的縣市、鄉鎮
+        String cleanAddress = deleteRepeatCountyAndTown(singleQueryDTO);
         //切地址+找mappingId
-        Address address = parseAddressAndfindMappingId(singleQueryDTO.getOriginalAddress());
+        Address address = parseAddressAndfindMappingId(cleanAddress);
         log.info("mappingId:{}", address.getMappingId());
         //找seq
         address = findSeqByMappingIdAndJoinStep(address);
@@ -597,6 +599,26 @@ public class SingleQueryService {
             sb.append(entry.getValue());
         }
         return sb.toString();
+    }
+
+    //刪除使用者重複input的縣市、鄉鎮
+    private String deleteRepeatCountyAndTown(SingleQueryDTO singleQueryDTO) {
+        String county = singleQueryDTO.getCounty() == null ? "" : singleQueryDTO.getCounty();
+        String town = singleQueryDTO.getTown() == null ? "" : singleQueryDTO.getTown();
+        Pattern pattern = Pattern.compile("(" + county + town + ")");
+        Matcher matcher = pattern.matcher(singleQueryDTO.getOriginalAddress());
+        int count = 0;
+        String result = singleQueryDTO.getOriginalAddress();
+        while (matcher.find()) {
+            count++;
+            //出現兩次以上，才需要刪除第一次出現的鄉鎮市區
+            if (count >= 2) {
+                result = singleQueryDTO.getOriginalAddress().replaceFirst(matcher.group(), "");
+                log.info("重複輸入:{}", matcher.group());
+                return result;
+            }
+        }
+        return result;
     }
 
 }
