@@ -84,4 +84,18 @@ public class IbdTbIhChangeDoorplateHisRepositoryImpl implements IbdTbIhChangeDoo
             return null;
         }
     }
+
+    @Override
+    public List<String> findByHistorySeq(List<String> seq) {
+        List<Integer> seqWhenEmpty = new ArrayList<>();
+        seqWhenEmpty.add(-1);
+        Query query = Query.builder()
+                .append("SELECT ADDRESS_ID")
+                .append("FROM ADDR_ODS.IBD_TB_IH_CHANGE_DOORPLATE_HIS WHERE HISTORY_SEQ IN (:SEQ) ", seq.isEmpty() ? seqWhenEmpty: seq)
+                .append("AND ADR_VERSION IN (SELECT MAX( ADR_VERSION ) FROM ADDR_ODS.IBD_TB_IH_CHANGE_DOORPLATE_HIS)")
+                .build();
+        log.info("query:{}", query);
+        log.info("params:{}", query.getParameters());
+        return sqlExecutor.queryForList(query, String.class);
+    }
 }
