@@ -40,7 +40,7 @@ public class AddressParser {
     private final String TOWN = "(?<town>\\D+?(市區|鎮區|鎮市|[鄉鎮市區])|%s)?";
     private final String VILLAGE = "(?<village>\\D+?(?:[村里]+|村|里)|%s)?";
     private final String NEIGHBOR = "(?<neighbor>" + ALL_CHAR + "+鄰)?";
-    private final String ROAD = "(?<road>.+段|.+街|.+大道|.+路|%s(?!巷))?";
+    private final String ROAD = "(?<road>.+段(?!.*巷)|.+街(?!.*巷)|.+大道(?!.*巷)|.+路(?!.*巷)|%s(?!.*巷))?";
     private final String LANE = "(?<lane>.+巷)?";
     private final String ALLEY = "(?<alley>" + ALL_CHAR + "+弄" + DYNAMIC_ALLEY_PART + ")?";
     private final String SUBALLEY = "(?<subAlley>" + ALL_CHAR + "+[衖衕橫])?";
