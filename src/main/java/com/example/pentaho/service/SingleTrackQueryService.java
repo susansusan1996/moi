@@ -1,13 +1,11 @@
 package com.example.pentaho.service;
 
 
-import com.example.pentaho.component.ApServerComponent;
-import com.example.pentaho.component.Directory;
-import com.example.pentaho.component.IbdTbIhChangeDoorplateHis;
-import com.example.pentaho.component.SingleBatchQueryParams;
+import com.example.pentaho.component.*;
 import com.example.pentaho.exception.MoiException;
 import com.example.pentaho.repository.IbdTbIhChangeDoorplateHisRepository;
 import com.example.pentaho.utils.StringUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opencsv.CSVReader;
 import io.netty.util.internal.StringUtil;
 import org.slf4j.Logger;
@@ -32,7 +30,14 @@ import java.util.zip.ZipOutputStream;
 public class SingleTrackQueryService {
 
 
-    private static Logger log = LoggerFactory.getLogger(SingleTrackQueryService.class);
+    private final static Logger log = LoggerFactory.getLogger(SingleTrackQueryService.class);
+
+    private final static char[]  inValidatedChars= new char[] {'A','E','I','O','U'};
+
+    private final static ObjectMapper objectMapper = new ObjectMapper();
+
+
+    private final static CharacterNumMapping characterNumMapping =new CharacterNumMapping();
 
 
     @Autowired
@@ -45,9 +50,27 @@ public class SingleTrackQueryService {
     private IbdTbIhChangeDoorplateHisRepository ibdTbIhChangeDoorplateHisRepository;
 
 
-    public List<IbdTbIhChangeDoorplateHis> querySingleTrack(String addressId) {
+
+
+
+    public List<SingleQueryTrackDTO> querySingleTrack(String addressId) {
         log.info("addressId:{}",addressId);
-        return ibdTbIhChangeDoorplateHisRepository.findByAddressId(addressId);
+        /*回傳內容*/
+        SingleQueryTrackDTO dto = new SingleQueryTrackDTO();
+        List result = new ArrayList<SingleQueryTrackDTO>();
+        List<IbdTbIhChangeDoorplateHis> byAddressId = ibdTbIhChangeDoorplateHisRepository.findByAddressId(addressId);
+        if (byAddressId.isEmpty() || byAddressId == null){
+            boolean isValidate = checkSum(addressId);
+            if(isValidate){
+                dto.setText("該筆地址無異動軌跡");
+            }else{
+                dto.setText("地址識別碼不合法");
+            }
+        }else{
+          dto.setData(byAddressId);
+        }
+        result.add(dto);
+        return result;
     }
 
 
@@ -344,6 +367,136 @@ public class SingleTrackQueryService {
         }
         log.info("content:{}",content);
         return content.toString();
+    }
+
+
+    /***
+     * BSZ7538-0
+     * @param addressId
+     * @return
+     */
+    public boolean checkSum(String addressId){
+        boolean result = false;
+        try {
+            log.info("addressId:{}", addressId);
+
+            //長度低於9不合法
+            if(addressId.length() > 9){
+                return false;
+            }
+
+            //'-' 的位置不合法
+            if(addressId.indexOf("-") != 7){
+                return false;
+            }
+
+            char[] chars = addressId.toCharArray();
+            log.info("chars.length:{}",chars.length);
+
+            //取target
+           if(!isNumber(addressId.toCharArray()[8])){
+                return false;
+           }
+
+           int comparation = Integer.parseInt(String.valueOf(addressId.toCharArray()[8]));
+           if(comparation < 0 || comparation > 9){
+               return false;
+           }
+
+            //取mapping
+//            String filepath = Thread.currentThread().getClass().getResource("/mapping.json").toString();
+//            log.info("filePath:{}",filepath);
+//            Path path = ResourceUtils.getFile(filepath).toPath();
+//            String content = Files.readString(path);
+//            log.info("content:{}",content);
+
+            /*英文對應的數字**/
+            List<Integer> checkSums = new ArrayList<>();
+            char[] characters = addressId.substring(0, 3).toCharArray();
+            for(char w :characters){
+                for(Map<String,Integer> pair: characterNumMapping.getCharacterMapping()){
+                    String strChar = String.valueOf(w);
+                    if(pair.containsKey(strChar)){
+                        Integer value = pair.get(strChar);
+                        log.info("英文:"+strChar+",對應數字:"+value);
+                        checkSums.add(value);
+                    }
+                   }
+                }
+
+            //前三碼一定要對到，只要!=3即不合法
+            if(checkSums.size()!=3){
+                return false;
+            }
+
+
+            //確認英文後四碼能不能轉為數
+            char[] numChars = addressId.substring(3, 7).toCharArray();
+            for(char numChar:numChars){
+             if(!isNumber(numChar)){
+                 //只要一個非數就不合法
+                 return false;
+             }else{
+                 int num = Integer.parseInt(String.valueOf(numChar));
+                 //todo:不能超過2位，範圍是0~9嗎?
+                 if(num < 0 || num > 9){
+                     return false;
+                 }
+                 log.info("英文後四碼:{}",num);
+                 checkSums.add(num);
+             }
+            }
+            //開始計算
+            Integer sum = 0;
+            sum += checkSums.get(0)*7;
+            sum += checkSums.get(1)*6;
+            sum += checkSums.get(2)*5;
+            sum += checkSums.get(3)*4;
+            sum += checkSums.get(4)*3;
+            sum += checkSums.get(5)*2;
+            sum += checkSums.get(6)*1;
+
+            int sourceValue = sum % 10;
+            //sourceValue 找出對應的targetValue後，再與comparation(-0) 相比
+            log.info("被除數:{}",sum);
+            log.info("餘數:{}",sourceValue);
+            int targetVal = -1;
+            for(Map<String,Integer> pair:characterNumMapping.getNumMapping()){
+               if(pair.containsKey(String.valueOf(sourceValue))){
+                   targetVal = pair.get(String.valueOf(sourceValue));
+                   break;
+               }
+            }
+            log.info("對應的targetVal:{}",targetVal);
+            log.info("comparation:{}",comparation);
+
+            if(targetVal == -1){
+                return false;
+            }
+
+            if(targetVal == comparation){
+                return true;
+            }
+
+            return false;
+
+        }catch (Exception e){
+            log.info("e:{}",e.toString());
+        }
+        return result;
+    }
+
+
+
+
+    private boolean isNumber(char numChar){
+        try{
+            Double.parseDouble(String.valueOf(numChar));
+            return true;
+        }catch (Exception e){
+            log.info("e:{}",e.toString());
+            return false;
+        }
     }
 
 }

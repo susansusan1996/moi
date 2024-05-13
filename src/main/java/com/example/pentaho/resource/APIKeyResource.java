@@ -222,7 +222,7 @@ public class APIKeyResource {
                     )})
     @GetMapping("/query-track")
     @Authorized(keyName = "AP")
-    public ResponseEntity<List<IbdTbIhChangeDoorplateHis>> queryTrack(
+    public ResponseEntity<List<SingleQueryTrackDTO>> queryTrack(
             @Parameter(
                     description = "編碼",
                     required = true,
@@ -232,6 +232,9 @@ public class APIKeyResource {
                     )
             ) @RequestParam String addressId) {
         UsageUtils.writeUsageLog("/api/api-key/query-track",addressId);
+        if(addressId.indexOf("\"")>=0){
+            addressId = addressId.replaceAll("\"", "").trim();
+        }
         return new ResponseEntity<>(singleTrackQueryService.querySingleTrack(addressId), HttpStatus.OK);
     }
 

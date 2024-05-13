@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -100,7 +101,7 @@ public class SingleQueryResouce {
                             )})
     @PostMapping("/query-track")
     @Authorized(keyName = "SHENG")
-    public ResponseEntity<List<IbdTbIhChangeDoorplateHis>> queryTrack(
+    public ResponseEntity<List<SingleQueryTrackDTO>> queryTrack(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "編碼",
                     required = true,
@@ -110,7 +111,19 @@ public class SingleQueryResouce {
                     )
             )
             @RequestBody String addressId) {
+        if(addressId.indexOf("\"")>=0){
+            addressId = addressId.replaceAll("\"", "").trim();
+        }
         return new ResponseEntity<>(singleQueryTrackService.querySingleTrack(addressId), HttpStatus.OK);
+    }
+
+
+
+    @GetMapping("/test")
+    @Hidden
+    public void checkSum(@RequestParam String addressId){
+        boolean isValidate = singleQueryTrackService.checkSum(addressId);
+        log.info("isValidate:{}",isValidate);
     }
 
 
