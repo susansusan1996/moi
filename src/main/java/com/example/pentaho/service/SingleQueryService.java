@@ -64,14 +64,19 @@ public class SingleQueryService {
             //檢查是否history(歷史門牌)，2的話就是history
             if ('2' == address.getJoinStep().charAt(3)) {
                 log.info("歷史門牌!");
-                List<String> addressIdList = ibdTbIhChangeDoorplateHisRepository.findByHistorySeq(seqSet.stream().toList());
-                list = ibdTbAddrCodeOfDataStandardRepository.findByAddressId(addressIdList);
+                List<IbdTbIhChangeDoorplateHis> hisList = ibdTbIhChangeDoorplateHisRepository.findByHistorySeq(seqSet.stream().toList());
+                list = ibdTbAddrCodeOfDataStandardRepository.findByAddressId(hisList, address);
             } else {
                 list = ibdTbAddrCodeOfDataStandardRepository.findBySeq(seqSet.stream().map(Integer::parseInt).collect(Collectors.toList()));
             }
             //放地址比對代碼
             Address finalAddress = address;
-            list.forEach(IbdTbAddrDataRepositoryNewdto -> IbdTbAddrDataRepositoryNewdto.setJoinStep(finalAddress.getJoinStep()));
+            list.forEach(IbdTbAddrDataRepositoryNewdto -> {
+                if(!"JE621".equals(IbdTbAddrDataRepositoryNewdto.getJoinStep()))
+                {
+                    IbdTbAddrDataRepositoryNewdto.setJoinStep(finalAddress.getJoinStep());
+                }
+            });
         }
         return list;
     }

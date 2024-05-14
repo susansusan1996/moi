@@ -11,7 +11,7 @@ public interface IbdTbIhChangeDoorplateHisRepository {
 
     List<IbdTbIhChangeDoorplateHis> findByAddressIdList(List<String> addressIdList);
 
-    List<String> findByHistorySeq(List<String> seq);
+    List<IbdTbIhChangeDoorplateHis> findByHistorySeq(List<String> seq);
 
 
 }

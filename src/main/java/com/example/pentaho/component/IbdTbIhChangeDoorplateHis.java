@@ -37,6 +37,18 @@ public class IbdTbIhChangeDoorplateHis {
     @Schema(description = "異動日期", example = "20200701")
     private String updateDt;
 
+    /**門牌是否廢止*/
+    @Schema(description = "門牌是否廢止", example = "X")
+    private String status;
+
+    /**歷史SEQ*/
+    @Schema(description = "歷史SEQ", example = "11099781")
+    private Integer historySeq;
+
+    /**版本號碼*/
+    @Schema(description = "版本號碼", example = "2312.2")
+    private String adrVersion;
+
     public String getAddressId() {
         return addressId;
     }
@@ -85,6 +97,30 @@ public class IbdTbIhChangeDoorplateHis {
         this.updateDt = updateDt;
     }
 
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Integer getHistorySeq() {
+        return historySeq;
+    }
+
+    public void setHistorySeq(Integer historySeq) {
+        this.historySeq = historySeq;
+    }
+
+    public String getAdrVersion() {
+        return adrVersion;
+    }
+
+    public void setAdrVersion(String adrVersion) {
+        this.adrVersion = adrVersion;
+    }
+
     @Override
     public String toString() {
         return "IbdTbIhChangeDoorplateHis{" +
@@ -94,6 +130,9 @@ public class IbdTbIhChangeDoorplateHis {
                 ", wgsY='" + wgsY + '\'' +
                 ", updateType='" + updateType + '\'' +
                 ", updateDt='" + updateDt + '\'' +
+                ", status='" + status + '\'' +
+                ", historySeq=" + historySeq +
+                ", adrVersion='" + adrVersion + '\'' +
                 '}';
     }
 }
