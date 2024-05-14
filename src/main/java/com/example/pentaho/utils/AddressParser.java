@@ -54,7 +54,7 @@ public class AddressParser {
     private final String ROOM = "(?<room>.*?室)?";
     private final String BASEMENTSTR = "(?<basementStr>屋頂突出.*層|地下.*層|地下.*樓|地下|地下室|底層|屋頂|頂樓|屋頂突出物|屋頂樓|頂層)?";
     private final String ADDRREMAINS = "(?<addrRemains>.+)?";
-    private final String REMARK = "(?<remark>[\\(\\{\\〈\\【\\[\\〔\\『\\「\\「\\《](.*?)[\\)\\〉\\】\\]\\〕\\』\\」\\}\\」\\》])";
+    private final String REMARK = "(?<remark>[\\(\\{\\〈\\【\\[\\〔\\『\\「\\「\\《](.*?)[\\)\\〉\\】\\]\\〕\\』\\」\\}\\」\\》])?";
     //〈〉【】[]〔〕()『』「」{}「」《》
 
     public Address parseAddress(String origninalAddress, String newAddress, Address address) {
