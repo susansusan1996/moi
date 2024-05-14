@@ -95,10 +95,7 @@ public class SingleQueryResouce {
             },
             responses = {
                     @ApiResponse(responseCode = "200", description = "",
-                            content = @Content(schema = @Schema(implementation = IbdTbIhChangeDoorplateHis.class))),
-                    @ApiResponse(responseCode = "500", description = "",
-                            content = @Content(schema = @Schema(implementation = String.class), examples = @ExampleObject(value = ""))
-                            )})
+                            content = @Content(schema = @Schema(implementation = SingleQueryTrackDTO.class)))})
     @PostMapping("/query-track")
     @Authorized(keyName = "SHENG")
     public ResponseEntity<List<SingleQueryTrackDTO>> queryTrack(

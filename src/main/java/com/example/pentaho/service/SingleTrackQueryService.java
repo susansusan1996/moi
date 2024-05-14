@@ -60,13 +60,16 @@ public class SingleTrackQueryService {
         List result = new ArrayList<SingleQueryTrackDTO>();
         List<IbdTbIhChangeDoorplateHis> byAddressId = ibdTbIhChangeDoorplateHisRepository.findByAddressId(addressId);
         if (byAddressId.isEmpty() || byAddressId == null){
+            ArrayList<IbdTbIhChangeDoorplateHis> empty = new ArrayList<>();
             boolean isValidate = checkSum(addressId);
             if(isValidate){
                 dto.setText("該筆地址無異動軌跡");
             }else{
                 dto.setText("地址識別碼不合法");
             }
+            dto.setData(empty);
         }else{
+          dto.setText("");
           dto.setData(byAddressId);
         }
         result.add(dto);

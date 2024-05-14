@@ -16,7 +16,7 @@ public class SingleQueryTrackDTO {
     private String text ;
 
 
-    @Schema(description = "data",example = "")
+    @Schema(description ="data")
     private List<IbdTbIhChangeDoorplateHis> data;
 
 
