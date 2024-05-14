@@ -4,7 +4,6 @@ import com.example.pentaho.component.*;
 import com.example.pentaho.exception.MoiException;
 import com.example.pentaho.utils.RSAJWTUtils;
 import com.example.pentaho.utils.RsaUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,11 +22,6 @@ public class ApiKeyService {
 
     @Autowired
     private RedisService redisService;
-
-    private final static String SYSTEM_UPDATE_URI = "/functionRecord/singleQuery/systemUpdate";
-
-
-    private final static  ObjectMapper objectMapper = new ObjectMapper();
 
     private final int VALID_TIME = 1440;
 
