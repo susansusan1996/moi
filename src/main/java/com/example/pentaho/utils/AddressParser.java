@@ -54,12 +54,13 @@ public class AddressParser {
     private final String ROOM = "(?<room>.*?室)?";
     private final String BASEMENTSTR = "(?<basementStr>屋頂突出.*層|地下.*層|地下.*樓|地下|地下室|底層|屋頂|頂樓|屋頂突出物|屋頂樓|頂層)?";
     private final String ADDRREMAINS = "(?<addrRemains>.+)?";
-
+    private final String REMARK = "(?<remark>[\\(\\{\\〈\\【\\[\\〔\\『\\「\\「\\《](.*?)[\\)\\〉\\】\\]\\〕\\』\\」\\}\\」\\》])";
+    //〈〉【】[]〔〕()『』「」{}「」《》
 
     public Address parseAddress(String origninalAddress, String newAddress, Address address) {
         String input = newAddress == null ? origninalAddress : newAddress;
         //去除特殊字元
-        input = input.replaceAll("[`~!@#$%^&*()+=|{}';',\\[\\].<>/?~！@#￥%……&*（）——+|{}【】‘”“’。，、？\\\\\\s]+", "");
+        input = input.replaceAll("[`~!@#$%^&*+=|';',\\[\\].<>/?~！@#￥%……&*——+|‘”“’。，、？\\\\\\s]+", "");
         log.info("去除特殊字元後的input:{}",input);
         if (address == null) {
             address = new Address();
@@ -162,7 +163,7 @@ public class AddressParser {
         String newTown = String.format(TOWN , String.join("|",townList));
         String newVillage = String.format(VILLAGE , String.join("|",villageList));
         String newRoad = String.format(ROAD , String.join("|",roadList));
-        String finalPattern = newCounty + newTown + newVillage + NEIGHBOR + SPECIALLANE + newRoad + LANE + ALLEY + SUBALLEY + NUMFLR1 + NUMFLR2 + NUMFLR3 + NUMFLR4 + NUMFLR5 + CONTINUOUS_NUM + ROOM + BASEMENTSTR + ADDRREMAINS;
+        String finalPattern = newCounty + newTown + newVillage + NEIGHBOR + SPECIALLANE + newRoad + LANE + ALLEY + SUBALLEY + NUMFLR1 + NUMFLR2 + NUMFLR3 + NUMFLR4 + NUMFLR5 + CONTINUOUS_NUM + ROOM + BASEMENTSTR + REMARK + ADDRREMAINS;
 //        log.info("finalPattern==>{}",finalPattern);
         return finalPattern;
     }
@@ -199,6 +200,7 @@ public class AddressParser {
         address.setContinuousNum(matcher.group("continuousNum"));
         address.setRoom(matcher.group("room"));
         address.setAddrRemains(matcher.group("addrRemains"));
+        address.setRemark(matcher.group("remark"));
         return address;
     }
 
