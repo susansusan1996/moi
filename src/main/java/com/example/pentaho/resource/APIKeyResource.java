@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.text.ParseException;
 import java.util.List;
@@ -216,13 +217,11 @@ public class APIKeyResource {
             },
             responses = {
                     @ApiResponse(responseCode = "200", description = "",
-                            content = @Content(schema = @Schema(implementation = IbdTbIhChangeDoorplateHis.class))),
-                    @ApiResponse(responseCode = "500", description = "",
-                            content = @Content(schema = @Schema(implementation = String.class), examples = @ExampleObject(value = ""))
-                    )})
+                            content = @Content(schema = @Schema(implementation = SingleQueryTrackDTO.class))),
+                  })
     @GetMapping("/query-track")
     @Authorized(keyName = "AP")
-    public ResponseEntity<List<IbdTbIhChangeDoorplateHis>> queryTrack(
+    public ResponseEntity<List<SingleQueryTrackDTO>> queryTrack(
             @Parameter(
                     description = "編碼",
                     required = true,
@@ -232,7 +231,15 @@ public class APIKeyResource {
                     )
             ) @RequestParam String addressId) {
         UsageUtils.writeUsageLog("/api/api-key/query-track",addressId);
-        return new ResponseEntity<>(singleTrackQueryService.querySingleTrack(addressId), HttpStatus.OK);
+        try {
+            if (addressId.indexOf("\"") >= 0) {
+                addressId = addressId.replaceAll("\"", "").trim();
+            }
+            return new ResponseEntity<>(singleTrackQueryService.querySingleTrack(addressId), HttpStatus.OK);
+        }catch (Exception e){
+            log.info("e:{}",e.toString());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
 
@@ -287,35 +294,39 @@ public class APIKeyResource {
                             examples = @ExampleObject(value = "台南市東區衛國里007鄰衛國街１１４巷９弄１０號B六樓之５,臺南市(可為空),東區(可為空)")
                     )
             ) @RequestParam String singleQueryStr) {
+        try {
+            UsageUtils.writeUsageLog("/api/api-key/query-single", singleQueryStr);
+            log.info("單筆查詢，參數為:{}", singleQueryStr);
 
-        UsageUtils.writeUsageLog("/api/api-key/query-single",singleQueryStr);
-        log.info("單筆查詢，參數為:{}",singleQueryStr);
-
-        if(singleQueryStr.indexOf(",") >=0){
-            String[] params = singleQueryStr.split(",");
-            SingleQueryDTO singleQueryDTO = new SingleQueryDTO();
-            switch (params.length){
-                case 1:
-                    singleQueryDTO.setOriginalAddress(params[0]);
-                    break;
-                case 2:
-                    singleQueryDTO.setOriginalAddress(params[0]);
-                    singleQueryDTO.setCounty(params[1]);
-                    break;
-                case 3:
-                    singleQueryDTO.setOriginalAddress(params[0]);
-                    singleQueryDTO.setCounty(params[1]);
-                    singleQueryDTO.setTown(params[2]);
-                    break;
-                default:
-                    return new ResponseEntity<>("格式輸入錯誤，請重新確認",HttpStatus.BAD_REQUEST);
+            if (singleQueryStr.indexOf(",") >= 0) {
+                String[] params = singleQueryStr.split(",");
+                SingleQueryDTO singleQueryDTO = new SingleQueryDTO();
+                switch (params.length) {
+                    case 1:
+                        singleQueryDTO.setOriginalAddress(params[0]);
+                        break;
+                    case 2:
+                        singleQueryDTO.setOriginalAddress(params[0]);
+                        singleQueryDTO.setCounty(params[1]);
+                        break;
+                    case 3:
+                        singleQueryDTO.setOriginalAddress(params[0]);
+                        singleQueryDTO.setCounty(params[1]);
+                        singleQueryDTO.setTown(params[2]);
+                        break;
+                    default:
+                        return new ResponseEntity<>("格式輸入錯誤，請重新確認", HttpStatus.BAD_REQUEST);
+                }
+                log.info("singleQueryDTO:{}", singleQueryDTO);
+                return ResponseEntity.ok(singleQueryService.findJsonTest(singleQueryDTO));
+            } else {
+                SingleQueryDTO singleQueryDTO = new SingleQueryDTO();
+                singleQueryDTO.setOriginalAddress(singleQueryStr);
+                return ResponseEntity.ok(singleQueryService.findJsonTest(singleQueryDTO));
             }
-            log.info("singleQueryDTO:{}",singleQueryDTO);
-            return ResponseEntity.ok(singleQueryService.findJsonTest(singleQueryDTO));
-        }else{
-            SingleQueryDTO singleQueryDTO = new SingleQueryDTO();
-            singleQueryDTO.setOriginalAddress(singleQueryStr);
-            return ResponseEntity.ok(singleQueryService.findJsonTest(singleQueryDTO));
+        }catch (Exception e){
+            log.info("e:{}",e.toString());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
