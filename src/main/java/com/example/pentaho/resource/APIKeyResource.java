@@ -239,10 +239,7 @@ public class APIKeyResource {
         }catch (Exception e){
             log.info("e:{}",e.toString());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
-        }finally {
-        User user = UserContextUtils.getUserHolder();
-        apiKeyService.singleQuerySystemUpdate(user.getId(),"CHANGE");
-    }
+        }
     }
 
 
@@ -330,9 +327,6 @@ public class APIKeyResource {
         }catch (Exception e){
             log.info("e:{}",e.toString());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
-        }finally {
-            User user = UserContextUtils.getUserHolder();
-           apiKeyService.singleQuerySystemUpdate(user.getId(),"STANDARD");
         }
     }
 

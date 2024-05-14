@@ -2,41 +2,21 @@ package com.example.pentaho.service;
 
 import com.example.pentaho.component.*;
 import com.example.pentaho.exception.MoiException;
-import com.example.pentaho.utils.HeaderUtils;
 import com.example.pentaho.utils.RSAJWTUtils;
 import com.example.pentaho.utils.RsaUtils;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.*;
-import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
-
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.security.PrivateKey;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.UUID;
 
 @Service
 public class ApiKeyService {
     private static Logger log = LoggerFactory.getLogger(ApiKeyService.class);
     @Autowired
     private KeyComponent keyComponent;
-
-    @Autowired
-    private ApServerComponent apServerComponent;
 
     @Autowired
     private RefreshTokenService refreshTokenService;
@@ -137,35 +117,5 @@ public class ApiKeyService {
     }
 
 
-    /*
-    * 單筆查詢 & 單筆軌跡 給聖森更新使用狀況
-    * */
-    public void singleQuerySystemUpdate(String userId,String type){
-        log.info("userId:{}",userId);
-        log.info("type:{}",type);
-        try {
-            String targerUrl = apServerComponent.getTargetUrl() + SYSTEM_UPDATE_URI;
-            log.info("targetUrl: {}", targerUrl);
-
-            Path path = Path.of(apServerComponent.getToken());
-            String token = Files.readString(path, StandardCharsets.UTF_8);
-
-            RestTemplate restTemplate = new RestTemplate();
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", token);
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HashMap<String,String> params = new HashMap<>();
-            params.put("userId",userId);
-            params.put("type", type);
-
-            String jsonStr = objectMapper.writeValueAsString(params);
-            HttpEntity<String> request = new HttpEntity<>(jsonStr, headers);
-            log.info("request:{}",request);
-            String response = restTemplate.postForObject(targerUrl, request, String.class);
-            log.info("response:{}", response);
-        }catch (Exception e){
-            log.info("e:{}",e.toString());
-        }
-    }
 
 }

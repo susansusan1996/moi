@@ -63,9 +63,9 @@ public class SingleTrackQueryService {
             ArrayList<IbdTbIhChangeDoorplateHis> empty = new ArrayList<>();
             boolean isValidate = checkSum(addressId);
             if(isValidate){
-                dto.setText("該筆地址無異動軌跡");
+                dto.setText("該筆識別碼無異動軌跡");
             }else{
-                dto.setText("地址識別碼不合法");
+                dto.setText("檢核為非地址識別碼格式");
             }
             dto.setData(empty);
         }else{

@@ -4,6 +4,7 @@ import com.example.pentaho.component.*;
 import com.example.pentaho.service.SingleQueryService;
 import com.example.pentaho.service.SingleTrackQueryService;
 import com.example.pentaho.utils.AddressParser;
+import com.example.pentaho.utils.UserContextUtils;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -16,10 +17,11 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+import com.example.pentaho.service.SystemUpdateService;
 
 import java.util.List;
 
@@ -40,6 +42,10 @@ public class SingleQueryResouce {
 
     @Autowired
     private AddressParser addressParser;
+
+
+    @Autowired
+    private SystemUpdateService systemUpdateService;
 
 
     /**
@@ -76,7 +82,7 @@ public class SingleQueryResouce {
             @RequestBody SingleQueryDTO singleQueryDTO
     ) throws NoSuchFieldException, IllegalAccessException {
 //        try {
-            return ResponseEntity.ok(singleQueryService.findJson(singleQueryDTO));
+        return ResponseEntity.ok(singleQueryService.findJson(singleQueryDTO));
 //        } catch (Exception e) {
 //            log.info("無法解析地址:{}", e.getMessage());
 //            return ResponseEntity.ok("無法解析地址");
@@ -108,10 +114,18 @@ public class SingleQueryResouce {
                     )
             )
             @RequestBody String addressId) {
-        if(addressId.indexOf("\"")>=0){
-            addressId = addressId.replaceAll("\"", "").trim();
+        try {
+            if (addressId.indexOf("\"") >= 0) {
+                addressId = addressId.replaceAll("\"", "").trim();
+            }
+            return new ResponseEntity<>(singleQueryTrackService.querySingleTrack(addressId), HttpStatus.OK);
+        }catch (Exception e){
+            log.info("e:{}",e.toString());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+        }finally {
+            User user = UserContextUtils.getUserHolder();
+            systemUpdateService.singleQuerySystemUpdate(user.getId(),"CHANGE");
         }
-        return new ResponseEntity<>(singleQueryTrackService.querySingleTrack(addressId), HttpStatus.OK);
     }
 
 
