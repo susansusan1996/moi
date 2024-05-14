@@ -60,7 +60,7 @@ public class AddressParser {
     public Address parseAddress(String origninalAddress, String newAddress, Address address) {
         String input = newAddress == null ? origninalAddress : newAddress;
         //去除特殊字元
-        input = input.replaceAll("[`~!@#$%^&*+=|';',\\[\\].<>/?~！@#￥%……&*——+|‘”“’。，、？\\\\\\s]+", "");
+        input = input.replaceAll("[`~!@#$%^&*+=|';',\\[\\].<>/~！@#￥%……&*——+|‘”“’。，、\\\\\\s]+", "");
         log.info("去除特殊字元後的input:{}",input);
         if (address == null) {
             address = new Address();
