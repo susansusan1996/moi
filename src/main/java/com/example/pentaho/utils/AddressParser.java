@@ -34,6 +34,7 @@ public class AddressParser {
     private AliasRepository aliasRepository;
 
     private final String BASEMENT_PATTERN = "basement:[一二三四五六七八九十百千]+樓"; //經過一次PARSE之後，如果有地下或屋頂，都會被改為basement:開頭
+    private final String ALL_CHAR_FOR_ALLEY = "[0-9０-９A-ZＡ-Ｚa-zａ-ｚ\\uFF10-\\uFF19零一二三四五六七八九十百千甲乙丙丁戊己庚壹貳參肆伍陸柒捌玖拾佰卅廿整棟之-]";
     private final String ALL_CHAR = "[0-9０-９A-ZＡ-Ｚa-zａ-ｚ\\uFF10-\\uFF19零一二三四五六七八九十百千甲乙丙丁戊己庚壹貳參肆伍陸柒捌玖拾佰卅廿整棟]";
     private final String DYNAMIC_ALLEY_PART = "|卓厝|安農新邨|吉祥園|蕭厝|泰安新村|美喬|１弄圳東|堤外|中興二村|溝邊|長埤|清水|南苑|二橫路|朝安|黃泥塘|建行新村|牛頭|永和山莊";
     private final String COUNTY = "(?<zipcode>(^\\d{5}|^\\d{3})?)(?<county>.*?縣|.*?市|%s)?";
@@ -43,7 +44,7 @@ public class AddressParser {
     private final String SPECIALLANE = "(?<speciallane>鐵路.*巷|丹路.*巷)?"; //避免被切到路，直接先寫死在這裡
     private final String ROAD = "(?<road>(.*?段|.*?街|.*?大道|.*?路(?!巷)|%s)?)";
     private final String LANE = "(?<lane>.*?巷)?";
-    private final String ALLEY = "(?<alley>" + ALL_CHAR + "+弄" + DYNAMIC_ALLEY_PART + ")?";
+    private final String ALLEY = "(?<alley>" + ALL_CHAR_FOR_ALLEY + "+弄" + DYNAMIC_ALLEY_PART + ")?";
     private final String SUBALLEY = "(?<subAlley>" + ALL_CHAR + "+[衖衕橫])?";
     private final String NUMFLR1 = "(?<numFlr1>" + ALL_CHAR + "+[-號Ff樓之區棟]+|" + BASEMENT_PATTERN + ")?";
     private final String NUMFLR2 = "(?<numFlr2>[之-]+" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + ALL_CHAR+"+[FｆＦf]|"+ ALL_CHAR + "+[-號樓FｆＦf之區棟]|" + BASEMENT_PATTERN + "|" + ALL_CHAR + "+(?!室))?";

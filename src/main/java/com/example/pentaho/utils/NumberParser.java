@@ -13,6 +13,7 @@ public class NumberParser {
 
     public static String replaceWithHalfWidthNumber(String input) {
         if (input != null && !input.isEmpty()) {
+            input = input.replace("-","之");
             if (containsLittleChineseNumbers(input)) {
                 log.info("含有中文數字:{}", input);
                 String newNum = LittleDigitConvert.convertToDigit(input);
