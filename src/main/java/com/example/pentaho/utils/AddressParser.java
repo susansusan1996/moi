@@ -34,7 +34,7 @@ public class AddressParser {
     private AliasRepository aliasRepository;
 
     private final String BASEMENT_PATTERN = "basement:[一二三四五六七八九十百千]+樓"; //經過一次PARSE之後，如果有地下或屋頂，都會被改為basement:開頭
-    private final String ALL_CHAR = "[0-9A-ZＡ-Ｚ\\uFF10-\\uFF19零一二三四五六七八九十百千甲乙丙丁戊己庚壹貳參肆伍陸柒捌玖拾佰卅廿整棟]";
+    private final String ALL_CHAR = "[0-9０-９A-ZＡ-Ｚa-zａ-ｚ\\uFF10-\\uFF19零一二三四五六七八九十百千甲乙丙丁戊己庚壹貳參肆伍陸柒捌玖拾佰卅廿整棟]";
     private final String DYNAMIC_ALLEY_PART = "|卓厝|安農新邨|吉祥園|蕭厝|泰安新村|美喬|１弄圳東|堤外|中興二村|溝邊|長埤|清水|南苑|二橫路|朝安|黃泥塘|建行新村|牛頭|永和山莊";
     private final String COUNTY = "(?<zipcode>(^\\d{5}|^\\d{3})?)(?<county>.*?縣|.*?市|%s)?";
     private final String TOWN = "(?<town>\\D+?(市區|鎮區|鎮市|[鄉鎮市區])|%s)?";
@@ -192,11 +192,11 @@ public class AddressParser {
         address.setLane(matcher.group("speciallane") != null ? matcher.group("speciallane") : matcher.group("lane"));
         address.setAlley(matcher.group("alley"));
         address.setSubAlley(matcher.group("subAlley"));
-        address.setNumFlr1(matcher.group("numFlr1"));
-        address.setNumFlr2(matcher.group("numFlr2"));
-        address.setNumFlr3(matcher.group("numFlr3"));
-        address.setNumFlr4(matcher.group("numFlr4"));
-        address.setNumFlr5(matcher.group("numFlr5"));
+        address.setNumFlr1(parseBasementForBF(matcher.group("numFlr1"), address));
+        address.setNumFlr2(parseBasementForBF(matcher.group("numFlr2"), address));
+        address.setNumFlr3(parseBasementForBF(matcher.group("numFlr3"), address));
+        address.setNumFlr4(parseBasementForBF(matcher.group("numFlr4"), address));
+        address.setNumFlr5(parseBasementForBF(matcher.group("numFlr5"), address));
         address.setContinuousNum(matcher.group("continuousNum"));
         address.setRoom(matcher.group("room"));
         address.setAddrRemains(matcher.group("addrRemains"));
@@ -239,6 +239,34 @@ public class AddressParser {
             }
         }
         return origninalAddress;
+    }
+
+
+    //再PARSE一次已經在FLR_NUM_1~5 的BF、B1F
+    private String parseBasementForBF(String input, Address address) {
+        if (StringUtils.isNotNullOrEmpty(input)) {
+            String[] basemantPattern1 = {"BF", "bf", "B1", "b1", "Ｂ１", "ｂ１", "ＢＦ", "ｂｆ"};
+            String[] basemantPattern2 = {".*B.*F", ".*b.*f", ".*Ｂ.*Ｆ", ".*ｂ.*ｆ"};
+            if (Arrays.asList(basemantPattern1).contains(input)) {
+                log.info("basemantPattern1:{}", input);
+                address.setBasementStr("1");
+                return "一樓";
+            } else {
+                for (String basemantPattern : basemantPattern2) {
+                    Pattern regex = Pattern.compile(basemantPattern);
+                    Matcher basemantMatcher = regex.matcher(input);
+                    if (basemantMatcher.matches()) {
+                        // 提取數字
+                        String numericPart = extractNumericPart(input);
+                        log.info("basementString 提取數字部分:{} ", numericPart);
+                        address.setBasementStr("1");
+                        return replaceWithChineseNumber(numericPart) + "樓";
+
+                    }
+                }
+            }
+        }
+        return input; //如果都沒有符合b1的格式，表示沒有地下室的字眼，就返回原字串即可
     }
 
 
