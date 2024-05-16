@@ -86,22 +86,7 @@ public class SingleQueryService {
             });
         }
         if (list.isEmpty()) {
-            log.info("查無資料");
-            IbdTbAddrCodeOfDataStandardDTO dto = new IbdTbAddrCodeOfDataStandardDTO();
-            String segNum = address.getSegmentExistNumber();
-            if (!segNum.startsWith("11")) {
-                dto.setJoinStep("JE431"); //缺少行政區 >>> 如果最後都沒有比到的話，同時沒有寫 縣市、鄉鎮市區
-                result.setText("缺少行政區");
-            } else if (segNum.startsWith("11") && '1' != segNum.charAt(4) && '1' != segNum.charAt(5)) {
-                dto.setJoinStep("JE421"); //缺少路地名 >>> 如果最後都沒有比到的話，地址中同時沒有寫路名、地名、巷名
-                result.setText("缺少路地名");
-            } else if ('1' == segNum.charAt(0) && '1' == segNum.charAt(1) && '1' == segNum.charAt(4) && '1' == segNum.charAt(8)) { //地址完整切割但比對不到母體檔(NEW那張)
-                dto.setJoinStep("JE511");
-                result.setText("查無地址");
-            }else {
-                result.setText("查無地址");
-            }
-            list.add(dto);
+            setJoinStepWhenResultIsEmpty(list,result,address); //JE431、JE421、JE511會在這邊寫入
         }
         result.setData(list);
         return result;
@@ -655,6 +640,25 @@ public class SingleQueryService {
     //如果input的地址包含、~就歸類在多重地址，就要吐回"該地址屬於多重地址"
     Boolean checkIfMultiAddress(SingleQueryDTO singleQueryDTO) {
         return singleQueryDTO.getOriginalAddress().matches(".*[、~].*");
+    }
+
+    void setJoinStepWhenResultIsEmpty(List<IbdTbAddrCodeOfDataStandardDTO> list, SingleQueryResultDTO result, Address address) {
+        log.info("查無資料");
+        IbdTbAddrCodeOfDataStandardDTO dto = new IbdTbAddrCodeOfDataStandardDTO();
+        String segNum = address.getSegmentExistNumber();
+        if (!segNum.startsWith("11")) {
+            dto.setJoinStep("JE431"); //缺少行政區 >>> 如果最後都沒有比到的話，同時沒有寫 縣市、鄉鎮市區
+            result.setText("缺少行政區");
+        } else if (segNum.startsWith("11") && '1' != segNum.charAt(4) && '1' != segNum.charAt(5)) {
+            dto.setJoinStep("JE421"); //缺少路地名 >>> 如果最後都沒有比到的話，地址中同時沒有寫路名、地名、巷名
+            result.setText("缺少路地名");
+        } else if ('1' == segNum.charAt(0) && '1' == segNum.charAt(1) && '1' == segNum.charAt(4) && '1' == segNum.charAt(8)) { //地址完整切割但比對不到母體檔(NEW那張)
+            dto.setJoinStep("JE511");
+            result.setText("查無地址");
+        } else {
+            result.setText("查無地址");
+        }
+        list.add(dto);
     }
 
 
