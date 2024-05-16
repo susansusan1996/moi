@@ -72,7 +72,7 @@ public class NumberParser {
                 return result.toString();
             }
         }
-        return "";
+        return input;
     }
 
     //檢查有無匹配國字大小寫數字
