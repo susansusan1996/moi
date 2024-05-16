@@ -75,13 +75,34 @@ public class SingleQueryService {
             //放地址比對代碼
             Address finalAddress = address;
             list.forEach(IbdTbAddrDataRepositoryNewdto -> {
-                if(!"JE621".equals(IbdTbAddrDataRepositoryNewdto.getJoinStep()))
+                if (!"JE621".equals(IbdTbAddrDataRepositoryNewdto.getJoinStep())
+                        && !"JE431".equals(finalAddress.getJoinStep()) //缺少行政區
+                        && !"JE421".equals(finalAddress.getJoinStep()) //缺少路地名
+                        && !"JE511".equals(finalAddress.getJoinStep()) //地址完整切割但比對不到母體檔
+                )
                 {
                     IbdTbAddrDataRepositoryNewdto.setJoinStep(finalAddress.getJoinStep());
                 }
             });
         }
-        result.setText(!list.isEmpty() ? "" : "查無地址");
+        if (list.isEmpty()) {
+            log.info("查無資料");
+            IbdTbAddrCodeOfDataStandardDTO dto = new IbdTbAddrCodeOfDataStandardDTO();
+            String segNum = address.getSegmentExistNumber();
+            if (!segNum.startsWith("11")) {
+                dto.setJoinStep("JE431"); //缺少行政區 >>> 如果最後都沒有比到的話，同時沒有寫 縣市、鄉鎮市區
+                result.setText("缺少行政區");
+            } else if (segNum.startsWith("11") && '1' != segNum.charAt(4) && '1' != segNum.charAt(5)) {
+                dto.setJoinStep("JE421"); //缺少路地名 >>> 如果最後都沒有比到的話，地址中同時沒有寫路名、地名、巷名
+                result.setText("缺少路地名");
+            } else if ('1' == segNum.charAt(0) && '1' == segNum.charAt(1) && '1' == segNum.charAt(4) && '1' == segNum.charAt(8)) { //地址完整切割但比對不到母體檔(NEW那張)
+                dto.setJoinStep("JE511");
+                result.setText("查無地址");
+            }else {
+                result.setText("查無地址");
+            }
+            list.add(dto);
+        }
         result.setData(list);
         return result;
     }
