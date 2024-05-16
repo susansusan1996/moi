@@ -154,9 +154,9 @@ public class SingleQueryService {
         }
         //沒找到
         //找不到符合得64碼。那就要把這串64碼，用join_step的邏輯一步一步(StepByStep)比較看看，看到哪一個join_step，會找到匹配的64碼
-        else {
-            seqSet.addAll(joinStepService.findSeqStepByStep(address));
-        }
+//        else {
+//            seqSet.addAll(joinStepService.findSeqStepByStep(address));
+//        }
         //多址判斷
         replaceJoinStepWhenMultiAdress(address,seqSet);
         address.setSeqSet(seqSet);
