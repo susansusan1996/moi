@@ -1,9 +1,6 @@
 package com.example.pentaho.service;
 
-import com.example.pentaho.component.Address;
-import com.example.pentaho.component.IbdTbAddrCodeOfDataStandardDTO;
-import com.example.pentaho.component.IbdTbIhChangeDoorplateHis;
-import com.example.pentaho.component.SingleQueryDTO;
+import com.example.pentaho.component.*;
 import com.example.pentaho.repository.IbdTbAddrCodeOfDataStandardRepository;
 import com.example.pentaho.repository.IbdTbIhChangeDoorplateHisRepository;
 import com.example.pentaho.utils.AddressParser;
@@ -49,7 +46,13 @@ public class SingleQueryService {
         return redisService.findByKey(null, "1066693", null);
     }
 
-    public List<IbdTbAddrCodeOfDataStandardDTO> findJson(SingleQueryDTO singleQueryDTO) throws NoSuchFieldException, IllegalAccessException {
+    public SingleQueryResultDTO findJson(SingleQueryDTO singleQueryDTO) throws NoSuchFieldException, IllegalAccessException {
+        SingleQueryResultDTO result = new SingleQueryResultDTO();
+        //確認是否是"連號"的地址
+        if(checkIfMultiAddress(singleQueryDTO)){
+            result.setText("該地址屬於多重地址");
+            return result;
+        }
         List<IbdTbAddrCodeOfDataStandardDTO> list = new ArrayList<>();
         //刪除使用者重複input的縣市、鄉鎮
         String cleanAddress = deleteRepeatCountyAndTown(singleQueryDTO);
@@ -78,7 +81,9 @@ public class SingleQueryService {
                 }
             });
         }
-        return list;
+        result.setText(!list.isEmpty() ? "" : "查無地址");
+        result.setData(list);
+        return result;
     }
 
     public Address parseAddressAndfindMappingId(String originalString) {
@@ -625,5 +630,11 @@ public class SingleQueryService {
         }
         return result;
     }
+
+    //如果input的地址包含、~就歸類在多重地址，就要吐回"該地址屬於多重地址"
+    Boolean checkIfMultiAddress(SingleQueryDTO singleQueryDTO) {
+        return singleQueryDTO.getOriginalAddress().matches(".*[、~].*");
+    }
+
 
 }

@@ -63,7 +63,7 @@ public class SingleQueryResouce {
                             schema = @Schema(type = "string"))}
     )
     @PostMapping("/query-single")
-    public ResponseEntity<List<IbdTbAddrCodeOfDataStandardDTO>> queryAddress(
+    public ResponseEntity<SingleQueryResultDTO> queryAddress(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "單筆查詢，request body 要帶 json，需包含:originalAddress、county(可為空)、town(可為空)。具體資料格式如下:",
                     required = true,
