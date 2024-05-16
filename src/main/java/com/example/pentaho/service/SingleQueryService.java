@@ -55,7 +55,7 @@ public class SingleQueryService {
         }
         List<IbdTbAddrCodeOfDataStandardDTO> list = new ArrayList<>();
         //刪除使用者重複input的縣市、鄉鎮
-        String cleanAddress = deleteRepeatCountyAndTown(singleQueryDTO);
+        String cleanAddress = removeRepeatCountyAndTown(singleQueryDTO);
         //切地址+找mappingId
         Address address = parseAddressAndfindMappingId(cleanAddress);
         log.info("mappingId:{}", address.getMappingId());
@@ -612,7 +612,7 @@ public class SingleQueryService {
     }
 
     //刪除使用者重複input的縣市、鄉鎮
-    private String deleteRepeatCountyAndTown(SingleQueryDTO singleQueryDTO) {
+    private String removeRepeatCountyAndTown(SingleQueryDTO singleQueryDTO) {
         String county = singleQueryDTO.getCounty() == null ? "" : singleQueryDTO.getCounty();
         String town = singleQueryDTO.getTown() == null ? "" : singleQueryDTO.getTown();
         Pattern pattern = Pattern.compile("(" + county + town + ")");
