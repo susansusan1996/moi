@@ -52,6 +52,7 @@ public class Address {
     private Set<String> seqSet;
     private String numTypeCd; //臨建特附
     private Boolean hasRoadArea; //有寫路地名為true，沒寫為false
+    private String remark;
 
 
     public Address() {
@@ -430,6 +431,14 @@ public class Address {
         MappingIdList = mappingIdList;
     }
 
+    public String getRemark() {
+        return remark;
+    }
+
+    public void setRemark(String remark) {
+        this.remark = remark;
+    }
+
     @Override
     public String toString() {
         return "Address{" +
@@ -469,7 +478,7 @@ public class Address {
                 ", addrRemains='" + addrRemains + '\'' +
                 ", isParseSuccessed=" + isParseSuccessed +
                 ", originalAddress='" + originalAddress + '\'' +
-                ", mappingId='" + mappingId + '\'' +
+                ", mappingId=" + mappingId +
                 ", segmentExistNumber='" + segmentExistNumber + '\'' +
                 ", mappingIdMap=" + mappingIdMap +
                 ", MappingIdList=" + MappingIdList +
@@ -477,6 +486,7 @@ public class Address {
                 ", seqSet=" + seqSet +
                 ", numTypeCd='" + numTypeCd + '\'' +
                 ", hasRoadArea=" + hasRoadArea +
+                ", remark='" + remark + '\'' +
                 '}';
     }
 }

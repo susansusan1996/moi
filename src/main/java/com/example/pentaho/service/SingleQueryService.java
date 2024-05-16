@@ -1,9 +1,6 @@
 package com.example.pentaho.service;
 
-import com.example.pentaho.component.Address;
-import com.example.pentaho.component.IbdTbAddrCodeOfDataStandardDTO;
-import com.example.pentaho.component.IbdTbIhChangeDoorplateHis;
-import com.example.pentaho.component.SingleQueryDTO;
+import com.example.pentaho.component.*;
 import com.example.pentaho.repository.IbdTbAddrCodeOfDataStandardRepository;
 import com.example.pentaho.repository.IbdTbIhChangeDoorplateHisRepository;
 import com.example.pentaho.utils.AddressParser;
@@ -49,10 +46,18 @@ public class SingleQueryService {
         return redisService.findByKey(null, "1066693", null);
     }
 
-    public List<IbdTbAddrCodeOfDataStandardDTO> findJson(SingleQueryDTO singleQueryDTO) throws NoSuchFieldException, IllegalAccessException {
+    public SingleQueryResultDTO findJson(SingleQueryDTO singleQueryDTO) throws NoSuchFieldException, IllegalAccessException {
+        SingleQueryResultDTO result = new SingleQueryResultDTO();
+        //確認是否是"連號"的地址
+        if(checkIfMultiAddress(singleQueryDTO)){
+            result.setText("該地址屬於多重地址");
+            return result;
+        }
         List<IbdTbAddrCodeOfDataStandardDTO> list = new ArrayList<>();
+        //刪除使用者重複input的縣市、鄉鎮
+        String cleanAddress = deleteRepeatCountyAndTown(singleQueryDTO);
         //切地址+找mappingId
-        Address address = parseAddressAndfindMappingId(singleQueryDTO.getOriginalAddress());
+        Address address = parseAddressAndfindMappingId(cleanAddress);
         log.info("mappingId:{}", address.getMappingId());
         //找seq
         address = findSeqByMappingIdAndJoinStep(address);
@@ -62,16 +67,23 @@ public class SingleQueryService {
             //檢查是否history(歷史門牌)，2的話就是history
             if ('2' == address.getJoinStep().charAt(3)) {
                 log.info("歷史門牌!");
-                List<String> addressIdList = ibdTbIhChangeDoorplateHisRepository.findByHistorySeq(seqSet.stream().toList());
-                list = ibdTbAddrCodeOfDataStandardRepository.findByAddressId(addressIdList);
+                List<IbdTbIhChangeDoorplateHis> hisList = ibdTbIhChangeDoorplateHisRepository.findByHistorySeq(seqSet.stream().toList());
+                list = ibdTbAddrCodeOfDataStandardRepository.findByAddressId(hisList, address);
             } else {
                 list = ibdTbAddrCodeOfDataStandardRepository.findBySeq(seqSet.stream().map(Integer::parseInt).collect(Collectors.toList()));
             }
             //放地址比對代碼
             Address finalAddress = address;
-            list.forEach(IbdTbAddrDataRepositoryNewdto -> IbdTbAddrDataRepositoryNewdto.setJoinStep(finalAddress.getJoinStep()));
+            list.forEach(IbdTbAddrDataRepositoryNewdto -> {
+                if(!"JE621".equals(IbdTbAddrDataRepositoryNewdto.getJoinStep()))
+                {
+                    IbdTbAddrDataRepositoryNewdto.setJoinStep(finalAddress.getJoinStep());
+                }
+            });
         }
-        return list;
+        result.setText(!list.isEmpty() ? "" : "查無地址");
+        result.setData(list);
+        return result;
     }
 
     public Address parseAddressAndfindMappingId(String originalString) {
@@ -598,5 +610,31 @@ public class SingleQueryService {
         }
         return sb.toString();
     }
+
+    //刪除使用者重複input的縣市、鄉鎮
+    private String deleteRepeatCountyAndTown(SingleQueryDTO singleQueryDTO) {
+        String county = singleQueryDTO.getCounty() == null ? "" : singleQueryDTO.getCounty();
+        String town = singleQueryDTO.getTown() == null ? "" : singleQueryDTO.getTown();
+        Pattern pattern = Pattern.compile("(" + county + town + ")");
+        Matcher matcher = pattern.matcher(singleQueryDTO.getOriginalAddress());
+        int count = 0;
+        String result = singleQueryDTO.getOriginalAddress();
+        while (matcher.find()) {
+            count++;
+            //出現兩次以上，才需要刪除第一次出現的鄉鎮市區
+            if (count >= 2) {
+                result = singleQueryDTO.getOriginalAddress().replaceFirst(matcher.group(), "");
+                log.info("重複輸入:{}", matcher.group());
+                return result;
+            }
+        }
+        return result;
+    }
+
+    //如果input的地址包含、~就歸類在多重地址，就要吐回"該地址屬於多重地址"
+    Boolean checkIfMultiAddress(SingleQueryDTO singleQueryDTO) {
+        return singleQueryDTO.getOriginalAddress().matches(".*[、~].*");
+    }
+
 
 }
