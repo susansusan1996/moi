@@ -86,11 +86,18 @@ public class LittleDigitConvert {
      * @return
      */
     public static String convertToDigit(String upper){
-        Pattern regexPattern = Pattern.compile(".*十.*"); // 使用通配符.*匹配"十"前后的任意字符
+        Pattern regexPattern = Pattern.compile(".*[^一二三四五六七八九]十[一二三四五六七八九]?.*"); //特別處理11~19
         Matcher matcher = regexPattern.matcher(upper);
         if (matcher.matches() && upper.indexOf("十") == upper.lastIndexOf("十")) {
-            //只有一個十的狀況ex.十樓
-            return "10";
+            int number = 10;
+            String[] digits = {"一", "二", "三", "四", "五", "六", "七", "八", "九"};
+            String[] digitValues = {"1", "2", "3", "4", "5", "6", "7", "8", "9"};
+            for (int i = 0; i < digits.length; i++) {
+                if (upper.contains(digits[i])) {
+                    number += Integer.parseInt(digitValues[i]);
+                }
+            }
+            return String.valueOf(number);
         }
         long digit = 1L;  //倍数
         long result = 0L; //最终结果
@@ -133,6 +140,7 @@ public class LittleDigitConvert {
                 }
             }
         }
+        System.out.println("String.valueOf(result): "+String.valueOf(result));
         return String.valueOf(result);
     }
 }
