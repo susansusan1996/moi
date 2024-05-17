@@ -47,10 +47,10 @@ public class AddressParser {
     private final String ALLEY = "(?<alley>" + ALL_CHAR_FOR_ALLEY + "+弄" + DYNAMIC_ALLEY_PART + ")?";
     private final String SUBALLEY = "(?<subAlley>" + ALL_CHAR + "+[衖衕橫])?";
     private final String NUMFLR1 = "(?<numFlr1>" + ALL_CHAR + "+[-號Ff樓之區棟]+|" + BASEMENT_PATTERN + ")?";
-    private final String NUMFLR2 = "(?<numFlr2>[之-－－]+" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + ALL_CHAR+"+[FｆＦf]|"+ ALL_CHAR + "+[-－號樓FｆＦf之區棟]|" + BASEMENT_PATTERN + "|" + ALL_CHAR + "+(?!室))?";
-    private final String NUMFLR3 = "(?<numFlr3>[之-－]+" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + ALL_CHAR+"+[FｆＦf]|"+ ALL_CHAR + "+[-－號樓FｆＦf之區棟]|" + BASEMENT_PATTERN + "|" + ALL_CHAR + "+(?!室))?";
-    private final String NUMFLR4 = "(?<numFlr4>[之-－]+" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + ALL_CHAR+"+[FｆＦf]|"+ ALL_CHAR + "+[-－號樓FｆＦf之區棟]|" + BASEMENT_PATTERN + "|" + ALL_CHAR + "+(?!室))?";
-    private final String NUMFLR5 = "(?<numFlr5>[之-－]+" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + BASEMENT_PATTERN + ")?";
+    private final String NUMFLR2 = "(?<numFlr2>"+ALL_CHAR + "+[-－號樓FｆＦf之區棟]|" +"[之-－]+" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + ALL_CHAR+"+[FｆＦf]|"+  BASEMENT_PATTERN + "|" + ALL_CHAR + "+(?!室))?";
+    private final String NUMFLR3 = "(?<numFlr3>"+ALL_CHAR + "+[-－號樓FｆＦf之區棟]|" +"[之-－]+" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + ALL_CHAR+"+[FｆＦf]|"+  BASEMENT_PATTERN + "|" + ALL_CHAR + "+(?!室))?";
+    private final String NUMFLR4 = "(?<numFlr4>"+ALL_CHAR + "+[-－號樓FｆＦf之區棟]|" +"[之-－]+" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + ALL_CHAR+"+[FｆＦf]|"+  BASEMENT_PATTERN + "|" + ALL_CHAR + "+(?!室))?";
+    private final String NUMFLR5 = "(?<numFlr5>"+ALL_CHAR + "+[-－號樓FｆＦf之區棟]|" +"[之-－]+" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + ALL_CHAR+"+[FｆＦf]|"+  BASEMENT_PATTERN + "|" + ALL_CHAR + "+(?!室))?";
     private final String CONTINUOUS_NUM = "(?<continuousNum>[之-－]+.*[樓FｆＦf])?"; //之45一樓
     private final String ROOM = "(?<room>.*?室)?";
     private final String BASEMENTSTR = "(?<basementStr>屋頂突出.*層|地下.*層|地下.*樓|地下|地下室|底層|屋頂|頂樓|屋頂突出物|屋頂樓|頂層)?";
