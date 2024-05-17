@@ -36,7 +36,7 @@ public class AddressParser {
     private final String ALL_CHAR_FOR_ALLEY = "[0-9０-９A-ZＡ-Ｚa-zａ-ｚ\\uFF10-\\uFF19零一二三四五六七八九十百千甲乙丙丁戊己庚壹貳參肆伍陸柒捌玖拾佰卅廿整棟之-]";
     private final String ALL_CHAR = "[0-9０-９A-ZＡ-Ｚa-zａ-ｚ\\uFF10-\\uFF19零一二三四五六七八九十百千甲乙丙丁戊己庚壹貳參肆伍陸柒捌玖拾佰卅廿整棟]";
     private final String DYNAMIC_ALLEY_PART = "|卓厝|安農新邨|吉祥園|蕭厝|泰安新村|美喬|１弄圳東|堤外|中興二村|溝邊|長埤|清水|南苑|二橫路|朝安|黃泥塘|建行新村|牛頭|永和山莊";
-    private final String COUNTY = "(?<zipcode>(^\\d{5}|^\\d{3})?)(?<county>.*?縣|.*?市|%s)?";
+    private final String COUNTY = "(?<zipcode>(^\\d{5}|^\\d{3}|^\\d)?)(?<county>.*?縣|.*?市|%s)?";
     private final String TOWN = "(?<town>\\D+?(市區|鎮區|鎮市|[鄉鎮市區])|%s)?";
     private final String VILLAGE = "(?<village>.*新里里|.*村里|.*?村|.*?里|%s)?";
     private final String NEIGHBOR = "(?<neighbor>" + ALL_CHAR + "+鄰)?";
@@ -60,6 +60,8 @@ public class AddressParser {
 
     public Address parseAddress(String origninalAddress, String newAddress, Address address) {
         String input = newAddress == null ? origninalAddress : newAddress;
+        //去"台灣省"
+        input = input.replace("台灣省", "");
         //去除特殊字元
         input = input.replaceAll("[`!@#$%^&*+=|';',\\[\\].<>/！@#￥%……&*+|‘”“’。，\\\\\\s]+", "");
         log.info("去除特殊字元後的input:{}",input);
@@ -69,11 +71,12 @@ public class AddressParser {
                 address.setOriginalAddress(origninalAddress);
             }
         }
+        address.setCleanAddress(input);
         String pattern = getPattern(); //組正則表達式
         Pattern regexPattern = Pattern.compile(pattern);
         Matcher matcher = regexPattern.matcher(input);
         if (matcher.matches()) {
-            return setAddress(matcher, address, input);
+            return setAddress(matcher, address);
         }
         return null;
     }
@@ -101,12 +104,10 @@ public class AddressParser {
         //如果有再找到area，就把area砍掉，切出其他address片段
         if(StringUtils.isNotNullOrEmpty(match)){
             address.setArea(match);
-            String originalAddress = address.getOriginalAddress();
-            log.info("originalAddress:{}",originalAddress);
+            String cleanAddress = address.getCleanAddress();
             log.info("match:{}",match);
-            int lastIndex = originalAddress.lastIndexOf(match);
-            String newAddressString = originalAddress.substring(0, lastIndex) + originalAddress.substring(lastIndex + match.length());
-            log.info("newAddressString:{}",newAddressString);
+            int lastIndex = cleanAddress.lastIndexOf(match);
+            String newAddressString = cleanAddress.substring(0, lastIndex) + cleanAddress.substring(lastIndex + match.length());
             address = parseAddress(null,newAddressString, address);
 
         }
@@ -180,12 +181,12 @@ public class AddressParser {
         return area;
     }
 
-    public Address setAddress(Matcher matcher, Address address, String origninalAddress) {
+    public Address setAddress(Matcher matcher, Address address) {
         address.setParseSuccessed(true);
         String basementString = matcher.group("basementStr");
         // 特殊處理地下一層和地下的情況
         if (StringUtils.isNotNullOrEmpty(basementString)) {
-            return parseAddress(null, parseBasement(basementString, origninalAddress, address), address);
+            return parseAddress(null, parseBasement(basementString, address.getCleanAddress(), address), address);
         }
         address.setZipcode(matcher.group("zipcode"));
         address.setCounty(matcher.group("county"));
