@@ -51,7 +51,7 @@ public class AddressParser {
     private final String NUMFLR3 = "(?<numFlr3>"+ALL_CHAR + "+[-－號樓FｆＦf之區棟]{1}|" +"[之-－]{1}" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + ALL_CHAR+"+[FｆＦf]{1}|"+  BASEMENT_PATTERN + "|" + ALL_CHAR + "+(?!室))?";
     private final String NUMFLR4 = "(?<numFlr4>"+ALL_CHAR + "+[-－號樓FｆＦf之區棟]{1}|" +"[之-－]{1}" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + ALL_CHAR+"+[FｆＦf]{1}|"+  BASEMENT_PATTERN + "|" + ALL_CHAR + "+(?!室))?";
     private final String NUMFLR5 = "(?<numFlr5>"+ALL_CHAR + "+[-－號樓FｆＦf之區棟]{1}|" +"[之-－]{1}" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + ALL_CHAR+"+[FｆＦf]{1}|"+  BASEMENT_PATTERN + "|" + ALL_CHAR + "+(?!室))?";
-    private final String CONTINUOUS_NUM = "(?<continuousNum>之" + ALL_CHAR + "+[樓FｆＦf]{1})?";
+    private final String CONTINUOUS_NUM = "(?<continuousNum>[之-－]{1}" + ALL_CHAR + "+[樓FｆＦf]{1})?";
     private final String ROOM = "(?<room>.*?室)?";
     private final String BASEMENTSTR = "(?<basementStr>屋頂突出.*層|地下.*層|地下.*樓|地下|地下室|底層|屋頂|頂樓|屋頂突出物|屋頂樓|頂層|頂加|頂)?";
     private final String ADDRREMAINS = "(?<addrRemains>.+)?";
