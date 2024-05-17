@@ -4,7 +4,7 @@ spring:
     #    db0: 存refrsesh_token
     redis0:
       database: 0
-      host: 10.193.15.102
+      host: 10.199.1.115
       port: 6379
       password: 1qaz@WSX
       lettuce:
@@ -16,7 +16,7 @@ spring:
     #    db1: 存64碼
     redis1:
       database: 1
-      host: 10.193.15.102
+      host: 10.199.1.115
       port: 6379
       password: 1qaz@WSX
       lettuce:
@@ -28,7 +28,7 @@ spring:
     #    db2: 存cd碼
     redis2:
       database: 2
-      host: 10.193.15.102
+      host: 10.199.1.115
       port: 6379
       password: 1qaz@WSX
       lettuce:
@@ -38,13 +38,13 @@ spring:
           max-idle: 8 # 连接池中的最大空闲连接 默认 8
           min-idle: 0 # 连接池中的最小空闲连接 默认 0
   datasource:
-    jdbc-url: jdbc:vertica://10.193.15.104:5433/vdb
+    jdbc-url: jdbc:vertica://10.199.1.117:5433/vdb
     username: dbadmin
     password: 1qaz@WSX
     driver-class-name: com.vertica.jdbc.Driver
     hikari:
       driver-class-name: io.opentracing.contrib.jdbc.TracingDriver
-      jdbc-url: jdbc:vertica://10.193.15.104:5433/vdb
+      jdbc-url: jdbc:vertica://10.199.1.117:5433/vdb
       poolName: Hikari
       auto-commit: false
       data-source-properties:
@@ -58,14 +58,14 @@ server:
 
 pentaho:
   #pentaho server IP (正式區) 8.3
-  web-target: http://10.193.15.103:8080/pentaho
+  web-target: http://10.199.1.116:8080/pentaho
   username: admin
   password: password
 
 
 directory:
   #pentaho server IP (正式區) 8.3 username:rhel
-  target: http://10.193.15.103
+  target: http://10.199.1.116
   #批次 原始csv存放目錄
   receive-file-dir: /home/moi/addr/batch_data/receive/
   #批次 zip檔存放目錄
@@ -94,14 +94,14 @@ key:
 
 apserver:
   #  批次查詢: 聖森接收批次結束檔案的api url 聖森後端AP
-  target-url: http://10.192.15.102:7008/addr/api/iisi
+  target-url: http://10.199.1.112:8080/addr/api/iisi
   batchform-update:
   bigquery-update:
   token: /home/moi/app/token/token.txt
 
 #Pentaho Server
 sftputils:
- host: 10.193.15.103
+ host: 10.199.1.116
  port: 22
  username: moi
  password: 1qaz@WSX
