@@ -117,38 +117,6 @@ public class AddressParser {
 
 
 
-    private String findArea(String input, Address address) {
-        if (!input.isEmpty()) {
-            List<String> areaSet = getArea().stream()
-//                    .map(area -> area + "(?!.*[里區市鄉衖衕橫路道街])") //如果後面帶有[里區市鄉衖衕橫路道街]這些後綴字，就代表是不area
-                    .toList();
-            String areaPatternString = String.join("|", areaSet);
-            log.info("areaPatternString:{}",areaPatternString);
-            Pattern pattern = Pattern.compile(areaPatternString);
-            Matcher matcher = pattern.matcher(input);
-            if (matcher.find()) {
-                for (String area : areaSet) {
-                    if (input.contains(area)) {
-                        address.setArea(area);
-                        log.info("找到area==>:{}", area);
-                        return removeLastMatch(input, area);
-                    }
-                }
-            }
-        }
-        return input;
-    }
-
-
-    private static String removeLastMatch(String input, String area) {
-        int lastIndex = input.lastIndexOf(area);
-        if (lastIndex != -1) {
-            return input.substring(0, lastIndex) + input.substring(lastIndex + area.length());
-        } else {
-            return input;
-        }
-    }
-
     private String getPattern() {
         List<AliasDTO> aliasList = aliasRepository.queryAllAlias();
         Set<String> specialAreas = findSpecialArea(); //找帶有"村"的AREA，避免被歸在VILLAGE
@@ -173,13 +141,6 @@ public class AddressParser {
         return finalPattern;
     }
 
-
-    private String getPatternForArea() {
-        String area  = "(?<area>^[^0-9０-９]+;^[^0-9０-９一二三四五六七八九十]+[一二三四五六七八九十]+[^0-9０-９一二三四五六七八九十]*;^[^0-9０-９一二三四五六七八九十]{1,7})?";
-//        String finalPattern =  area + LANE + ALLEY + SUBALLEY + NUMFLR1 + NUMFLR2 + NUMFLR3 + NUMFLR4 + NUMFLR5 + CONTINUOUS_NUM + ROOM + BASEMENTSTR + ADDRREMAINS;
-        log.info("finalPattern==>{}",area);
-        return area;
-    }
 
     public Address setAddress(Matcher matcher, Address address) {
         address.setParseSuccessed(true);
@@ -208,10 +169,6 @@ public class AddressParser {
         address.setAddrRemains(matcher.group("addrRemains"));
         address.setRemark(matcher.group("remark"));
         return address;
-    }
-
-    private List<String> getArea() {
-        return findListByKey("地名");
     }
 
     private String parseBasement(String basementString, String origninalAddress, Address address) {
@@ -276,16 +233,6 @@ public class AddressParser {
     }
 
 
-    /**
-     * 找為LIST的值 (redis: LRANGE)
-     */
-    public List<String> findListByKey(String key) {
-        ListOperations<String, String> listOps = stringRedisTemplate2.opsForList();
-        List<String> elements = listOps.range(key, 0, -1);
-        log.info("elements:{}", elements);
-        return elements;
-    }
-
 
     public Set<String> findSpecialArea() {
         Set<String> specialAreaSet = new HashSet<>();
@@ -329,35 +276,6 @@ public class AddressParser {
         return map;
     }
 
-
-    public static void main(String[] args) {
-        String input = "石岡112";
-
-        // 定義多個正則表達式
-        String[] regexArray = {
-                "^[^0-9０-９]+;", // 第一個規則
-                "^[^0-9０-９一二三四五六七八九十]+[一二三四五六七八九十]+[^0-9０-９一二三四五六七八九十]*;", // 第二個規則
-                "^[^0-9０-９一二三四五六七八九十]{1,7}" // 第三個規則
-        };
-
-        // 逐一檢查每一個正則表達式
-        for (String regex : regexArray) {
-            // 建立Pattern對象
-            Pattern pattern = Pattern.compile(regex);
-
-            // 建立Matcher對象
-            Matcher matcher = pattern.matcher(input);
-
-            // 尋找匹配
-            if (matcher.find()) {
-                // 匹配到的部分
-                String match = matcher.group();
-                System.out.println("匹配到的部分：" + match);
-                // 找到匹配後可以在這裡執行其他邏輯，或者直接break跳出迴圈
-                break;
-            }
-        }
-    }
 
 }
 
