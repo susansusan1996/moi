@@ -156,10 +156,10 @@ public class AddressParser {
 //        List<String> areaList = aliasList.stream().filter(aliasDTO -> aliasDTO.getTypeName().equals("AREA")).map(AliasDTO::getAlias).toList();
         List<String> townList = aliasList.stream()
                 .filter(aliasDTO -> aliasDTO.getTypeName().equals("TOWN"))
-                .map(aliasDTO -> aliasDTO.getAlias() + "(?!.*[里段街道路巷弄號樓之區棟])")
+                .map(aliasDTO -> aliasDTO.getAlias() + "(?![里段街道路巷弄號樓之區棟])")
                 .toList();
         List<String> villageList = aliasList.stream().filter(aliasDTO -> aliasDTO.getTypeName().equals("VILLAGE"))
-                .map(aliasDTO -> aliasDTO.getTypeName() + "(?!.*[里段街道路巷弄號樓之區棟])")
+                .map(aliasDTO -> aliasDTO.getTypeName() + "(?![里段街道路巷弄號樓之區棟])")
                 .toList();
         String newCounty = String.format(COUNTY , String.join("|",countyList));
         String newTown = String.format(TOWN , String.join("|",townList));
