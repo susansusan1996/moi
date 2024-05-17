@@ -541,16 +541,11 @@ public class SingleQueryService {
     private void assembleMultiMappingId(Address address) {
         String numTypeCd = address.getNumTypeCd(); //臨建特附
         String basementStr = address.getBasementStr() == null ? "0" : address.getBasementStr();
-        List<String> countys = new ArrayList<>();
-        List<String> townCds = new ArrayList<>();
-        List<String> villageCds = new ArrayList<>();
-        List<String> roadAreaCds = new ArrayList<>();
-        List<String> lanes = new ArrayList<>();
-        countys.addAll(splitAndAddToList(address.getCountyCd()));
-        townCds.addAll(splitAndAddToList(address.getTownCd()));
-        villageCds.addAll(splitAndAddToList(address.getVillageCd()));
-        roadAreaCds.addAll(splitAndAddToList(address.getRoadAreaSn()));
-        lanes.addAll(splitAndAddToList(address.getLaneCd())); // Add lanes here
+        List<String> countys = new ArrayList<>(splitAndAddToList(address.getCountyCd()));
+        List<String> townCds = new ArrayList<>(splitAndAddToList(address.getTownCd()));
+        List<String> villageCds = new ArrayList<>(splitAndAddToList(address.getVillageCd()));
+        List<String> roadAreaCds = new ArrayList<>(splitAndAddToList(address.getRoadAreaSn()));
+        List<String> lanes = new ArrayList<>(splitAndAddToList(address.getLaneCd())); // Add lanes here
         List<LinkedHashMap<String, String>> mappingIdMapList = new ArrayList<>();
         List<List<String>> mappingIdListCollection = new ArrayList<>();
         List<String> mappingIdStringList = new ArrayList<>();
