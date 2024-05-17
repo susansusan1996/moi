@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BigDigitConvert {
 
@@ -84,6 +86,12 @@ public class BigDigitConvert {
      * @return
      */
     public static String convertToDigit(String upper){
+        Pattern regexPattern = Pattern.compile(".*拾.*"); // 使用通配符.*匹配"十"前后的任意字符
+        Matcher matcher = regexPattern.matcher(upper);
+        if (matcher.matches() && upper.indexOf("拾") == upper.lastIndexOf("拾")) {
+            //只有一個十的狀況ex.十樓
+            return "10";
+        }
         long digit = 1L;  //倍数
         long result = 0L; //最终结果
         long pre = 0L;    //前一次转换后的数
