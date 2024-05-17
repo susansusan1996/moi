@@ -49,6 +49,10 @@ public class IbdTbIhChangeDoorplateHis {
     @Schema(description = "版本號碼", example = "2312.2")
     private String adrVersion;
 
+
+    @Schema(description = "", example = "3")
+    private String updateCode;
+
     public String getAddressId() {
         return addressId;
     }
@@ -121,6 +125,14 @@ public class IbdTbIhChangeDoorplateHis {
         this.adrVersion = adrVersion;
     }
 
+    public String getUpdateCode() {
+        return updateCode;
+    }
+
+    public void setUpdateCode(String updateCode) {
+        this.updateCode = updateCode;
+    }
+
     @Override
     public String toString() {
         return "IbdTbIhChangeDoorplateHis{" +
@@ -133,6 +145,7 @@ public class IbdTbIhChangeDoorplateHis {
                 ", status='" + status + '\'' +
                 ", historySeq=" + historySeq +
                 ", adrVersion='" + adrVersion + '\'' +
+                ", updateCode='" + updateCode + '\'' +
                 '}';
     }
 }

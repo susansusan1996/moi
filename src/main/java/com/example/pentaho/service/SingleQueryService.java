@@ -76,6 +76,7 @@ public class SingleQueryService {
             Address finalAddress = address;
             list.forEach(IbdTbAddrDataRepositoryNewdto -> {
                 if (!"JE621".equals(IbdTbAddrDataRepositoryNewdto.getJoinStep())
+                        && !"JD721".equals(IbdTbAddrDataRepositoryNewdto.getJoinStep())//增編多址比對
                         && !"JE431".equals(finalAddress.getJoinStep()) //缺少行政區
                         && !"JE421".equals(finalAddress.getJoinStep()) //缺少路地名
                         && !"JE511".equals(finalAddress.getJoinStep()) //地址完整切割但比對不到母體檔
@@ -86,7 +87,7 @@ public class SingleQueryService {
             });
         }
         if (list.isEmpty()) {
-            setJoinStepWhenResultIsEmpty(list,result,address); //JE431、JE421、JE511會在這邊寫入
+            setJoinStepWhenResultIsEmpty(list,result,address); //JE431、JE421、JE511、JE311會在這邊寫入
         }
         result.setData(list);
         return result;
@@ -658,6 +659,9 @@ public class SingleQueryService {
         } else if ('1' == segNum.charAt(0) && '1' == segNum.charAt(1) && '1' == segNum.charAt(4) && '1' == segNum.charAt(8)) { //地址完整切割但比對不到母體檔(NEW那張)
             dto.setJoinStep("JE511");
             result.setText("查無地址");
+        } else if (address.getOriginalAddress().contains("地號") || address.getOriginalAddress().contains("段號")) { //地址完整切割但比對不到母體檔(NEW那張)
+            dto.setJoinStep("JE311");
+            result.setText("地段號");
         } else {
             result.setText("查無地址");
         }

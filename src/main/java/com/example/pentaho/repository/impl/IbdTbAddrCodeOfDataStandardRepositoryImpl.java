@@ -6,6 +6,7 @@ import com.example.pentaho.component.Address;
 import com.example.pentaho.component.IbdTbAddrCodeOfDataStandardDTO;
 import com.example.pentaho.component.IbdTbIhChangeDoorplateHis;
 import com.example.pentaho.repository.IbdTbAddrCodeOfDataStandardRepository;
+import com.example.pentaho.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
@@ -47,7 +48,7 @@ public class IbdTbAddrCodeOfDataStandardRepositoryImpl implements IbdTbAddrCodeO
                 dto.setFullAddress(address.getOriginalAddress());
                 dto.setJoinStep("JE621");//異動軌跡有異
                 resultList.add(dto);
-            } else if (his.getAddressId() != null) {
+            } else if (StringUtils.isNotNullOrEmpty(his.getAddressId())) {
                 Query query = Query.builder()
                         .append("SELECT ADDR_ODS.IBD_TB_ADDR_CODE_OF_DATA_STANDARD.*")
                         .append("FROM ADDR_ODS.IBD_TB_ADDR_CODE_OF_DATA_STANDARD WHERE ADDRESS_ID = :ADDRESS_ID ", his.getAddressId())
@@ -55,8 +56,14 @@ public class IbdTbAddrCodeOfDataStandardRepositoryImpl implements IbdTbAddrCodeO
                         .build();
                 log.info("query:{}", query);
                 log.info("params:{}", query.getParameters());
-                resultList.addAll(sqlExecutor.queryForList(query, IbdTbAddrCodeOfDataStandardDTO.class));
-
+                if ("F".equals(his.getStatus()) && "3".equals(his.getUpdateCode())
+                ) {
+                    List<IbdTbAddrCodeOfDataStandardDTO> list =  sqlExecutor.queryForList(query, IbdTbAddrCodeOfDataStandardDTO.class);
+                    list.forEach(standard->standard.setJoinStep("JD721"));//增編多址比對(change status是F、UPDATE_CODE=3)
+                    resultList.addAll(list);
+                }else{
+                    resultList.addAll(sqlExecutor.queryForList(query, IbdTbAddrCodeOfDataStandardDTO.class));
+                }
             }
         });
         return resultList;
