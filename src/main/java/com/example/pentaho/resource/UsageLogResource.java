@@ -5,7 +5,7 @@ import com.example.pentaho.component.UsageLog;
 import com.example.pentaho.component.UsageLogDTO;
 import com.example.pentaho.component.UsageLogReport;
 import com.example.pentaho.utils.JasperResportUtils;
-import com.example.pentaho.utils.UsageLogService;
+import com.example.pentaho.service.UsageLogService;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -15,17 +15,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletResponse;
 import net.sf.jasperreports.engine.*;
-import org.checkerframework.checker.units.qual.A;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.ApplicationContext;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -96,7 +92,7 @@ public class UsageLogResource {
 
 
     @PostMapping(value = "/get-usagelog-pdf")
-//    @Authorized(keyName = "SHENG")
+    @Authorized(keyName = "SHENG")
     public void downloadPDFFile(@RequestBody UsageLogDTO usageLogDTO,HttpServletResponse response) throws JRException, IOException, NoSuchMethodException {
         log.info("usageLogDTO:{}",usageLogDTO);
             List<UsageLogReport> originalList = usageLogService.getUsageLogs(usageLogDTO);
@@ -117,7 +113,7 @@ public class UsageLogResource {
 
 
     @PostMapping(value = "/get-usagelog-ods")
-//    @Authorized(keyName = "SHENG")
+    @Authorized(keyName = "SHENG")
     public void downloadODSFile(@RequestBody UsageLogDTO usageLogDTO,HttpServletResponse response) throws JRException, IOException, NoSuchMethodException {
         log.info("usageLogDTO:{}",usageLogDTO);
         List<UsageLogReport> originalList = usageLogService.getUsageLogs(usageLogDTO);

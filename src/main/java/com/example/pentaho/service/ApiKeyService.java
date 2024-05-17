@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.security.PrivateKey;
 import java.util.Map;
 
@@ -23,7 +22,6 @@ public class ApiKeyService {
 
     @Autowired
     private RedisService redisService;
-
 
     private final int VALID_TIME = 1440;
 
@@ -111,6 +109,7 @@ public class ApiKeyService {
         refreshTokenService.updateTokenByUserId(userId, response);
         return response;
     }
+
 
 
 }

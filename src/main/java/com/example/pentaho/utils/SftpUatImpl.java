@@ -17,7 +17,7 @@ import java.util.Vector;
 
 @Component
 @ConfigurationProperties(prefix = "sftputils")
-@Profile("uat")
+@Profile("uat || another")
 public class SftpUatImpl implements Sftp {
     private static final Logger log = LoggerFactory.getLogger(SftpUatImpl.class);
     private String host;

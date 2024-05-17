@@ -316,13 +316,13 @@ public class BatchResource {
      *
      *
      * */
-    private BigDataParams isValid(String[] showField){
-        if(showField.length <= 0 ){
+    private BigDataParams isValid(Set<String> showFields){
+        if(showFields.size() <= 0 ){
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,"至少指定一個欄位");
         }
 
         Map<String, String> object = new HashMap<>();
-        for(String key:showField){
+        for(String key:showFields){
             object.put(key,"Y");
         }
 

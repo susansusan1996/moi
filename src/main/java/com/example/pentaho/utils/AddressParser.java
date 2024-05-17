@@ -7,14 +7,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -43,6 +42,7 @@ public class AddressParser {
     private final String NEIGHBOR = "(?<neighbor>" + ALL_CHAR + "+鄰)?";
     private final String SPECIALLANE = "(?<speciallane>鐵路.*巷|丹路.*巷)?"; //避免被切到路，直接先寫死在這裡
     private final String ROAD = "(?<road>(.*?段|.*?街|.*?大道|.*?路(?!巷)|%s)?)";
+    private final String SPECIAL_AREA = "(?<area>%s)"; //"村"結尾的AREA先抓出來
     private final String LANE = "(?<lane>.*?巷)?";
     private final String ALLEY = "(?<alley>" + ALL_CHAR_FOR_ALLEY + "+弄" + DYNAMIC_ALLEY_PART + ")?";
     private final String SUBALLEY = "(?<subAlley>" + ALL_CHAR + "+[衖衕橫])?";
@@ -150,6 +150,7 @@ public class AddressParser {
 
     private String getPattern() {
         List<AliasDTO> aliasList = aliasRepository.queryAllAlias();
+        Set<String> specialAreas = findSpecialArea(); //找帶有"村"的AREA，避免被歸在VILLAGE
         List<String> countyList = aliasList.stream().filter(aliasDTO -> aliasDTO.getTypeName().equals("COUNTY")).map(AliasDTO::getAlias).toList();
         List<String> roadList = aliasList.stream().filter(aliasDTO -> aliasDTO.getTypeName().equals("ROAD")).map(AliasDTO::getAlias).toList();
 //        List<String> areaList = aliasList.stream().filter(aliasDTO -> aliasDTO.getTypeName().equals("AREA")).map(AliasDTO::getAlias).toList();
@@ -164,7 +165,9 @@ public class AddressParser {
         String newTown = String.format(TOWN , String.join("|",townList));
         String newVillage = String.format(VILLAGE , String.join("|",villageList));
         String newRoad = String.format(ROAD , String.join("|",roadList));
-        String finalPattern = newCounty + newTown + newVillage + NEIGHBOR + SPECIALLANE + newRoad + LANE + ALLEY + SUBALLEY + NUMFLR1 + NUMFLR2 + NUMFLR3 + NUMFLR4 + NUMFLR5 + CONTINUOUS_NUM + ROOM + BASEMENTSTR + REMARK + ADDRREMAINS;
+        String newArea = String.format(SPECIAL_AREA , String.join("|",specialAreas));
+//        log.info("SPECIAL_AREA:{}",newArea);
+        String finalPattern = newCounty + newTown + newVillage + NEIGHBOR + SPECIALLANE + newRoad + newArea + LANE + ALLEY + SUBALLEY + NUMFLR1 + NUMFLR2 + NUMFLR3 + NUMFLR4 + NUMFLR5 + CONTINUOUS_NUM + ROOM + BASEMENTSTR + REMARK + ADDRREMAINS;
 //        log.info("finalPattern==>{}",finalPattern);
         return finalPattern;
     }
@@ -190,6 +193,7 @@ public class AddressParser {
         address.setVillage(matcher.group("village"));
         address.setNeighbor(matcher.group("neighbor"));
         address.setRoad(matcher.group("road"));
+        address.setArea(matcher.group("area")); //帶有"村"的area會先歸在這裡
         address.setLane(matcher.group("speciallane") != null ? matcher.group("speciallane") : matcher.group("lane"));
         address.setAlley(matcher.group("alley"));
         address.setSubAlley(matcher.group("subAlley"));
@@ -279,6 +283,28 @@ public class AddressParser {
         List<String> elements = listOps.range(key, 0, -1);
         log.info("elements:{}", elements);
         return elements;
+    }
+
+
+    public Set<String> findSpecialArea() {
+        Set<String> specialAreaSet = new HashSet<>();
+        try (RedisConnection connection = stringRedisTemplate2.getConnectionFactory().getConnection()) {
+            RedisSerializer<String> serializer = stringRedisTemplate2.getStringSerializer();
+            connection.openPipeline();
+            connection.sMembers(serializer.serialize("SPECIAL_AREA:"));
+            List<Object> results = connection.closePipeline();
+            for (Object result : results) {
+                if (result instanceof Set) {
+                    Set<byte[]> redisSetBytes = (Set<byte[]>) result;
+                    for (byte[] bytes : redisSetBytes) {
+                        specialAreaSet.add(serializer.deserialize(bytes));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("findSpecialArea error:{}",e.getMessage());
+        }
+        return specialAreaSet;
     }
 
     //如果還是有連在一起的地址，要切開EX.1之10樓，要切成"1之"，"10樓"
