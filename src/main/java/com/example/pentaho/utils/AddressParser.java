@@ -42,7 +42,7 @@ public class AddressParser {
     private final String NEIGHBOR = "(?<neighbor>" + ALL_CHAR + "+鄰)?";
     private final String SPECIALLANE = "(?<speciallane>鐵路.*巷|丹路.*巷)?"; //避免被切到路，直接先寫死在這裡
     private final String ROAD = "(?<road>(.*?段|.*?街|.*?大道|.*?路(?!巷)|%s)?)";
-    private final String SPECIAL_AREA = "(?<area>%s)"; //"村"結尾的AREA先抓出來
+    private final String SPECIAL_AREA = "(?<area>%s)?"; //"村"結尾的AREA先抓出來
     private final String LANE = "(?<lane>.*?巷)?";
     private final String ALLEY = "(?<alley>" + ALL_CHAR_FOR_ALLEY + "+弄" + DYNAMIC_ALLEY_PART + ")?";
     private final String SUBALLEY = "(?<subAlley>" + ALL_CHAR + "+[衖衕橫])?";
