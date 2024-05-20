@@ -11,7 +11,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.lang.reflect.Method;
-import java.time.Duration;
 import java.util.Map;
 
 /***
@@ -33,9 +32,9 @@ public class InitRateLimiter implements ApplicationContextAware {
                 if(method.isAnnotationPresent(RateLimiting.class)){
                     String ratelimiterName = method.getAnnotation(RateLimiting.class).name();
                     double ratelimiterTokens = method.getAnnotation(RateLimiting.class).tokens();
-                    long mintues = method.getAnnotation(RateLimiting.class).mintues();
+                    /*每秒生成的token*/
                     RateLimiter rateLimiter = RateLimiter.create(ratelimiterTokens);
-                    log.info("RateLimiter:"+ratelimiterName+" : 每"+ mintues +"分許可"+ratelimiterTokens+"次訪問");
+                    log.info("RateLimiter:"+ratelimiterName+" : 每秒生成/許可"+ratelimiterTokens+"次令牌");
                     /***
                      * 初始化RateLimiter放入切面
                      */

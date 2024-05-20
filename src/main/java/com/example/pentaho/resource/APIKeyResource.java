@@ -169,7 +169,7 @@ public class APIKeyResource {
     @Operation(description = "單筆未登入測試")
     @GetMapping("/forguest")
     @UnAuthorized
-    @RateLimiting(name="forguest",tokens = 2,mintues = 1)
+    @RateLimiting(name="forguest",tokens = 0.3333)
     public ResponseEntity<String> forGuestUser() {
         return new ResponseEntity<>("用戶未登入", HttpStatus.OK);
     }

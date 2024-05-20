@@ -15,7 +15,5 @@ public @interface RateLimiting {
     @NotNull
     double tokens();
 
-    @NotNull
-    long mintues();
 
 }
