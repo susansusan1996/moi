@@ -175,13 +175,26 @@ public class RedisService {
                 }
                 String key = redisKeys.get(i);
                 if (!redisSet.isEmpty()) {
-                    log.info("Found values for redisKey: {}, value: {}", key, redisSet);
+                    log.info("redis<有>找到cd代碼，key: {}, value: {}", key, redisSet);
                     String redisValue = String.join(",", redisSet);
                     resultMap.put(key, redisValue);
                     segmentExistNumberBuilder.append("1");
                 } else {
-                    log.info("No values found for redisKey: {}", key);
-                    resultMap.put(key, keyMap.get(key)); // 如果找不到对应的value的话，就要放default value
+                    log.info("redis<沒有>找到cd代碼，key: {}", key);
+                    //如果找不到，就要用模糊搜尋
+                    String redisValue = null;
+                    // TODO: 2024/5/14 除了?還有方框，帶補上
+                    if(key.contains("?")){
+                        String scanKey = key.replace("?","*");
+                        log.info("replace奇怪字元後，scanKey: {}", scanKey);
+                        redisValue = String.join(",",scanKeysAndReturnSet(scanKey));
+                        log.info("scanKey: {}, redisValue: {}", scanKey, redisValue);
+                    }
+                    if(StringUtils.isNotNullOrEmpty(redisValue)){
+                        resultMap.put(key, redisValue); //模糊搜尋有找到
+                    }else{
+                        resultMap.put(key, keyMap.get(key)); // 如果找不到對應的value，就要放default value
+                    }
                     segmentExistNumberBuilder.append("0");
                 }
             }
@@ -224,4 +237,33 @@ public class RedisService {
         log.info("keySet:{}", keySet);
         return keySet;
     }
+
+
+
+    /**
+     * 模糊比對，找出相符的 KEY (redis: scan)，
+     */
+    // TODO: 2024/5/14 速度慢，需要優化 
+    public Set<String> scanKeysAndReturnSet(String pattern) {
+        Set<String> resultSet = new HashSet<>();
+        stringRedisTemplate2.execute((RedisCallback<Void>) connection -> {
+            try (Cursor<byte[]> cursor = connection.scan(ScanOptions.scanOptions().match(pattern).build())) {
+                while (cursor.hasNext()) {
+                    byte[] next = cursor.next();
+                    resultSet.addAll(getSet(new String(next)));
+                }
+            }
+            return null;
+        });
+
+        return resultSet;
+    }
+
+    public Set<String> getSet(String key) {
+        SetOperations<String, String> setOperations = stringRedisTemplate2.opsForSet();
+        return setOperations.members(key);
+    }
+
+
+
 }

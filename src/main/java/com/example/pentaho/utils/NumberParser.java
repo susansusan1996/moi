@@ -13,6 +13,7 @@ public class NumberParser {
 
     public static String replaceWithHalfWidthNumber(String input) {
         if (input != null && !input.isEmpty()) {
+            input = input.replaceAll("[-－]", "之");
             if (containsLittleChineseNumbers(input)) {
                 log.info("含有中文數字:{}", input);
                 String newNum = LittleDigitConvert.convertToDigit(input);
@@ -25,50 +26,51 @@ public class NumberParser {
                 newNum = assembleString(input,newNum);
                 log.info("含有大寫中文數字，新字串:{}", newNum);
                 return newNum;
-            }
-            Map<String, String> map = new HashMap<>();
-            map.put("０", "0");
-            map.put("１", "1");
-            map.put("２", "2");
-            map.put("３", "3");
-            map.put("４", "4");
-            map.put("５", "5");
-            map.put("６", "6");
-            map.put("７", "7");
-            map.put("８", "8");
-            map.put("９", "9");
-            map.put("一", "1");
-            map.put("二", "2");
-            map.put("三", "3");
-            map.put("四", "4");
-            map.put("五", "5");
-            map.put("六", "6");
-            map.put("七", "7");
-            map.put("八", "8");
-            map.put("九", "9");
-            map.put("零", "0");
-            map.put("壹", "1");
-            map.put("貳", "2");
-            map.put("參", "3");
-            map.put("肆", "4");
-            map.put("伍", "5");
-            map.put("陸", "6");
-            map.put("柒", "7");
-            map.put("捌", "8");
-            map.put("玖", "9");
-            map.put("卅", "3"); //30的意思
-            map.put("廿", "2"); //20的意思
-            StringBuilder result = new StringBuilder();
-            for (int i = 0; i < input.length(); i++) {
-                String currentChar = String.valueOf(input.charAt(i));
-                if (map.containsKey(currentChar)) {
-                    result.append(map.get(currentChar));
-                } else {
-                    result.append(currentChar);
+            } else if (containsNumbers(input)) {
+                Map<String, String> map = new HashMap<>();
+                map.put("０", "0");
+                map.put("１", "1");
+                map.put("２", "2");
+                map.put("３", "3");
+                map.put("４", "4");
+                map.put("５", "5");
+                map.put("６", "6");
+                map.put("７", "7");
+                map.put("８", "8");
+                map.put("９", "9");
+                map.put("一", "1");
+                map.put("二", "2");
+                map.put("三", "3");
+                map.put("四", "4");
+                map.put("五", "5");
+                map.put("六", "6");
+                map.put("七", "7");
+                map.put("八", "8");
+                map.put("九", "9");
+                map.put("零", "0");
+                map.put("壹", "1");
+                map.put("貳", "2");
+                map.put("參", "3");
+                map.put("肆", "4");
+                map.put("伍", "5");
+                map.put("陸", "6");
+                map.put("柒", "7");
+                map.put("捌", "8");
+                map.put("玖", "9");
+                map.put("卅", "3"); //30的意思
+                map.put("廿", "2"); //20的意思
+                StringBuilder result = new StringBuilder();
+                for (int i = 0; i < input.length(); i++) {
+                    String currentChar = String.valueOf(input.charAt(i));
+                    if (map.containsKey(currentChar)) {
+                        result.append(map.get(currentChar));
+                    } else {
+                        result.append(currentChar);
+                    }
                 }
+                log.info("數字改為:{}", result);
+                return result.toString();
             }
-            log.info("數字改為:{}", result);
-            return result.toString();
         }
         return "";
     }
@@ -84,6 +86,13 @@ public class NumberParser {
 
     public static boolean containsBigChineseNumbers(String input) {
         String regex = ".*(拾|佰).*";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(input);
+        return matcher.matches();
+    }
+
+    public static boolean containsNumbers(String input) {
+        String regex = ".*(０|１|２|３|４|５|６|７|８|９|一|二|三|四|五|六|七|八|九|零|壹|貳|參|肆|伍|陸|柒|捌|玖|卅|廿).*";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(input);
         return matcher.matches();
