@@ -36,21 +36,21 @@ public class JoinStepService {
         List<String> regex = map.get("regex");
         log.info("因為地址不完整，組成新的 mappingId {}，以利模糊搜尋", newMappingId);
         log.info("模糊搜尋正則表達式為:{}", regex);
-        Set<String> mappingIdSet = redisService.findListByScan(newMappingId);
-//        for (int i = 0; i < newMappingId.size(); i++) {
-//            Set<String> mappingIdSet = redisService.findListByScan(newMappingId.get(i));
-//            log.info("mappingIdSet:{}", mappingIdSet);
-//            Pattern regexPattern = Pattern.compile(String.valueOf(regex.get(i)));
-//            for (String newMapping : mappingIdSet) {
-//                //因為redis的scan命令，無法搭配正則，限制*的位置只能有多少字元，所以要再用java把不符合的mappingId刪掉
-//                Matcher matcher = regexPattern.matcher(newMapping);
-//                //有符合的mappingId，才是真正要拿來處理比對代碼的mappingId
-//                if (matcher.matches()) {
-//                    newMappingIdSet.add(newMapping);
-//                }
-//            }
-//        }
-        return mappingIdSet;
+        Set<String> mappingIdSet = redisService.findListByScan(newMappingId); //redis撈出來的所有可能mappinId
+        Set<String> resultSet = new HashSet<>();
+        for (String newMapping : mappingIdSet) {
+            log.info("mappingIdSet:{}", mappingIdSet);
+            for (String reg : regex) {
+                Pattern regexPattern = Pattern.compile(reg);
+                //因為redis的scan命令，無法搭配正則，限制*的位置只能有多少字元，所以要再用java把不符合的mappingId刪掉
+                Matcher matcher = regexPattern.matcher(newMapping);
+                //有符合的mappingId，才是真正要拿來處理比對代碼的mappingId
+                if (matcher.matches()) {
+                    resultSet.add(newMapping);
+                }
+            }
+        }
+        return resultSet;
     }
 
 
