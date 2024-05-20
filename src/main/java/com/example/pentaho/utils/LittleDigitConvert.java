@@ -86,7 +86,7 @@ public class LittleDigitConvert {
      * @return
      */
     public static String convertToDigit(String upper){
-        Pattern regexPattern = Pattern.compile(".*[^一二三四五六七八九]十[一二三四五六七八九]?.*"); //特別處理11~19
+        Pattern regexPattern = Pattern.compile(".*[^一二三四五六七八九]十[一二三四五六七八九]?.*|^十[一二三四五六七八九].*?"); //特別處理11~19
         Matcher matcher = regexPattern.matcher(upper);
         if (matcher.matches() && upper.indexOf("十") == upper.lastIndexOf("十")) {
             int number = 10;

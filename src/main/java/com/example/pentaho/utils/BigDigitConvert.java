@@ -86,7 +86,7 @@ public class BigDigitConvert {
      * @return
      */
     public static String convertToDigit(String upper){
-        Pattern regexPattern = Pattern.compile(".*[^壹貳參肆伍陸柒捌玖]拾[壹貳參肆伍陸柒捌玖]?.*"); //特別處理11~19
+        Pattern regexPattern = Pattern.compile(".*[^壹貳參肆伍陸柒捌玖]拾[壹貳參肆伍陸柒捌玖]?.*|^拾[壹貳參肆伍陸柒捌玖].*?"); //特別處理11~19
         Matcher matcher = regexPattern.matcher(upper);
         if (matcher.matches() && upper.indexOf("拾") == upper.lastIndexOf("拾")) {
             int number = 10;
