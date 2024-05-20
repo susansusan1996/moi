@@ -201,20 +201,23 @@ public class SingleQueryService {
     }
 
     Set<String> splitSeqAndStep(Address address, List<String> seqList, Set<String> seqSet) {
-        List<String> sortedList = seqList.stream().sorted().toList(); //排序
-        String[] seqAndStep = sortedList.get(0).split(":");
-        if ('0' == address.getSegmentExistNumber().charAt(1)) {
-            seqAndStep[0] = seqAndStep[0].substring(0, seqAndStep[0].length() - 1) + "2"; //join_step最後一碼應該為2
+        if(!seqList.isEmpty()){
+            List<String> sortedList = seqList.stream().sorted().toList(); //排序
+            String[] seqAndStep = sortedList.get(0).split(":");
+            if ('0' == address.getSegmentExistNumber().charAt(1)) {
+                seqAndStep[0] = seqAndStep[0].substring(0, seqAndStep[0].length() - 1) + "2"; //join_step最後一碼應該為2
+            }
+            address.setJoinStep(seqAndStep[0]);
+            for (String seq : sortedList) {
+                seqAndStep = seq.split(":");
+                seqSet.add(seqAndStep[1]);
+            }
+            if ("JC211".equals(address.getJoinStep()) && StringUtils.isNullOrEmpty(address.getArea())) {
+                address.setJoinStep("JC311"); //路地名，連寫都沒寫
+            }
+            return seqSet;
         }
-        address.setJoinStep(seqAndStep[0]);
-        for (String seq : sortedList) {
-            seqAndStep = seq.split(":");
-            seqSet.add(seqAndStep[1]);
-        }
-        if ("JC211".equals(address.getJoinStep()) && StringUtils.isNullOrEmpty(address.getArea())) {
-            address.setJoinStep("JC311"); //路地名，連寫都沒寫
-        }
-        return seqSet;
+        return new HashSet<>();
     }
 
 
