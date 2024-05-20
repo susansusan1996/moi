@@ -20,31 +20,6 @@ public class JoinStepService {
     @Autowired
     private RedisService redisService;
 
-    @Autowired
-    private IbdTbAddrDataNewRepository ibdTbAddrDataNewRepository;
-
-    private static final String OLD_POSITION_1 = "32";
-    private static final String NEW_POSITION_1 = "24";
-    private static final String OLD_POSITION_2 = "31";
-    private static final String NEW_POSITION_2 = "14";
-    static String[] steps = {
-            "JA112_NO_COUNTY", //未含"縣市"，先歸在"JA112"
-            "JA112", //最嚴謹，未含鄉鎮市區
-            "JA211", "JA212", //退鄰--會有多址，多址會變成:"JD111","JD112"
-            "JA311", "JA312", //退里--會有多址，多址會變成:"JD111","JD112"
-            "JB111", "JB112", //退室--會有多址，多址會變成:"JD311"
-            "JB211", "JB212", //樓之之樓
-            "JB311", "JB312", //退樓後之--會有多址，多址會變成:"JD411","JD412"
-            "JB411", "JB412",  //退樓--會有多址，多址會變成:"JD511","JD512"
-            "JB511", "JB512",  //號之之號
-            "JC111",  //臨建特附
-            "JC211",  //路地名進階比對(有寫路地名，只是比對不到)
-            "JC311",  //缺路地名進階比對(沒寫路地名)
-            "JC411", "JC412",  //號樓之要件 (漏寫之)，邏輯:原本有"之"的該欄位position會是0或7，要改成4(.+之$)，數字欄位也要從7xxx改成0xxx
-            "JD111", "JD112",  //排除要件對應多址 (村里鄰拔掉變多址)
-    };
-    private static final String NUMFLRPOS = "NUMFLRPOS";
-
 
     public List<String> fuzzySearchSeq(Address address) {
         //都找不到，只好模糊搜尋mappingId，但就不會有join_step
