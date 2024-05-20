@@ -57,7 +57,7 @@ public class SingleQueryService {
         //刪除使用者重複input的縣市、鄉鎮
         String cleanAddress = removeRepeatCountyAndTown(singleQueryDTO);
         //切地址+找mappingId
-        Address address = parseAddressAndfindMappingId(cleanAddress);
+        Address address = parseAddressAndFindMappingId(cleanAddress);
         log.info("mappingId:{}", address.getMappingId());
         //找seq
         address = findSeq(address);
@@ -93,7 +93,7 @@ public class SingleQueryService {
         return result;
     }
 
-    public Address parseAddressAndfindMappingId(String originalString) {
+    public Address parseAddressAndFindMappingId(String originalString) {
         //切地址
         Address address = addressParser.parseAddress(originalString, null, null);
         if(address!=null){
