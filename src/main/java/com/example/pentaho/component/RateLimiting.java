@@ -4,17 +4,16 @@ import jakarta.validation.constraints.NotNull;
 
 import java.lang.annotation.*;
 
-@Target({ElementType.TYPE, ElementType.METHOD})
+@Target({ElementType.PARAMETER, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface RateLimiting {
 
+    @NotNull
+    String name();
 
     @NotNull
-    long capacity();
-
-    @NotNull
-    long tokens();
+    double tokens();
 
     @NotNull
     long mintues();

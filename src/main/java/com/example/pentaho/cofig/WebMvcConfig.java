@@ -1,17 +1,14 @@
 package com.example.pentaho.cofig;
 
 
-import com.example.pentaho.component.KeyComponent;
 import com.example.pentaho.utils.AuthorizationHandlerInterceptor;
 import com.example.pentaho.utils.MainHandlerInterceptor;
-import com.example.pentaho.utils.RateLimitingHandlerInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -28,13 +25,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Autowired
     private AuthorizationHandlerInterceptor authorizationHandlerInterceptor;
 
-
-    /**
-     * rate limiting
-     */
-    @Autowired
-    private RateLimitingHandlerInterceptor rateLimitingHandlerInterceptor;
-
     /**
      * 過濾
      *
@@ -43,11 +33,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         /**
-         * 可再新增攔截器
-         * RateLimitingHandlerInterceptor 流量
+         * 可再新增攔截器放進 interceptors
          * AuthorizationHandlerInterceptor 身分驗證
          */
-        List<HandlerInterceptor> interceptors = Arrays.asList(rateLimitingHandlerInterceptor,authorizationHandlerInterceptor);
+        List<HandlerInterceptor> interceptors = Arrays.asList(authorizationHandlerInterceptor);
         MainHandlerInterceptor mainHandlerInterceptor = new MainHandlerInterceptor(interceptors);
         registry
                 .addInterceptor(mainHandlerInterceptor);
