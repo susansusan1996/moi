@@ -15,9 +15,10 @@ import org.springframework.data.redis.core.*;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -31,7 +32,7 @@ public class RedisService {
 
     private static Logger log = LoggerFactory.getLogger(SingleQueryService.class);
 
-    Integer SCAN_SIZE = 1000;
+    Integer SCAN_SIZE = 10000;
 
     @Autowired
     @Qualifier("stringRedisTemplate2")
@@ -219,24 +220,46 @@ public class RedisService {
     /**
      * 模糊比對，找出相符的 KEY (redis: scan)
      */
-    public Set<String> findListByScan(String key) {
-        Set<String> keySet = stringRedisTemplate1.execute((RedisCallback<Set<String>>) connection -> {
-            Set<String> keySetTemp = new ConcurrentSkipListSet<>();
+    public Set<String> findListByScan(List<String> keys) {
+        Set<String> keySet = new ConcurrentSkipListSet<>();
+        ExecutorService executorService = Executors.newFixedThreadPool(4);
+        try {
+            List<Future<Set<String>>> futures = executorService.invokeAll(createScanTasks(keys));
+            for (Future<Set<String>> future : futures) {
+                keySet.addAll(future.get());
+            }
+        } catch (Exception e) {
+            log.error("Error during Redis scan: {}", e.getMessage());
+        } finally {
+            executorService.shutdown();
+        }
+        log.info("keySet: {}", keySet);
+        return keySet;
+    }
+
+    private List<Callable<Set<String>>> createScanTasks(List<String> keys) {
+        return keys.stream().map(this::createScanTask).toList();
+    }
+
+    private Callable<Set<String>> createScanTask(String key) {
+        return () -> stringRedisTemplate1.execute((RedisCallback<Set<String>>) connection -> {
+            Set<String> localKeySet = new ConcurrentSkipListSet<>();
             try (Cursor<byte[]> cursor = connection.scan(ScanOptions.scanOptions()
-                    .match(key) //模糊比對
+                    .match(key)
                     .count(SCAN_SIZE)
                     .build())) {
-                while (cursor.hasNext() && keySetTemp.size() < SCAN_SIZE) {
-                    keySetTemp.add(new String(cursor.next(), "utf-8"));
+                while (cursor.hasNext()) {
+                    localKeySet.add(new String(cursor.next(), StandardCharsets.UTF_8));
                 }
             } catch (Exception e) {
                 log.error("redis，模糊比對錯誤:{}", e.getMessage());
             }
-            return keySetTemp;
+            return localKeySet;
         });
-        log.info("keySet:{}", keySet);
-        return keySet;
     }
+
+
+
 
 
 

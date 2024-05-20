@@ -55,11 +55,11 @@ public class RedisResouce {
     /**
      * 模糊比對，找出相符的 KEY (scan)
      */
-    @GetMapping("/scan-data-list")
-    @Hidden
-    public ResponseEntity<Set<String>> scanAddr(@RequestBody String key) {
-        return ResponseEntity.ok(redisService.findListByScan(key));
-    }
+//    @GetMapping("/scan-data-list")
+//    @Hidden
+//    public ResponseEntity<Set<String>> scanAddr(@RequestBody String key) {
+//        return ResponseEntity.ok(redisService.findListByScan(key));
+//    }
 
 
     /**

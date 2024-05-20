@@ -60,7 +60,7 @@ public class SingleQueryService {
         Address address = parseAddressAndfindMappingId(cleanAddress);
         log.info("mappingId:{}", address.getMappingId());
         //找seq
-        address = findSeqByMappingIdAndJoinStep(address);
+        address = findSeq(address);
         Set<String> seqSet = address.getSeqSet();
         if (!seqSet.isEmpty()) {
             log.info("seq:{}", seqSet);
@@ -146,21 +146,18 @@ public class SingleQueryService {
     }
 
 
-    Address findSeqByMappingIdAndJoinStep(Address address) throws NoSuchFieldException, IllegalAccessException {
+    Address findSeq(Address address){
         Set<String> seqSet = new HashSet<>();
         log.info("mappingIdList:{}", address.getMappingId());
         //直接用input的地址組mappingId，進redis db1 找有沒有符合的mappingId
-        AtomicReference<List<String>> seqList = findSeqByMappingId(address);
-        //有找到
-        if (!seqList.get().isEmpty()) {
+        List<String> seqList = findSeqByMappingId(address);
+        if (!seqList.isEmpty()) {
             log.info("第一次就有比到!!");
-            seqSet = splitSeqAndStep(address, seqList, seqSet);
         }
-        //沒找到
-        //找不到符合得64碼。那就要把這串64碼，用join_step的邏輯一步一步(StepByStep)比較看看，看到哪一個join_step，會找到匹配的64碼
-//        else {
-//            seqSet.addAll(joinStepService.findSeqStepByStep(address));
-//        }
+        else { //沒找到，模糊搜尋(可能是COUNTY或TOWN沒有寫)
+            seqList.addAll(joinStepService.fuzzySearchSeq(address));
+        }
+        seqSet = splitSeqAndStep(address, seqList, seqSet);
         //多址判斷
         replaceJoinStepWhenMultiAdress(address,seqSet);
         address.setSeqSet(seqSet);
@@ -191,20 +188,24 @@ public class SingleQueryService {
     }
 
 
-    AtomicReference<List<String>> findSeqByMappingId(Address address) {
-        AtomicReference<List<String>> seqList = new AtomicReference<>();
+
+    List <String> findSeqByMappingId(Address address) {
+        List<String> seqList = new ArrayList<>();
         for (String mappingId : address.getMappingId()) {
-            seqList.set(redisService.findListByKey(mappingId));
-            if (!seqList.get().isEmpty()) {
+            seqList.addAll(redisService.findListByKey(mappingId));
+            if (!seqList.isEmpty()) {
                 break; //有比到就可以跳出迴圈了
             }
         }
         return seqList;
     }
 
-    Set<String> splitSeqAndStep(Address address, AtomicReference<List<String>> seqList, Set<String> seqSet) {
-        List<String> sortedList = seqList.get().stream().sorted().toList(); //排序
+    Set<String> splitSeqAndStep(Address address, List<String> seqList, Set<String> seqSet) {
+        List<String> sortedList = seqList.stream().sorted().toList(); //排序
         String[] seqAndStep = sortedList.get(0).split(":");
+        if ('0' == address.getSegmentExistNumber().charAt(1)) {
+            seqAndStep[0] = seqAndStep[0].substring(0, seqAndStep[0].length() - 1) + "2"; //join_step最後一碼應該為2
+        }
         address.setJoinStep(seqAndStep[0]);
         for (String seq : sortedList) {
             seqAndStep = seq.split(":");

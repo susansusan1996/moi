@@ -46,44 +46,11 @@ public class JoinStepService {
     private static final String NUMFLRPOS = "NUMFLRPOS";
 
 
-    public Set<String> findSeqStepByStep(Address address) throws NoSuchFieldException, IllegalAccessException {
-        Set<String> seqSet = new HashSet<>();
-        String finalStep = "";
-        for (int i = 0; i < address.getMappingIdMap().size(); i++) {
-            for (String step : steps) {
-                List<String> columns = new ArrayList<>(getColumnName(step));
-                //把想要挖掉的地址片段代碼用0取代
-                LinkedHashMap<String, String> oldMappingIdMap = new LinkedHashMap<>(address.getMappingIdMap().get(i));
-                log.info("oldMappingIdMap:{}", oldMappingIdMap);
-                String oldNumSegment = address.getMappingIdMap().get(i).get(NUMFLRPOS);
-                log.info("oldNumSegment:{}", oldNumSegment);
-                String newId = replaceCharsWithZero("oldId", columns, step, address, oldMappingIdMap);
-                log.info("step:{}，newId:{}", step, newId);
-                List<String> seqlist = redisService.findListByKey(newId);
-                for (String seq : seqlist) {
-                    if (seq.contains(":")) {
-                        log.info("seq:{}", seq);
-                        seqSet.add(seq.split(":")[1]);
-                        finalStep = seq.split(":")[0];
-                        if ("JC211".equals(finalStep) && StringUtils.isNullOrEmpty(address.getArea())) {
-                            finalStep = "JC311"; //路地名，連寫都沒寫
-                        }
-                        address.setJoinStep(finalStep);
-                    }
-                }
-                if (!seqSet.isEmpty()) {
-                    break;
-                }
-            }
-        }
-        if (seqSet.isEmpty()) {
-            //都找不到，只好模糊搜尋mappingId，但就不會有join_step
-            Set<String> newMappingIdSet = fuzzySearchMappingId(address);
-            log.info("newMappingIdSet:{}",newMappingIdSet);
-            List<String> seqs = redisService.findListsByKeys(newMappingIdSet.stream().toList());
-            seqSet.addAll(seqs.stream().map(seq->  seq.split(":")[1]).toList());
-        }
-        return seqSet;
+    public List<String> fuzzySearchSeq(Address address) {
+        //都找不到，只好模糊搜尋mappingId，但就不會有join_step
+        Set<String> newMappingIdSet = fuzzySearchMappingId(address);
+        log.info("newMappingIdSet:{}", newMappingIdSet);
+        return  redisService.findListsByKeys(newMappingIdSet.stream().toList());
     }
 
     private List<String> getColumnName(String step) {
@@ -371,104 +338,70 @@ public class JoinStepService {
 
 
     public Set<String> fuzzySearchMappingId(Address address) {
-        Map<String, List<String>> map = buildRegexMappingId(address);
+        Map<String, List<String>> map = buildMappingIdRegexString(address);
         List<String> newMappingId = map.get("newMappingId");
+        Set<String> set = new HashSet<>(newMappingId); //去除重複
+        newMappingId = new ArrayList<>(set); //轉回LIST
         List<String> regex = map.get("regex");
         log.info("因為地址不完整，組成新的 mappingId {}，以利模糊搜尋", newMappingId);
         log.info("模糊搜尋正則表達式為:{}", regex);
-        Set<String> newMappingIdSet = new HashSet<>();
-        for (int i = 0; i < newMappingId.size(); i++) {
-            Set<String> mappingIdSet = redisService.findListByScan(newMappingId.get(i));
-            log.info("mappingIdSet:{}", mappingIdSet);
-            Pattern regexPattern = Pattern.compile(String.valueOf(regex.get(i)));
-            for (String newMapping : mappingIdSet) {
-                //因為redis的scan命令，無法搭配正則，限制*的位置只能有多少字元，所以要再用java把不符合的mappingId刪掉
-                Matcher matcher = regexPattern.matcher(newMapping);
-                //有符合的mappingId，才是真正要拿來處理比對代碼的mappingId
-                if (matcher.matches()) {
-                    newMappingIdSet.add(newMapping);
-                }
-            }
-        }
-        return newMappingIdSet;
+        Set<String> mappingIdSet = redisService.findListByScan(newMappingId);
+//        for (int i = 0; i < newMappingId.size(); i++) {
+//            Set<String> mappingIdSet = redisService.findListByScan(newMappingId.get(i));
+//            log.info("mappingIdSet:{}", mappingIdSet);
+//            Pattern regexPattern = Pattern.compile(String.valueOf(regex.get(i)));
+//            for (String newMapping : mappingIdSet) {
+//                //因為redis的scan命令，無法搭配正則，限制*的位置只能有多少字元，所以要再用java把不符合的mappingId刪掉
+//                Matcher matcher = regexPattern.matcher(newMapping);
+//                //有符合的mappingId，才是真正要拿來處理比對代碼的mappingId
+//                if (matcher.matches()) {
+//                    newMappingIdSet.add(newMapping);
+//                }
+//            }
+//        }
+        return mappingIdSet;
     }
 
-    private Map<String, List<String>> buildRegexMappingId(Address address) {
+
+    private Map<String, List<String>> buildMappingIdRegexString(Address address) {
         List<String> newMappingIdList = new ArrayList<>();
         List<String> regexList = new ArrayList<>();
         String segNum = address.getSegmentExistNumber();
-        StringBuilder newMappingId = new StringBuilder(); //組給redis的模糊搜尋mappingId ex.10010***9213552**95********
-        StringBuilder regex = new StringBuilder();   //組給java的模糊搜尋mappingId ex.10010020017029\d{18}95\d{19}000000\d{5}
         //mappingCount陣列代表，COUNTY_CD要5位元，TOWN_CD要3位元，VILLAGE_CD要3位元，以此類推
         //6,5,4,3,1 分別是NUM_FLR_1~NUM_FLR_5
         int[] mappingCount = {5, 3, 3, 3, 7, 4, 7, 2, 6, 5, 4, 3, 1, 1, 5, 5};
         int sum = 0;
-        for (int j = 0; j < address.getMappingIdList().size(); j++) {
-            for (int i = 0; i < segNum.length(); i++) {
-                //該欄位是1的情況(找的到的情況)
-                if ("1".equals(String.valueOf(segNum.charAt(i)))) {
-                    newMappingId.append(address.getMappingIdList().get(j).get(i));
-                    regex.append(address.getMappingIdList().get(j).get(i));
-                    sum = 0; //歸零
-                    //該欄位是0的情況(找不到的情況)
-                } else {
-                    String segAfter = "";
-                    String segBefore = "";
-                    //第一碼
-                    if (i == 0) {
-                        segAfter = String.valueOf(segNum.charAt(i + 1));
-                        //如果前後碼也是0的話，表示要相加
-                        if ("0".equals(segAfter)) {
-                            sum += mappingCount[i];
-                        }
-                        //後面那碼是1，表示不用相加了
-                        else if ("1".equals(segAfter)) {
-                            sum += mappingCount[i];
-                            regex.append("\\d{").append(sum).append("}");
-                            sum = 0; //歸零
-                        }
-                    }
-                    //不是最後一個
-                    else if (i != segNum.length() - 1) {
-                        segAfter = String.valueOf(segNum.charAt(i + 1));
-                        segBefore = String.valueOf(segNum.charAt(i - 1));
-                        //如果前後都是是1的話，不用相加
-                        if ("1".equals(segBefore) && "1".equals(segAfter)) {
-                            sum = 0; //歸零
-                            regex.append("\\d{").append(mappingCount[i]).append("}");
-                        }
-                        //如果前後碼也是0的話，表示要相加
-                        else if ("0".equals(segAfter)) {
-                            sum += mappingCount[i];
-                        }
-                        //後面那碼是1，表示不用相加了
-                        else if ("1".equals(segAfter)) {
-                            sum += mappingCount[i];
-                            regex.append("\\d{").append(sum).append("}");
-                            sum = 0; //歸零
-                        }
-                    }
-                    //是最後一個
-                    else {
-                        segBefore = String.valueOf(segNum.charAt(i - 1));
-                        //如果前面是0表示最後一碼也要加上去
-                        if ("0".equals(segBefore)) {
-                            sum += mappingCount[i];
-                            regex.append("\\d{").append(sum).append("}");
-                        } else {
-                            regex.append("\\d{").append(mappingCount[i]).append("}");
-                        }
-                        sum = 0; //歸零
-                    }
-                    newMappingId.append("*");
+        List<LinkedHashMap<String, String>> mapList = address.getMappingIdMap();
+        mapList.forEach(map -> {
+            LinkedHashMap<String, String> regexMap = new LinkedHashMap<>(map);
+            LinkedHashMap<String, String> fuzzyMap = new LinkedHashMap<>(map);
+            StringBuilder newMappingId = new StringBuilder();
+                if ("0".equals(String.valueOf(segNum.charAt(0))) && "0".equals(String.valueOf(segNum.charAt(1)))) { //COUNTY
+                    regexMap.put("COUNTY", "\\d{8}");
+                    regexMap.put("TOWN", "");
+                    fuzzyMap.put("COUNTY", "*");
+                    fuzzyMap.put("TOWN", "");
+                } else if ("1".equals(String.valueOf(segNum.charAt(0))) && "0".equals(String.valueOf(segNum.charAt(1)))) {
+                    regexMap.put("COUNTY", "\\d{5}");
+                    regexMap.put("TOWN", "");
+                    fuzzyMap.put("TOWN", "*");
+                } else if ("0".equals(String.valueOf(segNum.charAt(0))) && "1".equals(String.valueOf(segNum.charAt(1)))) {
+                    regexMap.put("TOWN", "\\d{3}");
+                    fuzzyMap.put("COUNTY", "*");
                 }
-            }
-            newMappingIdList.add(newMappingId.toString());
-            regexList.add(regex.toString());
-        }
+                StringBuilder regex = new StringBuilder();
+                for (String value : regexMap.values()) {
+                        regex.append(value);
+                }
+                for (String value : fuzzyMap.values()) {
+                    newMappingId.append(value);
+                }
+            regexList.add(String.valueOf(regex));
+            newMappingIdList.add(String.valueOf(newMappingId));
+        });
         Map<String, List<String>> map = new HashMap<>();
-        map.put("newMappingId", newMappingIdList); //帶有**的mappingId(redis模糊搜尋)
         map.put("regex", regexList); //帶有正則的mappingId(java比對redis模糊搜尋出來的結果)
+        map.put("newMappingId", newMappingIdList); //帶有**的mappingId(redis模糊搜尋)
         return map;
     }
 
