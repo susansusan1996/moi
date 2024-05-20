@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -58,7 +59,7 @@ public class RateLimitAspect {
             String rateLimiterName = getRateLimiterName(targetClass, signatureName);
             RateLimiter rateLimiter = rateLimiterMap.get(rateLimiterName);
             if(!rateLimiter.tryAcquire()){
-                return new ResponseStatusException(HttpStatus.BANDWIDTH_LIMIT_EXCEEDED);
+                return new ResponseEntity<String>("頻繁執行，請稍後再試",HttpStatus.BANDWIDTH_LIMIT_EXCEEDED);
             }
                 obj = joinPoint.proceed();
 
