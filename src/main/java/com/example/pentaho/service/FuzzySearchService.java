@@ -20,7 +20,6 @@ public class FuzzySearchService {
 
 
     public List<String> fuzzySearchSeq(Address address) {
-        //都找不到，只好模糊搜尋mappingId，但就不會有join_step
         Set<String> newMappingIdSet = fuzzySearchMappingId(address);
         log.info("newMappingIdSet:{}", newMappingIdSet);
         return  redisService.findListsByKeys(newMappingIdSet.stream().toList());
