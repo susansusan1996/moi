@@ -154,6 +154,10 @@ public class RedisService {
         return resultMap;
     }
 
+    private static final List<String> KEYWORDS = Arrays.asList(
+            "COUNTY", "TOWN", "VILLAGE", "ROAD", "AREA", "LANE", "ALLEY",
+            "NUM_FLR_1", "NUM_FLR_2", "NUM_FLR_3", "NUM_FLR_4", "NUM_FLR_5"
+    );
 
     public Map<String, String> findSetByKeys(Map<String, String> keyMap, String segmentExistNumber) {
         Map<String, String> resultMap = new HashMap<>();
@@ -179,7 +183,12 @@ public class RedisService {
                     log.info("redis<有>找到cd代碼，key: {}, value: {}", key, redisSet);
                     String redisValue = String.join(",", redisSet);
                     resultMap.put(key, redisValue);
-                    segmentExistNumberBuilder.append("1");
+                    //如果是 "COUNTY", "TOWN", "VILLAGE","ROAD", "AREA", "LANE", "ALLEY",
+                    // "NUM_FLR_1", "NUM_FLR_2", "NUM_FLR_3", "NUM_FLR_4", "NUM_FLR_5"
+                    //才需要判斷0或1
+                    if(containsKeyword(key)){
+                        segmentExistNumberBuilder.append("1");
+                    }
                 } else {
                     log.info("redis<沒有>找到cd代碼，key: {}", key);
                     //如果找不到，就要用模糊搜尋
@@ -196,7 +205,9 @@ public class RedisService {
                     }else{
                         resultMap.put(key, keyMap.get(key)); // 如果找不到對應的value，就要放default value
                     }
-                    segmentExistNumberBuilder.append("0");
+                    if(containsKeyword(key)){
+                        segmentExistNumberBuilder.append("0");
+                    }
                 }
             }
         } finally {
@@ -208,9 +219,14 @@ public class RedisService {
     }
 
 
-
-
-
+    private Boolean containsKeyword (String key) {
+        for (String keyword : KEYWORDS) {
+            if (key.split(":")[0].equals(keyword)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public List<String> findByKeys(Set<String> keys) {
         return stringRedisTemplate1.opsForValue().multiGet(keys.stream().toList());
@@ -270,7 +286,7 @@ public class RedisService {
     public Set<String> scanKeysAndReturnSet(String pattern) {
         Set<String> resultSet = new HashSet<>();
         stringRedisTemplate2.execute((RedisCallback<Void>) connection -> {
-            try (Cursor<byte[]> cursor = connection.scan(ScanOptions.scanOptions().match(pattern).build())) {
+            try (Cursor<byte[]> cursor = connection.scan(ScanOptions.scanOptions().match(pattern).count(SCAN_SIZE).build())) {
                 while (cursor.hasNext()) {
                     byte[] next = cursor.next();
                     resultSet.addAll(getSet(new String(next)));

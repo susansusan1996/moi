@@ -46,7 +46,7 @@ public class SingleQueryService {
         return redisService.findByKey(null, "1066693", null);
     }
 
-    public SingleQueryResultDTO findJson(SingleQueryDTO singleQueryDTO) throws NoSuchFieldException, IllegalAccessException {
+    public SingleQueryResultDTO findJson(SingleQueryDTO singleQueryDTO) {
         SingleQueryResultDTO result = new SingleQueryResultDTO();
         //確認是否是"連號"的地址
         if(checkIfMultiAddress(singleQueryDTO)){
@@ -254,6 +254,8 @@ public class SingleQueryService {
         keyMap.put("COUNTY:" + county, "00000");//5
         keyMap.put("TOWN:" + town, "000");//鄉鎮市區 //3
         keyMap.put("VILLAGE:" + village, "000");//里 //3
+        keyMap.put("ROAD:" + road, ""); // 沒有要放進64碼，只是為了要看要件清單要沒有資料 (有資料:1，無資料:0)
+        keyMap.put("AREA:" + area, ""); // 沒有要放進64碼，只是為了要看要件清單要沒有資料 (有資料:1，無資料:0)
         keyMap.put("ROADAREA:" + roadAreaKey, "0000000"); //7
         keyMap.put("LANE:" + replaceWithHalfWidthNumber(lane), "0000");//巷 //4
         keyMap.put("ALLEY:" + alleyIdSnKey, "0000000");//弄 //7
@@ -270,15 +272,7 @@ public class SingleQueryService {
         address.setTownCd(resultMap.get("TOWN:" + town));
         address.setVillageCd(resultMap.get("VILLAGE:" + village));
         address.setNeighborCd(findNeighborCd(address.getNeighbor()));//鄰
-        if (StringUtils.isNullOrEmpty(roadAreaKey)) {
-            address.setRoadAreaSn("0000000");
-            //"沒有"填寫"路地名"先註記起來
-            address.setHasRoadArea(false);
-        } else {
-            address.setRoadAreaSn(resultMap.get("ROADAREA:" + roadAreaKey));
-            //"有"填寫"路地名"先註記起來
-            address.setHasRoadArea(true);
-        }
+        address.setRoadAreaSn(StringUtils.isNullOrEmpty(roadAreaKey) ? "0000000" : resultMap.get("ROADAREA:" + roadAreaKey));
         address.setLaneCd(resultMap.get("LANE:" + replaceWithHalfWidthNumber(lane)));
         address.setAlleyIdSn(resultMap.get("ALLEY:" + alleyIdSnKey));
         address.setNumFlr1Id(setNumFlrId(resultMap, address, "NUM_FLR_1"));
@@ -308,7 +302,12 @@ public class SingleQueryService {
         log.info("=== numFlrPos:{}", address.getNumFlrPos());
         log.info("=== getRoomIdSn:{}", address.getRoomIdSn());
         assembleMultiMappingId(address);
-        address.setSegmentExistNumber(insertCharAtIndex(resultMap.getOrDefault("segmentExistNumber", ""), address));
+        //segmentExistNumber，用來判斷每一個欄位，使用者是否有填寫。有寫:1，沒寫:0
+        //編碼如下:
+        // 0: COUNTY， 1: TOWN， 2: VILLAGE ，3: ROAD ，4: AREA ，5: LANE， 6: ALLEY ，
+        // 7: NUM_FLR_1 ，8: NUM_FLR_2 ，9: NUM_FLR_3 ，10: NUM_FLR_4 ，11: NUM_FLR_5
+        //送進combineSegment方法後，會合併7-11碼，變成一個0或1
+        address.setSegmentExistNumber(combineSegment(resultMap.getOrDefault("segmentExistNumber", "")));
         return address;
     }
 
@@ -380,6 +379,23 @@ public class SingleQueryService {
         log.info("segmentExistNumber: {}", result);
         return result;
     }
+
+    public static String combineSegment(String segmentExistNumber) {
+        if (segmentExistNumber.length() < 12) {
+            throw new IllegalArgumentException("segmentExistNumber initial value 應為 12 碼");
+        }
+        String flrSegNum = "0";
+        // 只要INDEX 7-11碼，有一碼為1，就返回1
+        for (int i = 7; i <= 11; i++) {
+            if (segmentExistNumber.charAt(i) == '1') {
+                flrSegNum = "1";
+                break;
+            }
+        }
+        // 保留segmentExistNumber的index 0-5碼，並把index 7的值改成flrSegNum
+        return segmentExistNumber.substring(0, 7) + flrSegNum;
+    }
+
 
 
     //把為了識別是basement的字眼拿掉、將F轉換成樓、-轉成之
@@ -645,17 +661,28 @@ public class SingleQueryService {
         return singleQueryDTO.getOriginalAddress().matches(".*[、~].*");
     }
 
+    // 會到這個階段的地址都是前幾個階段沒有比對到母體的地址的前提下
     void setJoinStepWhenResultIsEmpty(List<IbdTbAddrCodeOfDataStandardDTO> list, SingleQueryResultDTO result, Address address) {
         log.info("查無資料");
         IbdTbAddrCodeOfDataStandardDTO dto = new IbdTbAddrCodeOfDataStandardDTO();
         String segNum = address.getSegmentExistNumber();
+        log.info("查無資料，segNum:{}", segNum);
         if (!segNum.startsWith("11")) {
-            dto.setJoinStep("JE431"); //缺少行政區 >>> 如果最後都沒有比到的話，同時沒有寫 縣市、鄉鎮市區
+            dto.setJoinStep("JE431"); //缺少行政區(連寫都沒有寫) >>> 如果最後都沒有比到的話，同時沒有寫 縣市、鄉鎮市區
             result.setText("缺少行政區");
-        } else if (segNum.startsWith("11") && '1' != segNum.charAt(4) && '1' != segNum.charAt(5)) {
-            dto.setJoinStep("JE421"); //缺少路地名 >>> 如果最後都沒有比到的話，地址中同時沒有寫路名、地名、巷名
+        } else if (segNum.startsWith("11") && '1' != segNum.charAt(3) && '1' != segNum.charAt(4) && '1' != segNum.charAt(5)) {
+            dto.setJoinStep("JE421"); //缺少路地名(連寫都沒有寫) >>> 如果最後都沒有比到的話，地址中同時沒有寫路名(3)、地名(4)、巷名(5)
             result.setText("缺少路地名");
-        } else if ('1' == segNum.charAt(0) && '1' == segNum.charAt(1) && '1' == segNum.charAt(4) && '1' == segNum.charAt(8)) { //地址完整切割但比對不到母體檔(NEW那張)
+        } else if (address.getCounty() != null && address.getTown() != null && segNum.startsWith("00")) {
+            //如果縣市/鄉鎮市區片段欄位有值，但要件編號為空 -> JE521
+            dto.setJoinStep("JE521");
+            result.setText("查無地址");
+        } else if ((address.getVillage() != null && '0' == segNum.charAt(2)) || (address.getRoad() != null && address.getArea() != null && '0' == segNum.charAt(3) && '0' == segNum.charAt(4))) {
+            // 如果村里(2)片段欄位有值，但要件編號為空   或   路地名片段欄位有值，但路地名要件編號為空 -> JE531
+            dto.setJoinStep("JE531");
+            result.setText("查無地址");
+        } else if (checkSeg(segNum)) {
+            // 若有地址 各地址片段不但有寫  且 有在要件清單裡，又不是上述兩種狀況，也比對不到母體 -> JE511
             dto.setJoinStep("JE511");
             result.setText("查無地址");
         } else if (address.getOriginalAddress().contains("地號") || address.getOriginalAddress().contains("段號")) { //地址完整切割但比對不到母體檔(NEW那張)
@@ -667,5 +694,9 @@ public class SingleQueryService {
         list.add(dto);
     }
 
+    private Boolean checkSeg (String segNum){
+        String pattern = "^111(1[01]{2}|[01]1[01]|[01]{2}1)11$"; //總共8碼，確保第3(ROAD)、4(AREA)、5(LANE) 個字符中至少有一个是1，而其他的必須是1
+        return segNum.matches(pattern);
+    }
 
 }
