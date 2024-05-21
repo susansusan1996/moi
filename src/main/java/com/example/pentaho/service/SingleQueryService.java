@@ -668,30 +668,26 @@ public class SingleQueryService {
         String segNum = address.getSegmentExistNumber();
         log.info("查無資料，segNum:{}", segNum);
         if (!segNum.startsWith("11")) {
-            dto.setJoinStep("JE431"); //缺少行政區(連寫都沒有寫) >>> 如果最後都沒有比到的話，同時沒有寫 縣市、鄉鎮市區
-            result.setText("缺少行政區");
+            setResult(dto, result, "JE431", "缺少行政區"); //缺少行政區(連寫都沒有寫) >>> 如果最後都沒有比到的話，同時沒有寫 縣市、鄉鎮市區
         } else if (segNum.startsWith("11") && '1' != segNum.charAt(3) && '1' != segNum.charAt(4) && '1' != segNum.charAt(5)) {
-            dto.setJoinStep("JE421"); //缺少路地名(連寫都沒有寫) >>> 如果最後都沒有比到的話，地址中同時沒有寫路名(3)、地名(4)、巷名(5)
-            result.setText("缺少路地名");
+            setResult(dto, result, "JE421", "缺少路地名"); //缺少路地名(連寫都沒有寫) >>> 如果最後都沒有比到的話，地址中同時沒有寫路名(3)、地名(4)、巷名(5)
         } else if (address.getCounty() != null && address.getTown() != null && segNum.startsWith("00")) {
-            //如果縣市/鄉鎮市區片段欄位有值，但要件編號為空 -> JE521
-            dto.setJoinStep("JE521");
-            result.setText("查無地址");
+            setResult(dto, result, "JE521", "查無地址"); //如果縣市/鄉鎮市區片段欄位有值，但要件編號為空 -> JE521
         } else if ((address.getVillage() != null && '0' == segNum.charAt(2)) || (address.getRoad() != null && address.getArea() != null && '0' == segNum.charAt(3) && '0' == segNum.charAt(4))) {
-            // 如果村里(2)片段欄位有值，但要件編號為空   或   路地名片段欄位有值，但路地名要件編號為空 -> JE531
-            dto.setJoinStep("JE531");
-            result.setText("查無地址");
+            setResult(dto, result, "JE531", "查無地址"); // 如果村里(2)片段欄位有值，但要件編號為空   或   路地名片段欄位有值，但路地名要件編號為空 -> JE531
         } else if (checkSeg(segNum)) {
-            // 若有地址 各地址片段不但有寫  且 有在要件清單裡，又不是上述兩種狀況，也比對不到母體 -> JE511
-            dto.setJoinStep("JE511");
-            result.setText("查無地址");
-        } else if (address.getOriginalAddress().contains("地號") || address.getOriginalAddress().contains("段號")) { //地址完整切割但比對不到母體檔(NEW那張)
-            dto.setJoinStep("JE311");
-            result.setText("地段號");
+            setResult(dto, result, "JE511", "查無地址"); // 若有地址 各地址片段不但有寫  且 有在要件清單裡，又不是上述兩種狀況，也比對不到母體 -> JE511
+        } else if (address.getOriginalAddress().contains("地號") || address.getOriginalAddress().contains("段號")) {
+            setResult(dto, result, "JE311", "地段號");
         } else {
             result.setText("查無地址");
         }
         list.add(dto);
+    }
+
+    private void setResult(IbdTbAddrCodeOfDataStandardDTO dto, SingleQueryResultDTO result, String joinStep, String text) {
+        dto.setJoinStep(joinStep);
+        result.setText(text);
     }
 
     private Boolean checkSeg (String segNum){
