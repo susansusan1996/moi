@@ -85,8 +85,7 @@ directory:
 
 #如果是自己要在 uat server上測試，要改成/home/moi/app/ap_key/rsa.pub(用自己的公鑰)
 key:
-#  pubkey-name: D:\rsa_key\rsa.pub #AP公鑰
-  pubkey-name: /home/moi/app/ap_key/rsa.pub #AP公鑰
+  pubkey-name: /home/moi/app/key/rsa.pub #聖森公鑰
   ap-prikey-name: /home/moi/app/ap_key/rsa.pri #AP私鑰
   ap-pubkey-name: /home/moi/app/ap_key/rsa.pub #AP公鑰
 
