@@ -56,10 +56,6 @@ public class FuzzySearchService {
         List<String> newMappingIdList = new ArrayList<>();
         List<String> regexList = new ArrayList<>();
         String segNum = address.getSegmentExistNumber();
-        //mappingCount陣列代表，COUNTY_CD要5位元，TOWN_CD要3位元，VILLAGE_CD要3位元，以此類推
-        //6,5,4,3,1 分別是NUM_FLR_1~NUM_FLR_5
-        int[] mappingCount = {5, 3, 3, 3, 7, 4, 7, 2, 6, 5, 4, 3, 1, 1, 5, 5};
-        int sum = 0;
         List<LinkedHashMap<String, String>> mapList = address.getMappingIdMap();
         mapList.forEach(map -> {
             LinkedHashMap<String, String> regexMap = new LinkedHashMap<>(map);
