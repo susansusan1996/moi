@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -37,7 +36,7 @@ public class SingleQueryService {
     private RedisService redisService;
 
     @Autowired
-    private JoinStepService joinStepService;
+    private FuzzySearchService fuzzySearchService;
 
     String segmentExistNumber = ""; //紀錄user是否有輸入每個地址片段，有:1，沒有:0
 
@@ -155,7 +154,7 @@ public class SingleQueryService {
             log.info("第一次就有比到!!");
         }
         else { //沒找到，模糊搜尋(可能是COUNTY或TOWN沒有寫)
-            seqList.addAll(joinStepService.fuzzySearchSeq(address));
+            seqList.addAll(fuzzySearchService.fuzzySearchSeq(address));
         }
         seqSet = splitSeqAndStep(address, seqList, seqSet);
         //多址判斷

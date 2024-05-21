@@ -1,8 +1,6 @@
 package com.example.pentaho.service;
 
 import com.example.pentaho.component.Address;
-import com.example.pentaho.repository.IbdTbAddrDataNewRepository;
-import com.example.pentaho.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,9 +11,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
-public class JoinStepService {
+public class FuzzySearchService {
 
-    private static Logger log = LoggerFactory.getLogger(JoinStepService.class);
+    private static Logger log = LoggerFactory.getLogger(FuzzySearchService.class);
 
     @Autowired
     private RedisService redisService;
