@@ -209,7 +209,7 @@ public class AddressParser {
     private String parseBasementForBF(String input, Address address) {
         if (StringUtils.isNotNullOrEmpty(input)) {
             String[] basemantPattern1 = {"BF", "bf", "B1", "b1", "Ｂ１", "ｂ１", "ＢＦ", "ｂｆ"};
-            String[] basemantPattern2 = {".*B.*F", ".*b.*f", ".*Ｂ.*Ｆ", ".*ｂ.*ｆ"};
+            String[] basemantPattern2 = {".*B.*樓",".*b.*樓",".*Ｂ.*樓",".*ｂ.*樓",".*B.*F", ".*b.*f", ".*Ｂ.*Ｆ", ".*ｂ.*ｆ"};
             if (Arrays.asList(basemantPattern1).contains(input)) {
                 log.info("basemantPattern1:{}", input);
                 address.setBasementStr("1");
