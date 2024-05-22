@@ -38,7 +38,8 @@ public class AddressParser {
     private final String DYNAMIC_ALLEY_PART = "|卓厝|安農新邨|吉祥園|蕭厝|泰安新村|美喬|１弄圳東|堤外|中興二村|溝邊|長埤|清水|南苑|二橫路|朝安|黃泥塘|建行新村|牛頭|永和山莊";
     private final String COUNTY = "(?<zipcode>(^\\d{5}|^\\d{3}|^\\d)?)(?<county>.*?縣|.*?市|%s)?";
     private final String TOWN = "(?<town>\\D+?(市區|鎮區|鎮市|[鄉鎮市區])|%s)?";
-    private final String VILLAGE = "(?<village>.*新里里|.*村里|.*?村|.*?里|%s)?";
+    //    private final String VILLAGE = "(?<village>(.*新里里|.*村里|.*?里|.*?村|%s))?";
+    private final String VILLAGE = "(?<village>(?<!路)(新里里|村里|[^路]*?里|[^路]*?村|%s))?";
     private final String NEIGHBOR = "(?<neighbor>" + ALL_CHAR + "+鄰)?";
     private final String SPECIALLANE = "(?<speciallane>鐵路.*巷|丹路.*巷)?"; //避免被切到路，直接先寫死在這裡
     private final String ROAD = "(?<road>(.*?段|.*?街|.*?大道|.*?路(?!巷)|%s)?)";
@@ -63,7 +64,7 @@ public class AddressParser {
         //去"台灣省"
         input = input.replace("台灣省", "");
         //去除特殊字元
-        input = input.replaceAll("[`!@#$%^&*+=|';',\\[\\].<>/！@#￥%……&*+|‘”“’。，\\\\\\s]+", "");
+        input = input.replaceAll("[`!@#$%^&*+=|';',./！@#￥%……&*+|‘”“’。，\\\\\\s]+", "");
         log.info("去除特殊字元後的input:{}",input);
         if (address == null) {
             address = new Address();
@@ -136,7 +137,7 @@ public class AddressParser {
         String newRoad = String.format(ROAD , String.join("|",roadList));
         String newArea = String.format(SPECIAL_AREA , String.join("|",specialAreas));
 //        log.info("SPECIAL_AREA:{}",newArea);
-        String finalPattern = newCounty + newTown + newVillage + NEIGHBOR + SPECIALLANE + newRoad + newArea + LANE + ALLEY + SUBALLEY + NUMFLR1 + NUMFLR2 + NUMFLR3 + NUMFLR4 + NUMFLR5 + CONTINUOUS_NUM + ROOM + BASEMENTSTR + REMARK + ADDRREMAINS;
+        String finalPattern = newCounty + newTown + newArea + newVillage + NEIGHBOR + SPECIALLANE + newRoad + LANE + ALLEY + SUBALLEY + NUMFLR1 + NUMFLR2 + NUMFLR3 + NUMFLR4 + NUMFLR5 + CONTINUOUS_NUM + ROOM + BASEMENTSTR + REMARK + ADDRREMAINS;
 //        log.info("finalPattern==>{}",finalPattern);
         return finalPattern;
     }
@@ -155,7 +156,10 @@ public class AddressParser {
         address.setVillage(matcher.group("village"));
         address.setNeighbor(matcher.group("neighbor"));
         address.setRoad(matcher.group("road"));
-        address.setArea(matcher.group("area")); //帶有"村"的area會先歸在這裡
+        address.setSpecialArea(matcher.group("area"));//帶有"村"的area會先歸在這裡
+        if(address.getSpecialArea()!=null){
+            address.setArea(address.getSpecialArea());
+        }
         address.setLane(matcher.group("speciallane") != null ? matcher.group("speciallane") : matcher.group("lane"));
         address.setAlley(matcher.group("alley"));
         address.setSubAlley(matcher.group("subAlley"));

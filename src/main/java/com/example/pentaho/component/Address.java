@@ -18,6 +18,7 @@ public class Address {
     private String neighbor;
     private String neighborCd;
     private String road;
+    private String specialArea;
     private String area;
     private String roadAreaSn;
     private String lane;
@@ -448,6 +449,14 @@ public class Address {
         this.cleanAddress = cleanAddress;
     }
 
+    public String getSpecialArea() {
+        return specialArea;
+    }
+
+    public void setSpecialArea(String specialArea) {
+        this.specialArea = specialArea;
+    }
+
     @Override
     public String toString() {
         return "Address{" +
@@ -461,6 +470,7 @@ public class Address {
                 ", neighbor='" + neighbor + '\'' +
                 ", neighborCd='" + neighborCd + '\'' +
                 ", road='" + road + '\'' +
+                ", specialArea='" + specialArea + '\'' +
                 ", area='" + area + '\'' +
                 ", roadAreaSn='" + roadAreaSn + '\'' +
                 ", lane='" + lane + '\'' +
