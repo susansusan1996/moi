@@ -66,11 +66,12 @@ public class FuzzySearchService {
                     fuzzyMap.put("COUNTY", "*");
                     fuzzyMap.put("TOWN", "");
                 } else if ("1".equals(String.valueOf(segNum.charAt(0))) && "0".equals(String.valueOf(segNum.charAt(1)))) {
-                    regexMap.put("COUNTY", "\\d{5}");
-                    regexMap.put("TOWN", "");
+                    // 有COUNTY，沒TOWN
+                    regexMap.put("TOWN", "\\d{3}");
                     fuzzyMap.put("TOWN", "*");
                 } else if ("0".equals(String.valueOf(segNum.charAt(0))) && "1".equals(String.valueOf(segNum.charAt(1)))) {
-                    regexMap.put("TOWN", "\\d{3}");
+                    // 有TOWN，沒COUNTY
+                    regexMap.put("COUNTY", "\\d{5}");
                     fuzzyMap.put("COUNTY", "*");
                 }
                 StringBuilder regex = new StringBuilder();
