@@ -60,7 +60,6 @@ public class SingleQueryResouce {
     }
 
 
-
     @Operation(description = "單筆查詢",
             parameters = {
                     @Parameter(in = ParameterIn.HEADER,
@@ -80,13 +79,15 @@ public class SingleQueryResouce {
                     )
             )
             @RequestBody SingleQueryDTO singleQueryDTO
-    ) throws NoSuchFieldException, IllegalAccessException {
-//        try {
-        return ResponseEntity.ok(singleQueryService.findJson(singleQueryDTO));
-//        } catch (Exception e) {
-//            log.info("無法解析地址:{}", e.getMessage());
-//            return ResponseEntity.ok("無法解析地址");
-//        }
+    ) {
+        try {
+            return ResponseEntity.ok(singleQueryService.findJson(singleQueryDTO));
+        } catch (Exception e) {
+            log.info("無法解析地址:{}", e.getMessage());
+            SingleQueryResultDTO dto = new SingleQueryResultDTO();
+            dto.setText("無法解析地址");
+            return ResponseEntity.ok(dto);
+        }
     }
 
     /***
