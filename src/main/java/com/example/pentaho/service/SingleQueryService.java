@@ -39,6 +39,7 @@ public class SingleQueryService {
     private FuzzySearchService fuzzySearchService;
 
     String segmentExistNumber = ""; //紀錄user是否有輸入每個地址片段，有:1，沒有:0
+    private static final Set<String> EXCLUDED_JOIN_STEPS = Set.of("JE621", "JD721", "JE431", "JE421", "JE511");
 
 
     public String findJsonTest(SingleQueryDTO singleQueryDTO) {
@@ -63,24 +64,15 @@ public class SingleQueryService {
         Set<String> seqSet = address.getSeqSet();
         if (!seqSet.isEmpty()) {
             log.info("seq:{}", seqSet);
-            //檢查是否history(歷史門牌)，2的話就是history
-            if ('2' == address.getJoinStep().charAt(3)) {
-                log.info("歷史門牌!");
-                List<IbdTbIhChangeDoorplateHis> hisList = ibdTbIhChangeDoorplateHisRepository.findByHistorySeq(seqSet.stream().toList());
-                list = ibdTbAddrCodeOfDataStandardRepository.findByAddressId(hisList, address);
-            } else {
-                list = ibdTbAddrCodeOfDataStandardRepository.findBySeq(seqSet.stream().map(Integer::parseInt).collect(Collectors.toList()));
-            }
+            list = fetchAddressData(address); //db取資料
             //放地址比對代碼
             Address finalAddress = address;
             list.forEach(IbdTbAddrDataRepositoryNewdto -> {
-                if (!"JE621".equals(IbdTbAddrDataRepositoryNewdto.getJoinStep())
-                        && !"JD721".equals(IbdTbAddrDataRepositoryNewdto.getJoinStep())//增編多址比對
-                        && !"JE431".equals(finalAddress.getJoinStep()) //缺少行政區
-                        && !"JE421".equals(finalAddress.getJoinStep()) //缺少路地名
-                        && !"JE511".equals(finalAddress.getJoinStep()) //地址完整切割但比對不到母體檔
-                )
-                {
+                if (
+                        IbdTbAddrDataRepositoryNewdto.getJoinStep() == null
+                                || (!EXCLUDED_JOIN_STEPS.contains(IbdTbAddrDataRepositoryNewdto.getJoinStep()) &&
+                                !EXCLUDED_JOIN_STEPS.contains(finalAddress.getJoinStep()))
+                ) {
                     IbdTbAddrDataRepositoryNewdto.setJoinStep(finalAddress.getJoinStep());
                 }
             });
@@ -98,7 +90,6 @@ public class SingleQueryService {
         if(address!=null){
             log.info("getOriginalAddress:{}", address.getOriginalAddress());
             String numTypeCd = "95";
-            //如果有addrRemain的話，表示有可能是"臨建特附"，要把"臨建特附"先拿掉，再PARSE一次地址
             if (StringUtils.isNotNullOrEmpty(address.getAddrRemains()) && StringUtils.isNullOrEmpty(address.getBasementStr())) {
                 numTypeCd = getNumTypeCd(address);
                 if (!"95".equals(numTypeCd)) { //臨建特附，再parse一次地址
@@ -692,6 +683,17 @@ public class SingleQueryService {
     private Boolean checkSeg (String segNum){
         String pattern = "^111(1[01]{2}|[01]1[01]|[01]{2}1)11$"; //總共8碼，確保第3(ROAD)、4(AREA)、5(LANE) 個字符中至少有一个是1，而其他的必須是1
         return segNum.matches(pattern);
+    }
+
+    private List<IbdTbAddrCodeOfDataStandardDTO> fetchAddressData(Address address) {
+        if ('2' == address.getJoinStep().charAt(3)) {
+            //檢查是否history(歷史門牌)，2的話就是history
+            log.info("歷史門牌!");
+            List<IbdTbIhChangeDoorplateHis> hisList = ibdTbIhChangeDoorplateHisRepository.findByHistorySeq(address.getSeqSet().stream().toList());
+            return ibdTbAddrCodeOfDataStandardRepository.findByAddressId(hisList, address);
+        } else {
+            return ibdTbAddrCodeOfDataStandardRepository.findBySeq(address.getSeqSet().stream().map(Integer::parseInt).collect(Collectors.toList()));
+        }
     }
 
 }

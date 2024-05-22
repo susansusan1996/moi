@@ -71,8 +71,10 @@ public class NumberParser {
                 log.info("數字改為:{}", result);
                 return result.toString();
             }
+        } else if (input == null) {
+            return "";
         }
-        return "";
+        return input;
     }
 
     //檢查有無匹配國字大小寫數字
