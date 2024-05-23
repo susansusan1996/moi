@@ -87,17 +87,16 @@ public class SingleQueryService {
     public Address parseAddressAndFindMappingId(String input) {
         // 解析地址
         Address address = addressParser.parseAddress(input, null);
+        address.setOriginalAddress(input);
         log.info("初次解析 address:{}", address);
-        if (address == null) {
-            return new Address();
-        }
         String numTypeCd = "95";
-        if (StringUtils.isNotNullOrEmpty(address.getAddrRemains()) && StringUtils.isNullOrEmpty(address.getBasementStr())) {
+        //處理remain
+        if (StringUtils.isNotNullOrEmpty(address.getAddrRemains())) {
             numTypeCd = getNumTypeCd(address);
             if (!"95".equals(numTypeCd)) {
                 // 如果是臨建特附，再解析一次地址
-                log.info("<臨建特附>:{}", address.getOriginalAddress());
-                address = addressParser.parseAddress( address.getOriginalAddress(), address);
+                log.info("<臨建特附>:{}", address.getCleanAddress());
+                address = addressParser.parseAddress( address.getCleanAddress(), address);
             } else {
                 // 有可能是地址沒有切出來導致有remain，解析AREA
                 address = addressParser.parseArea(address);
@@ -129,7 +128,7 @@ public class SingleQueryService {
             newAddrRemains = oldAddrRemains;
         }
         //再把addrRemains拼回原本的address，再重新切一次地址
-        address.setOriginalAddress(address.getOriginalAddress().replace(oldAddrRemains, newAddrRemains));
+        address.setCleanAddress(address.getCleanAddress().replace(oldAddrRemains, newAddrRemains));
         return numTypeCd;
     }
 
@@ -655,6 +654,7 @@ public class SingleQueryService {
         IbdTbAddrCodeOfDataStandardDTO dto = new IbdTbAddrCodeOfDataStandardDTO();
         String segNum = address.getSegmentExistNumber();
         log.info("查無資料，segNum:{}", segNum);
+        log.info("address.getCleanAddress():{}",address.getCleanAddress());
         if (!segNum.startsWith("11")) {
             setResult(dto, result, "JE431", "缺少行政區"); //缺少行政區(連寫都沒有寫) >>> 如果最後都沒有比到的話，同時沒有寫 縣市、鄉鎮市區
         } else if (segNum.startsWith("11") && '1' != segNum.charAt(3) && '1' != segNum.charAt(4) && '1' != segNum.charAt(5)) {

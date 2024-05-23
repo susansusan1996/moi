@@ -58,23 +58,27 @@ public class AddressParser {
     //〈〉【】[]〔〕()『』「」{}「」《》（）
 
     public Address parseAddress(String origninalAddress, Address address) {
-        //去"台灣省"
-        origninalAddress = origninalAddress.replace("台灣省", "");
-        //去除特殊字元
-        origninalAddress = origninalAddress.replaceAll("[`!@#$%^&*+=|';',./！@#￥%……&*+|‘”“’。，\\\\\\s]+", "");
-        log.info("去除特殊字元後的input:{}",origninalAddress);
-        if (address == null) {
+        if (address == null) { //表示初次切割，如果有切完第一次有REMAIN或是地下室的狀況，才會再把地址丟進來再切一次
             address = new Address();
-            address.setOriginalAddress(origninalAddress);
         }
-        address.setCleanAddress(origninalAddress);
+        address.setCleanAddress(cleanAddress(origninalAddress));
         String pattern = getPattern(); //組正則表達式
         Pattern regexPattern = Pattern.compile(pattern);
         Matcher matcher = regexPattern.matcher(origninalAddress);
         if (matcher.matches()) {
             return setAddress(matcher, address);
         }
-        return null;
+        return address;
+    }
+
+
+    public static String cleanAddress(String originalAddress) {
+        if (originalAddress == null || originalAddress.isEmpty()) {
+            return originalAddress;
+        }
+        // 去掉 "台灣省" 並去除特殊字元
+        return originalAddress.replace("台灣省", "")
+                .replaceAll("[`!@#$%^&*+=|';',./！@#￥%……&*+|‘”“’。，\\\\\\s]+", "");
     }
 
 
@@ -103,6 +107,7 @@ public class AddressParser {
             String cleanAddress = address.getCleanAddress();
             log.info("match:{}",match);
             int lastIndex = cleanAddress.lastIndexOf(match);
+            //把找到的AREA從INPUT的ADDRESS刪掉，再切一次
             String newAddressString = cleanAddress.substring(0, lastIndex) + cleanAddress.substring(lastIndex + match.length());
             address = parseAddress(newAddressString, address);
         }
