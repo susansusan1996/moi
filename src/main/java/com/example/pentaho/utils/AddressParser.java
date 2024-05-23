@@ -1,14 +1,12 @@
 package com.example.pentaho.utils;
 
 import com.example.pentaho.component.Address;
-import com.example.pentaho.component.AliasDTO;
 import com.example.pentaho.repository.AliasRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.connection.RedisConnection;
-import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.stereotype.Component;
@@ -115,29 +113,59 @@ public class AddressParser {
 
 
     private String getPattern() {
-        List<AliasDTO> aliasList = aliasRepository.queryAllAlias();
-        Set<String> specialAreas = findSpecialArea(); //找帶有"村"的AREA，避免被歸在VILLAGE
-        List<String> countyList = aliasList.stream().filter(aliasDTO -> aliasDTO.getTypeName().equals("COUNTY")).map(AliasDTO::getAlias).toList();
-        List<String> roadList = aliasList.stream().filter(aliasDTO -> aliasDTO.getTypeName().equals("ROAD")).map(AliasDTO::getAlias).toList();
-//        List<String> areaList = aliasList.stream().filter(aliasDTO -> aliasDTO.getTypeName().equals("AREA")).map(AliasDTO::getAlias).toList();
-        List<String> townList = aliasList.stream()
-                .filter(aliasDTO -> aliasDTO.getTypeName().equals("TOWN"))
-                .map(aliasDTO -> aliasDTO.getAlias() + "(?![里段街道路巷弄號樓之區棟])")
-                .toList();
-        List<String> villageList = aliasList.stream().filter(aliasDTO -> aliasDTO.getTypeName().equals("VILLAGE"))
-                .map(aliasDTO -> aliasDTO.getTypeName() + "(?![里段街道路巷弄號樓之區棟])")
-                .toList();
-        String newCounty = String.format(COUNTY , String.join("|",countyList));
-        String newTown = String.format(TOWN , String.join("|",townList));
-        String newVillage = String.format(VILLAGE , String.join("|",villageList));
-        String newRoad = String.format(ROAD , String.join("|",roadList));
-        String newArea = String.format(SPECIAL_AREA , String.join("|",specialAreas));
-//        log.info("SPECIAL_AREA:{}",newArea);
-        String finalPattern = newCounty + newTown + newArea + newVillage + NEIGHBOR + SPECIALLANE + newRoad + LANE + ALLEY + SUBALLEY + NUMFLR1 + NUMFLR2 + NUMFLR3 + NUMFLR4 + NUMFLR5 + CONTINUOUS_NUM + ROOM + BASEMENTSTR + REMARK + ADDRREMAINS;
-//        log.info("finalPattern==>{}",finalPattern);
-        return finalPattern;
+        Map<String, Set<String>> allKeys = new LinkedHashMap<>();
+        try {
+            String[] keys = {"COUNTY_ALIAS:", "TOWN_ALIAS:", "VILLAGE_ALIAS:", "ROAD_ALIAS:", "SPECIAL_AREA:"};
+            allKeys = findAllKeys(keys); //redis查詢所有alias，要拼在正則後面
+        } catch (Exception e) {
+            log.error("findAllKeys error: {}", e.getMessage());
+        }
+        String newCounty = String.format(COUNTY , String.join("|",allKeys.get("COUNTY_ALIAS:")));
+        log.info("newCounty:{}",newCounty);
+        String newTown = String.format(TOWN , String.join("|",allKeys.get("TOWN_ALIAS:")));
+        String newVillage = String.format(VILLAGE , String.join("|",allKeys.get("VILLAGE_ALIAS:")));
+        String newRoad = String.format(ROAD , String.join("|",allKeys.get("ROAD_ALIAS:")));
+        String newArea = String.format(SPECIAL_AREA , String.join("|",allKeys.get("SPECIAL_AREA:")));
+        return newCounty + newTown + newArea + newVillage + NEIGHBOR + SPECIALLANE + newRoad + LANE + ALLEY + SUBALLEY + NUMFLR1 + NUMFLR2 + NUMFLR3 + NUMFLR4 + NUMFLR5 + CONTINUOUS_NUM + ROOM + BASEMENTSTR + REMARK + ADDRREMAINS;
     }
 
+
+
+    private Map<String, Set<String>> findAllKeys(String[] keys) {
+        Map<String, Set<String>> resultMap = new HashMap<>();
+        RedisConnection connection = null;
+        try {
+            connection = getConnection();
+            RedisSerializer<String> serializer = stringRedisTemplate2.getStringSerializer();
+            for (String key : keys) {
+                Set<byte[]> redisSetBytes = connection.sMembers(serializer.serialize(key));
+                Set<String> deserializedSet = new HashSet<>();
+                for (byte[] bytes : redisSetBytes) {
+                    deserializedSet.add(serializer.deserialize(bytes));
+                }
+                resultMap.put(key, deserializedSet);
+            }
+        } catch (Exception e) {
+            log.error("findAllKeys error: {}", e.getMessage());
+        } finally {
+            releaseConnection(connection);
+        }
+        return resultMap;
+    }
+
+    private RedisConnection getConnection() {
+        return stringRedisTemplate2.getConnectionFactory().getConnection();
+    }
+
+    private void releaseConnection(RedisConnection connection) {
+        if (connection != null) {
+            try {
+                connection.close();
+            } catch (Exception e) {
+                log.error("Error closing Redis connection: {}", e.getMessage());
+            }
+        }
+    }
 
     public Address setAddress(Matcher matcher, Address address) {
         address.setParseSuccessed(true);
@@ -233,27 +261,6 @@ public class AddressParser {
     }
 
 
-
-    public Set<String> findSpecialArea() {
-        Set<String> specialAreaSet = new HashSet<>();
-        try (RedisConnection connection = stringRedisTemplate2.getConnectionFactory().getConnection()) {
-            RedisSerializer<String> serializer = stringRedisTemplate2.getStringSerializer();
-            connection.openPipeline();
-            connection.sMembers(serializer.serialize("SPECIAL_AREA:"));
-            List<Object> results = connection.closePipeline();
-            for (Object result : results) {
-                if (result instanceof Set) {
-                    Set<byte[]> redisSetBytes = (Set<byte[]>) result;
-                    for (byte[] bytes : redisSetBytes) {
-                        specialAreaSet.add(serializer.deserialize(bytes));
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log.error("findSpecialArea error:{}",e.getMessage());
-        }
-        return specialAreaSet;
-    }
 
     //如果還是有連在一起的地址，要切開EX.1之10樓，要切成"1之"，"10樓"
     public Map<String, Object> parseNumFlrAgain(String rawNumFLR,String flrType) {
