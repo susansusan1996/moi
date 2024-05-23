@@ -48,17 +48,6 @@ public class SingleQueryResouce {
     private SystemUpdateService systemUpdateService;
 
 
-    /**
-     * 拆分地址
-     */
-    @GetMapping("/query-address")
-    @Hidden
-    public ResponseEntity<Address> queryData(@RequestBody SingleQueryDTO singleQueryDTO) {
-//        return ResponseEntity.ok(new Address(singleQueryDTO.getOriginalAddress()));
-        return ResponseEntity.ok(addressParser.parseAddress(singleQueryDTO.getOriginalAddress(),null,null));
-
-    }
-
 
     @Operation(description = "單筆查詢",
             parameters = {
