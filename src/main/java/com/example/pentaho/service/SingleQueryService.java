@@ -657,7 +657,7 @@ public class SingleQueryService {
         log.info("address.getCleanAddress():{}",address.getCleanAddress());
         if (!segNum.startsWith("11")) {
             setResult(dto, result, "JE431", "缺少行政區"); //缺少行政區(連寫都沒有寫) >>> 如果最後都沒有比到的話，同時沒有寫 縣市、鄉鎮市區
-        } else if (segNum.startsWith("11") && '1' != segNum.charAt(3) && '1' != segNum.charAt(4) && '1' != segNum.charAt(5)) {
+        } else if (segNum.startsWith("11") && '0' == segNum.charAt(3) && '0' == segNum.charAt(4) && '0' == segNum.charAt(5)) {
             setResult(dto, result, "JE421", "缺少路地名"); //缺少路地名(連寫都沒有寫) >>> 如果最後都沒有比到的話，地址中同時沒有寫路名(3)、地名(4)、巷名(5)
         } else if (address.getCounty() != null && address.getTown() != null && segNum.startsWith("00")) {
             setResult(dto, result, "JE521", "查無地址"); //如果縣市/鄉鎮市區片段欄位有值，但要件編號為空 -> JE521
