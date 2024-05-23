@@ -59,23 +59,20 @@ public class AddressParser {
     private final String REMARK = "(?<remark>[\\(\\{\\〈\\【\\[\\〔\\『\\「\\「\\《\\（](.*?)[\\)\\〉\\】\\]\\〕\\』\\」\\}\\」\\》\\）])?";
     //〈〉【】[]〔〕()『』「」{}「」《》（）
 
-    public Address parseAddress(String origninalAddress, String newAddress, Address address) {
-        String input = newAddress == null ? origninalAddress : newAddress;
+    public Address parseAddress(String origninalAddress, Address address) {
         //去"台灣省"
-        input = input.replace("台灣省", "");
+        origninalAddress = origninalAddress.replace("台灣省", "");
         //去除特殊字元
-        input = input.replaceAll("[`!@#$%^&*+=|';',./！@#￥%……&*+|‘”“’。，\\\\\\s]+", "");
-        log.info("去除特殊字元後的input:{}",input);
+        origninalAddress = origninalAddress.replaceAll("[`!@#$%^&*+=|';',./！@#￥%……&*+|‘”“’。，\\\\\\s]+", "");
+        log.info("去除特殊字元後的input:{}",origninalAddress);
         if (address == null) {
             address = new Address();
-            if (newAddress == null) {
-                address.setOriginalAddress(origninalAddress);
-            }
+            address.setOriginalAddress(origninalAddress);
         }
-        address.setCleanAddress(input);
+        address.setCleanAddress(origninalAddress);
         String pattern = getPattern(); //組正則表達式
         Pattern regexPattern = Pattern.compile(pattern);
-        Matcher matcher = regexPattern.matcher(input);
+        Matcher matcher = regexPattern.matcher(origninalAddress);
         if (matcher.matches()) {
             return setAddress(matcher, address);
         }
@@ -109,8 +106,7 @@ public class AddressParser {
             log.info("match:{}",match);
             int lastIndex = cleanAddress.lastIndexOf(match);
             String newAddressString = cleanAddress.substring(0, lastIndex) + cleanAddress.substring(lastIndex + match.length());
-            address = parseAddress(null,newAddressString, address);
-
+            address = parseAddress(newAddressString, address);
         }
         log.info("切不出地名，再切一次的新address:{}",address);
         return address;
@@ -148,7 +144,7 @@ public class AddressParser {
         String basementString = matcher.group("basementStr");
         // 特殊處理地下一層和地下的情況
         if (StringUtils.isNotNullOrEmpty(basementString)) {
-            return parseAddress(null, parseBasement(basementString, address.getCleanAddress(), address), address);
+            return parseAddress(parseBasement(basementString, address.getCleanAddress(), address), address);
         }
         address.setZipcode(matcher.group("zipcode"));
         address.setCounty(matcher.group("county"));

@@ -84,31 +84,29 @@ public class SingleQueryService {
         return result;
     }
 
-    public Address parseAddressAndFindMappingId(String originalString) {
-        //切地址
-        Address address = addressParser.parseAddress(originalString, null, null);
-        if(address!=null){
-            log.info("getOriginalAddress:{}", address.getOriginalAddress());
-            String numTypeCd = "95";
-            if (StringUtils.isNotNullOrEmpty(address.getAddrRemains()) && StringUtils.isNullOrEmpty(address.getBasementStr())) {
-                numTypeCd = getNumTypeCd(address);
-                if (!"95".equals(numTypeCd)) { //臨建特附，再parse一次地址
-                    log.info("臨建特附:{}", address.getOriginalAddress());
-                    address = addressParser.parseAddress(null, address.getOriginalAddress(), address);
-                } else if (StringUtils.isNotNullOrEmpty(address.getContinuousNum())) { //連在一起的數字，再parse一次地址
-                    address = addressParser.parseAddress(null, address.getOriginalAddress(), address);
-                } else {
-                    //有可能是地址沒有切出來導致有remain
-                    address = addressParser.parseArea(address);
-                }
-                address.setNumTypeCd(numTypeCd);
-            } else {
-                address.setNumTypeCd(numTypeCd); //95
-            }
-            return setAddressAndFindCdByRedis(address);
+    public Address parseAddressAndFindMappingId(String input) {
+        // 解析地址
+        Address address = addressParser.parseAddress(input, null);
+        log.info("初次解析 address:{}", address);
+        if (address == null) {
+            return new Address();
         }
-        return new Address();
+        String numTypeCd = "95";
+        if (StringUtils.isNotNullOrEmpty(address.getAddrRemains()) && StringUtils.isNullOrEmpty(address.getBasementStr())) {
+            numTypeCd = getNumTypeCd(address);
+            if (!"95".equals(numTypeCd)) {
+                // 如果是臨建特附，再解析一次地址
+                log.info("<臨建特附>:{}", address.getOriginalAddress());
+                address = addressParser.parseAddress( address.getOriginalAddress(), address);
+            } else {
+                // 有可能是地址沒有切出來導致有remain，解析AREA
+                address = addressParser.parseArea(address);
+            }
+        }
+        address.setNumTypeCd(numTypeCd);
+        return setAddressAndFindCdByRedis(address);
     }
+
 
     private static String getNumTypeCd(Address address) {
         String oldAddrRemains = address.getAddrRemains();

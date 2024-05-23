@@ -270,7 +270,7 @@ public class APIKeyResource {
             )) @RequestParam String address) {
         log.info("address:{}",address);
         UsageUtils.writeUsageLog("/api/api-key/query-standard-address",address);
-        return new ResponseEntity<>(addressParser.parseAddress(address,null,null),HttpStatus.OK);
+        return new ResponseEntity<>(addressParser.parseAddress(address,null),HttpStatus.OK);
     }
 
     /**
