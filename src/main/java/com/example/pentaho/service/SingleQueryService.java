@@ -98,7 +98,7 @@ public class SingleQueryService {
                 log.info("<臨建特附>:{}", address.getCleanAddress());
                 address = addressParser.parseAddress( address.getCleanAddress(), address);
             } else {
-                // 有可能是地址沒有切出來導致有remain，解析AREA
+                // 有可能是AREA沒有切出來導致有remain，解析AREA
                 address = addressParser.parseArea(address);
             }
         }
