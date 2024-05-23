@@ -274,8 +274,9 @@ public class JobService {
         String password = pentahoComponent.getPassword(); //password
         String auth = username + ":" + password;
         byte[] authBytes = auth.getBytes(StandardCharsets.UTF_8);
+        //todo:把Basic 移到Server?
         String encodedAuth = Base64.getEncoder().encodeToString(authBytes);
-        connection.setRequestProperty("Authorization", "Basic " + encodedAuth);
+        connection.setRequestProperty("Authorization",encodedAuth);
     }
 
     public void downloadFile() throws IOException {

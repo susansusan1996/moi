@@ -97,7 +97,9 @@ public class WebServiceUtils {
         String auth = username + ":" + password;
         byte[] authBytes = auth.getBytes(StandardCharsets.UTF_8);
         String encodedAuth = Base64.getEncoder().encodeToString(authBytes);
-        connection.setRequestProperty("Authorization", "Basic " + encodedAuth);
+
+        //todo:Basic 移到server
+        connection.setRequestProperty("Authorization", encodedAuth);
     }
 
 

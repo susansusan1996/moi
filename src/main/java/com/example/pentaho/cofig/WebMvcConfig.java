@@ -19,11 +19,16 @@ import java.util.List;
 public class WebMvcConfig implements WebMvcConfigurer {
 
 
+
     /**
      * token check
      */
-    @Autowired
     private AuthorizationHandlerInterceptor authorizationHandlerInterceptor;
+
+
+    public WebMvcConfig(AuthorizationHandlerInterceptor authorizationHandlerInterceptor) {
+        this.authorizationHandlerInterceptor = authorizationHandlerInterceptor;
+    }
 
     /**
      * 過濾
