@@ -5,7 +5,7 @@ spring:
     redis0:
       database: 0
       host: 10.32.32.208
-      port: 6379
+      port: 6379 #issue
       password: 1qaz@WSX
       lettuce:
         pool:
@@ -17,7 +17,7 @@ spring:
     redis1:
       database: 1
       host: 10.32.32.208
-      port: 6379
+      port: 6379 #issue
       password: 1qaz@WSX
       lettuce:
         pool:
@@ -29,7 +29,7 @@ spring:
     redis2:
       database: 2
       host: 10.32.32.208
-      port: 6379
+      port: 6379 #issue
       password: 1qaz@WSX
       lettuce:
         pool:
@@ -39,7 +39,7 @@ spring:
           min-idle: 0 # 连接池中的最小空闲连接 默认 0
   datasource:
     jdbc-url: jdbc:vertica://10.32.32.200:5433/vdb
-    username: M_ETL_ADDR_0001
+    username: M_ETL_ADDR_0001 #issue
     password: 1qaz@WSX
     driver-class-name: com.vertica.jdbc.Driver
     hikari:
@@ -59,7 +59,7 @@ server:
 pentaho:
   #pentaho server IP (正式區) 8.3
   web-target: http://10.32.32.74:8080/pentaho
-  username: v_iisi_6008
+  username: v_iisi_6008 #issue
   password: iisi!F327019
 
 
@@ -108,7 +108,7 @@ apserver:
 sftputils:
  host: 10.32.32.74
  port: 22
- username: rhel
+ username: rhel #issue
  password: 1qaz#EDC
 
 LogsLocation: /home/moi/app/aplog/

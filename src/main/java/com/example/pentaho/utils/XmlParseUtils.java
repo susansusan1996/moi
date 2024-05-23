@@ -1,5 +1,6 @@
 package com.example.pentaho.utils;
 
+import net.sf.jasperreports.engine.json.expression.filter.FilterExpression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.*;
@@ -13,6 +14,12 @@ public class XmlParseUtils {
     
     private final static Logger log = LoggerFactory.getLogger(XmlParseUtils.class);
 
+
+    public DocumentBuilderFactory newDocumentBuilderFactory(){
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        /***/
+        factory.setFeature(VALID,factory.isValidating());
+    }
 
     public final static Element parser(String eleStr){
         log.info("parser:{}",eleStr);

@@ -1,6 +1,8 @@
 package com.example.pentaho.cofig;
 
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,6 +18,8 @@ import java.time.Duration;
 
 @Configuration
 public class RedisConfig {
+
+    private final static Logger log = LoggerFactory.getLogger(RedisConfig.class);
 
     @Bean(name = "stringRedisTemplate0")
     public StringRedisTemplate stringRedisTemplate0(
@@ -38,6 +42,7 @@ public class RedisConfig {
             @Value("${spring.data.redis0.port}")
             int port
     ) {
+        log.info("password:{}",password);
         // connection config
         RedisStandaloneConfiguration configuration = new RedisStandaloneConfiguration();
         configuration.setHostName(host);

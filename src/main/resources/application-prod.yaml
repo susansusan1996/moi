@@ -42,7 +42,7 @@ spring:
           min-idle: 0 # 连接池中的最小空闲连接 默认 0
   datasource:
     jdbc-url: jdbc:vertica://52.40.252.111:5433/vdb
-    username: dbadmin
+    username: dbadmin #issue
     password: 1qaz@WSX
     driver-class-name: com.vertica.jdbc.Driver
     hikari:
@@ -61,7 +61,7 @@ server:
 
 pentaho:
   web-target: http://52.33.116.195:8080/pentaho
-  username: admin
+  username: admin #issue
   password: password
 
 directory:
