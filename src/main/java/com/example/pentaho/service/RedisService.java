@@ -213,7 +213,6 @@ public class RedisService {
         } finally {
             connection.close();
         }
-
         resultMap.put("segmentExistNumber", segmentExistNumberBuilder.toString());
         return resultMap;
     }
