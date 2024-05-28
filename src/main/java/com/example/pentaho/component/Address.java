@@ -49,7 +49,6 @@ public class Address {
     private List<String> mappingId; //64碼
     private String segmentExistNumber; //紀錄user是否有輸入每個地址片段，有:1，沒有:0
     private List<LinkedHashMap<String, String>> mappingIdMap;
-    private List<List<String>> MappingIdList;
     private String joinStep; //地址比對代碼
     private Set<String> seqSet;
     private String numTypeCd; //臨建特附
@@ -425,14 +424,6 @@ public class Address {
         this.mappingIdMap = mappingIdMap;
     }
 
-    public List<List<String>> getMappingIdList() {
-        return MappingIdList;
-    }
-
-    public void setMappingIdList(List<List<String>> mappingIdList) {
-        MappingIdList = mappingIdList;
-    }
-
     public String getRemark() {
         return remark;
     }
@@ -501,7 +492,6 @@ public class Address {
                 ", mappingId=" + mappingId +
                 ", segmentExistNumber='" + segmentExistNumber + '\'' +
                 ", mappingIdMap=" + mappingIdMap +
-                ", MappingIdList=" + MappingIdList +
                 ", joinStep='" + joinStep + '\'' +
                 ", seqSet=" + seqSet +
                 ", numTypeCd='" + numTypeCd + '\'' +

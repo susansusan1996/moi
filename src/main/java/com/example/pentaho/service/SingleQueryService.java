@@ -555,7 +555,7 @@ public class SingleQueryService {
                                     .map(Object::toString)
                                     .collect(Collectors.toList());
                             mappingIdMapList.add(mappingIdMap);
-                            mappingIdListCollection.add(mappingIdList);
+//                            mappingIdListCollection.add(mappingIdList);
                             mappingIdStringList.add(String.join("", mappingIdList));
                             // 將NUMFLRPOS為00000的組合也塞進去mappingIdStringList
                             String oldPos = mappingIdMap.get("NUMFLRPOS");
@@ -567,7 +567,6 @@ public class SingleQueryService {
             }
         }
         address.setMappingIdMap(mappingIdMapList);
-        address.setMappingIdList(mappingIdListCollection);
         address.setMappingId(mappingIdStringList);
     }
 
