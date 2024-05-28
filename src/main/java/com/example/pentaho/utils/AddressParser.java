@@ -37,7 +37,7 @@ public class AddressParser {
     private final String COUNTY = "(?<zipcode>(^\\d{5}|^\\d{3}|^\\d)?)(?<county>.*?縣|.*?市|%s)?";
     private final String TOWN = "(?<town>\\D+?(市區|鎮區|鎮市|[鄉鎮市區]|%s)(?![村里鄰路巷段街道弄]))?";
     //    private final String VILLAGE = "(?<village>(.*新里里|.*村里|.*?里|.*?村|%s))?";
-    private final String VILLAGE = "(?<village>(?<!路)(新里里|村里|[^路]*?里|[^路]*?村|%s))?";
+    private final String VILLAGE = "(?<village>(?<!路)%s(新里里|村里|[^路]*?里|[^路]*?村|%s))?";
     private final String NEIGHBOR = "(?<neighbor>" + ALL_CHAR + "+鄰)?";
     private final String SPECIALLANE = "(?<speciallane>鐵路.*巷|丹路.*巷)?"; //避免被切到路，直接先寫死在這裡
     private final String ROAD = "(?<road>(.*?段|.*?街|.*?大道|.*?路(?!巷)|%s)?)";
@@ -128,10 +128,10 @@ public class AddressParser {
         String newCounty = String.format(COUNTY , String.join("|",allKeys.get("COUNTY_ALIAS:")));
         log.info("newCounty:{}",newCounty);
         String newTown = String.format(TOWN , String.join("|",allKeys.get("TOWN_ALIAS:")));
-        String newVillage = String.format(VILLAGE , String.join("|",allKeys.get("VILLAGE_ALIAS:")));
-        String newRoad = String.format(ROAD , String.join("|",allKeys.get("ROAD_ALIAS:")));
         String newArea = String.format(SPECIAL_AREA , String.join("|",allKeys.get("SPECIAL_AREA:")));
-        return newCounty + newTown + newArea + newVillage + NEIGHBOR + SPECIALLANE + newRoad + LANE + ALLEY + SUBALLEY + NUMFLR1 + NUMFLR2 + NUMFLR3 + NUMFLR4 + NUMFLR5 + CONTINUOUS_NUM + ROOM + BASEMENTSTR + REMARK + ADDRREMAINS;
+        String newVillage = String.format(VILLAGE , "(?!"+String.join("|",allKeys.get("SPECIAL_AREA:"))+")",String.join("|",allKeys.get("VILLAGE_ALIAS:")));
+        String newRoad = String.format(ROAD , String.join("|",allKeys.get("ROAD_ALIAS:")));
+        return newCounty + newTown + newVillage + NEIGHBOR + SPECIALLANE + newRoad + newArea + LANE + ALLEY + SUBALLEY + NUMFLR1 + NUMFLR2 + NUMFLR3 + NUMFLR4 + NUMFLR5 + CONTINUOUS_NUM + ROOM + BASEMENTSTR + REMARK + ADDRREMAINS;
     }
 
 
