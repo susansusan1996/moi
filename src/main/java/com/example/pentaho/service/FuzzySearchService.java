@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -33,7 +34,9 @@ public class FuzzySearchService {
         List<String> regex = map.get("regex");
         log.info("因為地址不完整，組成新的 mappingId {}，以利模糊搜尋", newMappingId);
         log.info("模糊搜尋正則表達式為:{}", regex);
+        log.info("redis開始模糊搜尋:{}", Instant.now());
         Set<String> mappingIdSet = redisService.findListByScan(newMappingId); //redis撈出來的所有可能mappinId
+        log.info("redis結束模糊搜尋:{}", Instant.now());
         Set<String> resultSet = new HashSet<>();
         for (String newMapping : mappingIdSet) {
             log.info("mappingIdSet:{}", mappingIdSet);
