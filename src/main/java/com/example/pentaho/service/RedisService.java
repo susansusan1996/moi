@@ -197,7 +197,7 @@ public class RedisService {
                     if(key.contains("?")){
                         String scanKey = key.replace("?","*");
                         log.info("replace奇怪字元後，scanKey: {}", scanKey);
-                        redisValue = String.join(",",scanKeysAndReturnSet(scanKey));
+                        redisValue = String.join(",",scanKeysAndReturnList(scanKey));
                         log.info("scanKey: {}, redisValue: {}", scanKey, redisValue);
                     }
                     if(StringUtils.isNotNullOrEmpty(redisValue)){
@@ -301,6 +301,31 @@ public class RedisService {
         SetOperations<String, String> setOperations = stringRedisTemplate2.opsForSet();
         return setOperations.members(key);
     }
+
+
+
+    public List<String> scanKeysAndReturnList(String pattern) {
+        List<String> resultList = new ArrayList<>();
+        stringRedisTemplate2.execute((RedisCallback<Void>) connection -> {
+            try (Cursor<byte[]> cursor = connection.scan(ScanOptions.scanOptions().match(pattern).count(SCAN_SIZE).build())) {
+                while (cursor.hasNext()) {
+                    byte[] next = cursor.next();
+                    resultList.addAll(getList(new String(next)));
+                }
+            }
+            return null;
+        });
+        return resultList;
+    }
+
+    public List<String> getList(String key) {
+        ListOperations<String, String> listOps = stringRedisTemplate2.opsForList();
+        List<String> elements = Optional.ofNullable(listOps.range(key, 0, -1)).orElse(Collections.emptyList());
+        log.info("elements: {}", elements);
+        return elements;
+    }
+
+
 
 
 
