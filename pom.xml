@@ -13,11 +13,6 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<name>moi</name>
 	<description>Demo project for Spring Boot</description>
-	<properties>
-		<java.version>17</java.version>
-		<sonar.host.url>http://34.211.215.66:9000</sonar.host.url>
-		<sonar.token>sqp_32dca263889d22cc8c8e4389420c962280ab549f</sonar.token>
-	</properties>
 	<dependencies>
 		<!-- JPA -->
 		<!--貌似跟VERTICA衝突，先不用-->
@@ -300,13 +295,14 @@
 
 	<build>
 		<plugins>
-			<!--Maven-->
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<!--預設是會將所有src/main/resource/资源文件包含在最终的 JAR 包-->
 				<configuration>
 					<!--設置為true，以便把本地system的jar也打包進來-->
 					<includeSystemScope>true</includeSystemScope>
+
 				</configuration>
 			</plugin>
 

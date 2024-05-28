@@ -71,7 +71,7 @@ public class WebServiceUtils {
                 status="CALL_JOB_SUCESS";
                 result.put("status",status);
                 /*responseContent*/
-                XmlParseUtils.parser(con.getInputStream(),result);
+//                XmlParseUtils.parser(con.getInputStream(),result);
             }
         }catch (Exception e){
             log.info("e:{}",e.toString());
@@ -135,7 +135,7 @@ public class WebServiceUtils {
             URL url = new URL(fullURL);
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             basicAuthentication(con);
-            XmlParseUtils.parser(con.getInputStream(),result);
+//            XmlParseUtils.parser(con.getInputStream(),result);
             log.info("result:{}",result);
             return result;
         }catch (Exception e){

@@ -58,6 +58,12 @@ public class AddressParser {
     private final String REMARK = "(?<remark>[\\(\\{\\〈\\【\\[\\〔\\『\\「\\「\\《](.*?)[\\)\\〉\\】\\]\\〕\\』\\」\\}\\」\\》])?";
     //〈〉【】[]〔〕()『』「」{}「」《》
 
+    /**
+     * @param origninalAddress => 第一次切割的地址
+     * @param newAddress => 第n次切割的地址
+     * @param address => Address 物件
+     * @return
+     */
     public Address parseAddress(String origninalAddress, String newAddress, Address address) {
         String input = newAddress == null ? origninalAddress : newAddress;
         //去除特殊字元
@@ -177,19 +183,29 @@ public class AddressParser {
         return area;
     }
 
+    /**
+     *
+     * @param matcher
+     * @param address
+     * @param origninalAddress
+     * @return
+     */
     public Address setAddress(Matcher matcher, Address address, String origninalAddress) {
         address.setParseSuccessed(true);
+        //matcher.group("basementStr"):符合basementStr 正則的內容
         String basementString = matcher.group("basementStr");
         // 特殊處理地下一層和地下的情況
         if (StringUtils.isNotNullOrEmpty(basementString)) {
             return parseAddress(null, parseBasement(basementString, origninalAddress, address), address);
         }
+        //matcher.group(groupName):符合groupName 正則的字串
         address.setZipcode(matcher.group("zipcode"));
         address.setCounty(matcher.group("county"));
         address.setTown(matcher.group("town"));
         address.setVillage(matcher.group("village"));
         address.setNeighbor(matcher.group("neighbor"));
         address.setRoad(matcher.group("road"));
+        //todo:
         address.setLane(matcher.group("speciallane") != null ? matcher.group("speciallane") : matcher.group("lane"));
         address.setAlley(matcher.group("alley"));
         address.setSubAlley(matcher.group("subAlley"));
@@ -198,7 +214,7 @@ public class AddressParser {
         address.setNumFlr3(parseBasementForBF(matcher.group("numFlr3"), address));
         address.setNumFlr4(parseBasementForBF(matcher.group("numFlr4"), address));
         address.setNumFlr5(parseBasementForBF(matcher.group("numFlr5"), address));
-        address.setContinuousNum(matcher.group("continuousNum"));
+        address.setContinuousNum(matcher.group("continuousNum")); //之45一樓
         address.setRoom(matcher.group("room"));
         address.setAddrRemains(matcher.group("addrRemains"));
         address.setRemark(matcher.group("remark"));

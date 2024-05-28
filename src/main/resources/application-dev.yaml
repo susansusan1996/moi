@@ -1,6 +1,6 @@
 #開發環境
 server:
-  port: 8080
+  port: 8081
 
 pentaho:
   web-target: http://52.33.116.195:8080/pentaho

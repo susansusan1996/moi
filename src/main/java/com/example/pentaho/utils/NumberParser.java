@@ -11,6 +11,12 @@ import java.util.regex.Pattern;
 public class NumberParser {
     private static final Logger log = LoggerFactory.getLogger(NumberParser.class);
 
+    /**
+     * @param input
+     * 符合 (?<coutinuousNum1>[之-]+[\\d\\uFF10-\\uFF19]+)(?<coutinuousNum2>\\D+[之樓FｆＦf])? 的字串
+     * 符合 (?<coutinuousNum1>[之-]\\D+)(?<coutinuousNum2>[\\d\\uFF10-\\uFF19]+[之樓FｆＦf])?  的字串
+     * @return
+     */
     public static String replaceWithHalfWidthNumber(String input) {
         if (input != null && !input.isEmpty()) {
             input = input.replaceAll("[-－]", "之");

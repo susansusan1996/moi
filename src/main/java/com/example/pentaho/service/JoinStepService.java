@@ -45,18 +45,26 @@ public class JoinStepService {
     };
     private static final String NUMFLRPOS = "NUMFLRPOS";
 
-
+    /**
+     *
+     * @param address
+     * @return
+     * @throws NoSuchFieldException
+     * @throws IllegalAccessException
+     */
     public Set<String> findSeqStepByStep(Address address) throws NoSuchFieldException, IllegalAccessException {
         Set<String> seqSet = new HashSet<>();
         String finalStep = "";
+        //MappingIdMap=[MappingIdMap1{"COUNT":"00000"},MappingIdMap2:{"COUNT":"00001"}]
         for (int i = 0; i < address.getMappingIdMap().size(); i++) {
+            //每一個組合都拿出來跑join_step
             for (String step : steps) {
                 List<String> columns = new ArrayList<>(getColumnName(step));
                 //把想要挖掉的地址片段代碼用0取代
                 LinkedHashMap<String, String> oldMappingIdMap = new LinkedHashMap<>(address.getMappingIdMap().get(i));
-                log.info("oldMappingIdMap:{}", oldMappingIdMap);
+                log.info("之前拼出的排列組合Map,oldMappingIdMap:{}", oldMappingIdMap);
                 String oldNumSegment = address.getMappingIdMap().get(i).get(NUMFLRPOS);
-                log.info("oldNumSegment:{}", oldNumSegment);
+                log.info("之前拼出的排列組合Map中的oldNumSegment:{}", oldNumSegment);
                 String newId = replaceCharsWithZero("oldId", columns, step, address, oldMappingIdMap);
                 log.info("step:{}，newId:{}", step, newId);
                 List<String> seqlist = redisService.findListByKey(newId);

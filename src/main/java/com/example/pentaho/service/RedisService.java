@@ -153,26 +153,39 @@ public class RedisService {
         return resultMap;
     }
 
+    /**
+     * keyMap {"COUNTY":"新北市00000",...}
+     * @param keyMap
+     * @param segmentExistNumber =>這是什麼嘞
+     * 使用
+     * @return
+     */
 
     public Map<String, String> findSetByKeys(Map<String, String> keyMap, String segmentExistNumber) {
         Map<String, String> resultMap = new HashMap<>();
+        /****/
         List<String> redisKeys = new ArrayList<>(keyMap.keySet());
         StringBuilder segmentExistNumberBuilder = new StringBuilder(segmentExistNumber);
         RedisConnection connection = stringRedisTemplate2.getConnectionFactory().getConnection();
         RedisSerializer<String> serializer = stringRedisTemplate2.getStringSerializer();
         try {
             connection.openPipeline();
+            /*redisKeys = keyMap.keySet() (COUNTY...等)**/
             for (String key : redisKeys) {
                 connection.sMembers(serializer.serialize(key));
             }
+            /**List = 符合key的物件**/
             List<Object> results = connection.closePipeline();
 
             for (int i = 0; i < results.size(); i++) {
+                /**把物件轉為 Set<byte[]> */
                 Set<byte[]> redisSetBytes = (Set<byte[]>) results.get(i);
+                /**1個結果就有一個redisSet*/
                 Set<String> redisSet = new HashSet<>();
                 for (byte[] bytes : redisSetBytes) {
                     redisSet.add(serializer.deserialize(bytes));
                 }
+                /**COUNTY..等*/
                 String key = redisKeys.get(i);
                 if (!redisSet.isEmpty()) {
                     log.info("redis<有>找到cd代碼，key: {}, value: {}", key, redisSet);

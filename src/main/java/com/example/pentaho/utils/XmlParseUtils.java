@@ -13,19 +13,40 @@ import java.util.Map;
 public class XmlParseUtils {
     
     private final static Logger log = LoggerFactory.getLogger(XmlParseUtils.class);
+    /*完全禁用*/
+    private final static String DISALLOW_DOCTYPE_DECL = "http://apache.org/xml/features/disallow-doctype-decl";
+    /*禁用外部dtd*/
+    private final static String LOAD_EXTERNAL_DTD = "http://apache.org/xml/features/nonvalidating/load-external-dtd";
+    /*禁止加载外部实体*/
+    private final static String EXTERNAL_GENERAL_ENITIES = "http://xml.org/sax/features/external-general-entities";
+    /*禁止加载参数实体*/
+    private final static String EXTERNAL_PARAMETER_ENITIES = "http://xml.org/sax/features/external-parameter-entities";
+    /*禁止加载HTTP参数*/
+    private final static String SECURE_PROCESSING = "http://javax.xml.XMLConstants/feature/secure-processing";
+
+    private DocumentBuilder builder = newDocumentBuilderFactory();
 
 
-    public DocumentBuilderFactory newDocumentBuilderFactory(){
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        /***/
-        factory.setFeature(VALID,factory.isValidating());
-    }
-
-    public final static Element parser(String eleStr){
-        log.info("parser:{}",eleStr);
+    public DocumentBuilder newDocumentBuilderFactory(){
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            /***/
+            String FEATURE = null;
+            FEATURE = EXTERNAL_PARAMETER_ENITIES;
+            factory.setFeature(FEATURE, factory.isValidating());
             DocumentBuilder builder = factory.newDocumentBuilder();
+            return builder;
+        }catch (Exception e){
+            log.info("e:{}",e);
+        }
+        return null;
+    }
+
+    public Element parser(String eleStr){
+        log.info("parser:{}",eleStr);
+        try {
+//            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+//            DocumentBuilder builder = factory.newDocumentBuilder();
             Document document = builder.parse(new ByteArrayInputStream(eleStr.getBytes()));
             Element element = document.getDocumentElement();
             return element;
@@ -36,7 +57,7 @@ public class XmlParseUtils {
     }
 
 
-    public final static Map<String,String> getAttributes(String eleStr,Map<String,String> keys){
+    public Map<String,String> getAttributes(String eleStr, Map<String, String> keys){
         Element element = parser(eleStr);
         if(element == null){
             return null;
@@ -60,7 +81,7 @@ public class XmlParseUtils {
     }
 
 
-    public final static Map<String,String> parser(InputStream inputStream,Map<String,String> result){
+    public Map<String,String> parser(InputStream inputStream, Map<String, String> result){
         try {
             StringBuilder content = new StringBuilder();
             InputStreamReader inputStreamReader = new InputStreamReader(inputStream);

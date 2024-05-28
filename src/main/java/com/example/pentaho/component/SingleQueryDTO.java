@@ -17,7 +17,7 @@ public class SingleQueryDTO {
 
     private List<String> redisValueList;
 
-    private String originalAddress;
+    private String originalAddress; //
 
     private String county; //縣市(選填)
 
