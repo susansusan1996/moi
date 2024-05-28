@@ -95,13 +95,19 @@ public class SingleQueryService {
 
 
     private void handleAddressRemains(Address address) {
+        //continuousNum :之四十五F、－45樓、-四5f
+        //addressRemain :切不到的片段
         if (StringUtils.isNotNullOrEmpty(address.getAddrRemains())&&StringUtils.isNullOrEmpty(address.getContinuousNum())) {
+            // 如果是臨建特附，會給於96,97,98,99 NumType
+            // 再把原始地址中的臨建特附刪除，再重新切割一次地址(parseAddress)
             String numTypeCd = getNumTypeCd(address);
             if (!"95".equals(numTypeCd)) {
-                // 如果是臨建特附，再解析一次地址
+                //如果是臨建特附，會把關鍵字拿掉再解析一次地址，最後再用Numtype判斷一開始填了什麼
+                //這樣就能把addressRemain切割成片段
                 log.info("<臨建特附>:{}", address.getCleanAddress());
                 address = addressParser.parseAddress(address.getCleanAddress(), address);
             } else {
+                // 不是臨建特附不會更動原始地址，直接跑parseArea Numtype=95
                 // 有可能是AREA沒有切出來導致有remain，解析AREA
                 address = addressParser.parseArea(address);
             }
@@ -213,21 +219,31 @@ public class SingleQueryService {
 
 
     public Address findCdAndMappingId(Address address) {
+        /**原始地址要完整的切入address*/
         log.info("address:{}", address);
-        segmentExistNumber = ""; //先清空
+        segmentExistNumber = ""; //先清空，8碼；0,1組成用於判斷指定欄位有沒有填
         //===========取各地址片段===========================
-        String county = address.getCounty();
-        String town = address.getTown();
-        String village = address.getVillage(); //里
-        String road = address.getRoad();
-        String area = address.getArea();
+        String county = address.getCounty();//縣市
+        String town = address.getTown();//區
+        String village = address.getVillage(); //村、里、村里、新里里 (不能有路字眼)
+        String road = address.getRoad(); // 路、段、大道、街(不能有路巷)
+        String area = address.getArea(); // 南洋新村、陸光新村
+        //用半形數字取代任何數字的部分
+        //road地址片段(.*?段|.*?街|.*?大道|.*?路(?!巷)|hardcore路名)?
+        //area地址片段 南洋新村 | 大學新村
+        //roadAreaKey = 民安1路陸光三村
         String roadAreaKey = replaceWithHalfWidthNumber(road) + (area == null ? "" : area);
+        //數字 巷
         String lane = address.getLane(); //巷
+        //數字 弄
         String alley = address.getAlley(); //弄
+        //數字 衖衕橫
         String subAlley = address.getSubAlley(); //弄
+        //alleyIdSnKey = 半形數字巷 +半形數字衖衕橫 ex:53弄7橫
         String alleyIdSnKey = replaceWithHalfWidthNumber(alley) + replaceWithHalfWidthNumber(subAlley);
-        String numTypeCd = address.getNumTypeCd(); //臨建特附
-        //如果有"之45一樓"，要額外處理
+        //臨96 建97 特98 附99 其餘95
+        String numTypeCd = address.getNumTypeCd();
+        //如果有"之45一樓"，要額外處理 (?<continuous>[//-－之]{1}+ALLCHAR+[樓號Ff]{1})?
         if (StringUtils.isNotNullOrEmpty(address.getContinuousNum())) {
             formatCoutinuousFlrNum(address.getContinuousNum(), address);
         }
@@ -246,6 +262,7 @@ public class SingleQueryService {
         keyMap.put("ROAD:" + road, ""); // 沒有要放進64碼，只是為了要看要件清單要沒有資料 (有資料:1，無資料:0)
         keyMap.put("AREA:" + area, ""); // 沒有要放進64碼，只是為了要看要件清單要沒有資料 (有資料:1，無資料:0)
         keyMap.put("ROADAREA:" + roadAreaKey, "0000000"); //7
+        //lane有可能是 －四巷，轉換成 之4巷
         keyMap.put("LANE:" + replaceWithHalfWidthNumber(lane), "0000");//巷 //4
         keyMap.put("ALLEY:" + alleyIdSnKey, "0000000");//弄 //7
         keyMap.put("NUM_FLR_1:" + normalizeFloor(numFlr1, address, "NUM_FLR_1").getNumFlr1(), "000000"); //6
@@ -255,15 +272,25 @@ public class SingleQueryService {
         keyMap.put("NUM_FLR_5:" + normalizeFloor(numFlr5, address, "NUM_FLR_5").getNumFlr5(), "0"); //1
         keyMap.put("ROOM:" + replaceWithHalfWidthNumber(address.getRoom()), "00000"); //5
         //===========把存有各地址片段的map丟到redis找cd碼===========================
+        //segmentExistNumber: 長度為8,以1代表有填寫有找到，以0代表未找到(有填或沒填都有可能)
         Map<String, String> resultMap = redisService.findSetByKeys(keyMap, segmentExistNumber);
         //===========把找到的各地址片段cd碼組裝好===========================
+        //resultMap 的value 有可能還是default value 喔(00000...等)
+        //COUNTY:新北市 : 65000 或 00000
         address.setCountyCd(resultMap.get("COUNTY:" + county));
+        //TOWN:新莊區:190 或 000
         address.setTownCd(resultMap.get("TOWN:" + town));
+        //VILLAGE:民安里: 061 或 000
         address.setVillageCd(resultMap.get("VILLAGE:" + village));
-        address.setNeighborCd(findNeighborCd(address.getNeighbor()));//鄰
+        //隣的地址片段(1七鄰)取數字部分(1七)轉換為半形數字(17)，補到三位數(017) 或 未填寫為 "000"
+        address.setNeighborCd(findNeighborCd(address.getNeighbor()));
+        //roadAreaKey = 民安路  ROADAREA:民安路:9112659 或 0000000
         address.setRoadAreaSn(StringUtils.isNullOrEmpty(roadAreaKey) ? "0000000" : resultMap.get("ROADAREA:" + roadAreaKey));
+        //巷 = 五一四巷，換成514巷; LANE:514巷 : 0514 或 0000
         address.setLaneCd(resultMap.get("LANE:" + replaceWithHalfWidthNumber(lane)));
+        //弄 = 2弄 ALLEY:2弄:0002000 或 0000000
         address.setAlleyIdSn(resultMap.get("ALLEY:" + alleyIdSnKey));
+        //
         address.setNumFlr1Id(setNumFlrId(resultMap, address, "NUM_FLR_1"));
         address.setNumFlr2Id(setNumFlrId(resultMap, address, "NUM_FLR_2"));
         address.setNumFlr3Id(setNumFlrId(resultMap, address, "NUM_FLR_3"));
@@ -305,52 +332,75 @@ public class SingleQueryService {
         log.info("=== getRoomIdSn:{}", address.getRoomIdSn());
     }
 
-
-    //處理: 之45一樓 (像這種連續的號碼，就會被歸在這裡)
+    /**
+     * (?<continuousNum>[之\\-－]{1}" + ALL_CHAR + "+[樓FｆＦf]{1})?"
+     * 492號-1一樓 ->  492號(numFlr1),-1一樓 (continuousNum)
+     * -11樓
+     * @param input continuousNum的地址片段 ex:-1一樓
+     * @param address
+     */
+    //處理: 之 45一 樓 (像這種連續的號碼，就會被歸在這裡)
     public void formatCoutinuousFlrNum(String input, Address address) {
         if (StringUtils.isNotNullOrEmpty(input)) {
+            //first:之、- + 阿拉伯數字 + 中文 + 之樓FｆＦf
+            //second:之、- + 中文數字 + 阿拉伯數字 + 之樓FｆＦf
             String firstPattern = "(?<coutinuousNum1>[之-]+[\\d\\uFF10-\\uFF19]+)(?<coutinuousNum2>\\D+[之樓FｆＦf])?"; //之45一樓
             String secondPattern = "(?<coutinuousNum1>[之-]\\D+)(?<coutinuousNum2>[\\d\\uFF10-\\uFF19]+[之樓FｆＦf])?"; //之四五1樓
             Matcher matcherFirst = Pattern.compile(firstPattern).matcher(input);
             Matcher matcherSecond = Pattern.compile(secondPattern).matcher(input);
+            //flrArray=["492號","","","",""]
             String[] flrArray = {address.getNumFlr1(), address.getNumFlr2(), address.getNumFlr3(), address.getNumFlr4(), address.getNumFlr5()};
             int count = 0;
             for (int i = 0; i < flrArray.length; i++) {
+                //表示沒切到
                 if (StringUtils.isNullOrEmpty(flrArray[i])) {
-                    log.info("目前最大到:{}，新分解好的flr，就要再往後塞到:{}", "numFlr" + (i), "numFlr" + (i + 1));
                     count = i + 1;
+                    log.info("目前還切到:{}，新分解好的flr，就要再往後塞到:{}", "numFlr" + (i), "numFlr" + (count));
                     break;
                 }
             }
-            if (matcherFirst.matches()) {
-                setFlrNum(count, matcherFirst.group("coutinuousNum1"), matcherFirst.group("coutinuousNum2"), address);
-            } else if (matcherSecond.matches()) {
+            //如果連號有匹配 1 或 2 pattern，則往下一層NumFlr放
+            //用count 分辨已經分到第幾層NumFlr
+            if (matcherFirst.matches() || matcherSecond.matches()) {
+            // 半數+中文
                 setFlrNum(count, matcherFirst.group("coutinuousNum1"), matcherFirst.group("coutinuousNum2"), address);
             }
+//            else if (matcherSecond.matches()) {
+            // 中文+半數
+//                setFlrNum(count, matcherFirst.group("coutinuousNum1"), matcherFirst.group("coutinuousNum2"), address);
+//            }
         }
     }
 
+    /**
+     * @param count :目前匹配到NumFlr第幾層
+     * @param first :匹配 [之//-]{1}+[阿拉伯數字]+[//D]+[號樓Ff]{1} 可為空
+     * @param second：匹配 [之//-]{1}+[中文數字]+[//d]+[號樓Ff]{1} 可為空
+     * @param address
+     */
     private void setFlrNum(int count, String first, String second, Address address) {
+        //-－改為 之；數字改半形 -1一樓 ->之11樓
         first = replaceWithHalfWidthNumber(first);
+        //-－改為 之；數字改半形 -一1F -> 之11F
         second = replaceWithHalfWidthNumber(second);
         log.info("first:{},second:{}", first, second);
         switch (count) {
-            case 1:
+            case 1: //全部都沒有
                 address.setNumFlr1(first);
                 address.setNumFlr2(second);
                 address.setNumFlr3(address.getAddrRemains()); //剩下跑到remain的就塞到最後
                 break;
-            case 2:
+            case 2://對到NumFlr1
                 address.setNumFlr2(first);
                 address.setNumFlr3(second);
                 address.setNumFlr4(address.getAddrRemains());//剩下跑到remain的就塞到最後
                 break;
-            case 3:
+            case 3://對到NumFlr1,NumFlr2
                 address.setNumFlr3(first);
                 address.setNumFlr4(second);
                 address.setNumFlr5(address.getAddrRemains());//剩下跑到remain的就塞到最後
                 break;
-            case 4:
+            case 4://對到NumFlr1,NumFlr2,NumFlr3
                 address.setNumFlr4(first);
                 address.setNumFlr5(second);
                 break;
@@ -391,8 +441,14 @@ public class SingleQueryService {
     }
 
 
-
-    //把為了識別是basement的字眼拿掉、將F轉換成樓、-轉成之
+    /***
+     * 把為了識別是basement的字眼拿掉、將 F -> 樓、 - -> 之
+     * NumFlr1~5 都有可能為 basement:[一二三四五六七八九十百千]+樓 ex:basement:一樓
+     * @param rawString
+     * @param address
+     * @param flrType
+     * @return
+     */
     public Address normalizeFloor(String rawString, Address address, String flrType) {
         if (rawString != null) {
             String result = convertFToFloorAndHyphenToZhi(replaceWithHalfWidthNumber(rawString).replace("basement:", ""));
@@ -452,26 +508,34 @@ public class SingleQueryService {
         }
     }
 
+    /***
+     * neighbor 鄰的地址片段
+     * 提取數字後轉換成半形數字
+     * @param rawNeighbor
+     * @return
+     */
     public String findNeighborCd(String rawNeighbor) {
         if (StringUtils.isNotNullOrEmpty(rawNeighbor)) {
             Pattern pattern = Pattern.compile("\\d+"); //指提取數字
             Matcher matcher = pattern.matcher(replaceWithHalfWidthNumber(rawNeighbor));
             if (matcher.find()) {
+                //neighborResult -> 只會是半形數字 12
                 String neighborResult = matcher.group();
-                // 往前補零，補到三位數
+                // 往前補零，補到三位數 012
                 String paddedNumber = String.format("%03d", Integer.parseInt(neighborResult));
                 log.info("提取的數字部分為：{}", paddedNumber);
                 return paddedNumber;
             }
         } else {
             log.info("沒有數字部分");
-            return "000";
+            return "000"; //neighbor 的 default value
         }
         return "000";
     }
 
     public String getNumFlrPos(Address address) {
-        String[] patternFlr1 = {".+號$", ".+樓$", ".+之$"};
+        String[] patternFlr1 = {".+號$", ".+樓$", ".+之$"}; //NumFlr1 號:1
+        //N
         String[] patternFlr2 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^之.+號", "^[A-ZＡ-Ｚ]+$"};
         String[] patternFlr3 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
         String[] patternFlr4 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};

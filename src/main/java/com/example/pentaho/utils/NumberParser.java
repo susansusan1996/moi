@@ -11,21 +11,30 @@ import java.util.regex.Pattern;
 public class NumberParser {
     private static final Logger log = LoggerFactory.getLogger(NumberParser.class);
 
+    /***
+     * [-－] 半形、全形- 用 之 取代
+     * 其餘 表達數字的字符 轉為 半形數字
+     * @param input
+     * @return
+     */
     public static String replaceWithHalfWidthNumber(String input) {
         if (input != null && !input.isEmpty()) {
             input = input.replaceAll("[-－]", "之");
+             /* 判斷有無匹配 .*(十|零).* */
             if (containsLittleChineseNumbers(input)) {
                 log.info("含有中文數字:{}", input);
                 String newNum = LittleDigitConvert.convertToDigit(input);
                 newNum = assembleString(input,newNum);
                 log.info("含有中文數字，新字串:{}", newNum);
                 return newNum;
+             /* .*(拾|佰).* */
             } else if (containsBigChineseNumbers(input)) {
                 log.info("含有大寫中文數字:{}", input);
                 String newNum = BigDigitConvert.convertToDigit(input);
                 newNum = assembleString(input,newNum);
                 log.info("含有大寫中文數字，新字串:{}", newNum);
                 return newNum;
+            /* .*(０|１|２|３|４|５|６|７|８|９|一|二|三|四|五|六|七|八|九|零|壹|貳|參|肆|伍|陸|柒|捌|玖|卅|廿).* */
             } else if (containsNumbers(input)) {
                 Map<String, String> map = new HashMap<>();
                 map.put("０", "0");

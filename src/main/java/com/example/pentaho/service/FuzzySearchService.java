@@ -54,15 +54,17 @@ public class FuzzySearchService {
     private Map<String, List<String>> buildMappingIdRegexString(Address address) {
         List<String> newMappingIdList = new ArrayList<>();
         List<String> regexList = new ArrayList<>();
-        String segNum = address.getSegmentExistNumber();
-        List<LinkedHashMap<String, String>> mapList = address.getMappingIdMap();
+        String segNum = address.getSegmentExistNumber();//紀錄SingleQueryDTO
+         List<LinkedHashMap<String, String>> mapList = address.getMappingIdMap();
         mapList.forEach(map -> {
             LinkedHashMap<String, String> regexMap = new LinkedHashMap<>(map);
             LinkedHashMap<String, String> fuzzyMap = new LinkedHashMap<>(map);
             StringBuilder newMappingId = new StringBuilder();
                 if ("0".equals(String.valueOf(segNum.charAt(0))) && "0".equals(String.valueOf(segNum.charAt(1)))) { //COUNTY
+                    //java正則
                     regexMap.put("COUNTY", "\\d{8}");
                     regexMap.put("TOWN", "");
+                    //rediskey
                     fuzzyMap.put("COUNTY", "*");
                     fuzzyMap.put("TOWN", "");
                 } else if ("1".equals(String.valueOf(segNum.charAt(0))) && "0".equals(String.valueOf(segNum.charAt(1)))) {

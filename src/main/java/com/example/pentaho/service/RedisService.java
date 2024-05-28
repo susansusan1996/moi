@@ -135,6 +135,7 @@ public class RedisService {
 
     public Map<String, String> findByKeys(Map<String, String> keyMap, String segmentExistNumber) {
         Map<String, String> resultMap = new HashMap<>();
+
         List<String> redisKeys = new ArrayList<>(keyMap.keySet());
         List<String> redisValues = stringRedisTemplate2.opsForValue().multiGet(redisKeys);
         for (int i = 0; i < redisKeys.size(); i++) {
@@ -154,57 +155,88 @@ public class RedisService {
         return resultMap;
     }
 
+    /***
+     * segmentExistNumber 以0,1組成一串長度為8的數字，用來判斷以下欄位是否填寫
+     *  "NUM_FLR_1", "NUM_FLR_2", "NUM_FLR_3", "NUM_FLR_4", "NUM_FLR_5" -> 為一組，其中一個有寫就好
+     */
     private static final List<String> KEYWORDS = Arrays.asList(
             "COUNTY", "TOWN", "VILLAGE", "ROAD", "AREA", "LANE", "ALLEY",
             "NUM_FLR_1", "NUM_FLR_2", "NUM_FLR_3", "NUM_FLR_4", "NUM_FLR_5"
     );
 
+    /***
+     * keyMap
+     * @param keyMap {
+     *            "COUNTY:新北市":"00000",
+     *            "TOWN:新莊區":"000",..
+     *         }
+     * @param segmentExistNumber
+     * @return
+     */
     public Map<String, String> findSetByKeys(Map<String, String> keyMap, String segmentExistNumber) {
         Map<String, String> resultMap = new HashMap<>();
+        //redisKeys = ["COUNTY:新北市","TOWN:新莊區",...]
         List<String> redisKeys = new ArrayList<>(keyMap.keySet());
+        //
         StringBuilder segmentExistNumberBuilder = new StringBuilder(segmentExistNumber);
+        //
         RedisConnection connection = stringRedisTemplate2.getConnectionFactory().getConnection();
         RedisSerializer<String> serializer = stringRedisTemplate2.getStringSerializer();
         try {
             connection.openPipeline();
+            //
             for (String key : redisKeys) {
+                //Set
                 connection.sMembers(serializer.serialize(key));
             }
             List<Object> results = connection.closePipeline();
 
+
             for (int i = 0; i < results.size(); i++) {
+                //到這裡轉型Set
+                //byte[] = 地址片段代碼
                 Set<byte[]> redisSetBytes = (Set<byte[]>) results.get(i);
+                //一個key就一個Set
                 Set<String> redisSet = new HashSet<>();
                 for (byte[] bytes : redisSetBytes) {
                     redisSet.add(serializer.deserialize(bytes));
                 }
+
                 String key = redisKeys.get(i);
                 if (!redisSet.isEmpty()) {
                     log.info("redis<有>找到cd代碼，key: {}, value: {}", key, redisSet);
+                    //多個
                     String redisValue = String.join(",", redisSet);
                     resultMap.put(key, redisValue);
                     //如果是 "COUNTY", "TOWN", "VILLAGE","ROAD", "AREA", "LANE", "ALLEY",
-                    // "NUM_FLR_1", "NUM_FLR_2", "NUM_FLR_3", "NUM_FLR_4", "NUM_FLR_5"
+                    //"NUM_FLR_1", "NUM_FLR_2", "NUM_FLR_3", "NUM_FLR_4", "NUM_FLR_5"
                     //才需要判斷0或1
                     if(containsKeyword(key)){
+                        //地址片段有找到cd表示有填寫，segmentExistNumber 給 1
                         segmentExistNumberBuilder.append("1");
                     }
+                    //
                 } else {
                     log.info("redis<沒有>找到cd代碼，key: {}", key);
-                    //如果找不到，就要用模糊搜尋
+                    //如果地址片段找不到，就要用模糊搜尋
                     String redisValue = null;
                     // TODO: 2024/5/14 除了?還有方框，帶補上
+                    // 難字判斷
+                    // key="COUNTY:新?市"
                     if(key.contains("?")){
                         String scanKey = key.replace("?","*");
                         log.info("replace奇怪字元後，scanKey: {}", scanKey);
+                        //可能的組合用 "," 區隔組成字串
                         redisValue = String.join(",",scanKeysAndReturnSet(scanKey));
                         log.info("scanKey: {}, redisValue: {}", scanKey, redisValue);
                     }
+
                     if(StringUtils.isNotNullOrEmpty(redisValue)){
                         resultMap.put(key, redisValue); //模糊搜尋有找到
                     }else{
-                        resultMap.put(key, keyMap.get(key)); // 如果找不到對應的value，就要放default value
+                        resultMap.put(key, keyMap.get(key)); // 如果找不到對應的value，就要放default value(00000,0000)
                     }
+                    //因為原始地址片段找不到cd,先判斷他沒有寫
                     if(containsKeyword(key)){
                         segmentExistNumberBuilder.append("0");
                     }
@@ -280,6 +312,7 @@ public class RedisService {
 
     /**
      * 模糊比對，找出相符的 KEY (redis: scan)，
+     * 會把難字換成*放進來模糊查詢
      */
     // TODO: 2024/5/14 速度慢，需要優化 
     public Set<String> scanKeysAndReturnSet(String pattern) {
