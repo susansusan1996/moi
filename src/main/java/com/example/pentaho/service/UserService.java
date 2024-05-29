@@ -39,8 +39,6 @@ public class UserService  {
                 "    \"ROLE_ADMIN\",\n" +
                 "    \"ROLE_MODERATOR\"\n" +
                 "  ],\n" +
-                "  \"remoteAddr\": \"192.168.31.167\",\n" +
-                "  \"xrealIp\": \"110.28.2.123\"\n" +
                 "}");
         return Login.ofRSAJWTToken(user,keyComponent.getApPrikeyName());
 
