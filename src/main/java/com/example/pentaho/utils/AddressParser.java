@@ -34,14 +34,13 @@ public class AddressParser {
     private final String ALL_CHAR_FOR_ALLEY = "[0-9０-９A-ZＡ-Ｚa-zａ-ｚ\\uFF10-\\uFF19零一二三四五六七八九十百千甲乙丙丁戊己庚壹貳參肆伍陸柒捌玖拾佰卅廿整棟之-]";
     private final String ALL_CHAR = "[0-9０-９A-ZＡ-Ｚa-zａ-ｚ\\uFF10-\\uFF19零一二三四五六七八九十百千甲乙丙丁戊己庚壹貳參肆伍陸柒捌玖拾佰卅廿整棟]";
     private final String DYNAMIC_ALLEY_PART = "|卓厝|安農新邨|吉祥園|蕭厝|泰安新村|美喬|１弄圳東|堤外|中興二村|溝邊|長埤|清水|南苑|二橫路|朝安|黃泥塘|建行新村|牛頭|永和山莊";
-    private final String COUNTY = "(?<zipcode>(^\\d{5}|^\\d{3}|^\\d)?)(?<county>.*?縣|.*?市|%s)?";
+    private final String COUNTY = "(?<zipcode>(^\\d{5}|^\\d{3}|^\\d)?)(?<county>(?:.*?[縣市](?!場)|%s))?"; //(?!場)==>為了避免"內埔市場"這種area被切到這裡
     private final String TOWN = "(?<town>\\D+?(市區|鎮區|鎮市|[鄉鎮市區]|%s)(?![村里鄰路巷段街道弄]))?";
     //    private final String VILLAGE = "(?<village>(.*新里里|.*村里|.*?里|.*?村|%s))?";
-    private final String VILLAGE = "(?<village>(?<!路)%s(新里里|村里|[^路]*?里|[^路]*?村|%s))?";
+    private final String VILLAGE = "(?<village>(?<!路)%s(新里里|村里|[^路]*?里|[^路]*?村|%s)(?![村里鄰路巷段街道弄]))?";
     private final String NEIGHBOR = "(?<neighbor>" + ALL_CHAR + "+鄰)?";
     private final String SPECIALLANE = "(?<speciallane>鐵路.*巷|丹路.*巷)?"; //避免被切到路，直接先寫死在這裡
     private final String ROAD = "(?<road>(.*?段|.*?街|.*?大道|.*?路(?!巷)|%s)?)";
-    private final String SPECIAL_AREA = "(?<area>%s)?"; //"村"結尾的AREA先抓出來
     private final String LANE = "(?<lane>.*?巷)?";
     private final String ALLEY = "(?<alley>" + ALL_CHAR_FOR_ALLEY + "+弄" + DYNAMIC_ALLEY_PART + ")?";
     private final String SUBALLEY = "(?<subAlley>" + ALL_CHAR + "+[衖衕橫]{1})?";
@@ -62,13 +61,29 @@ public class AddressParser {
             address = new Address();
         }
         address.setCleanAddress(cleanAddress(origninalAddress));
-        String pattern = getPattern(); //組正則表達式
+        //先把有鄉鎮市區村里字眼的area拿出來
+        Map<String, Set<String>> allKeys = new LinkedHashMap<>();
+        allKeys = findAllKeys(); //redis查詢所有alias，要拼在正則後面
+        origninalAddress = findSpecialArea(allKeys, address, origninalAddress); //先把帶有"村"、"鄉"、"鎮"、"市"、"區"的area抓出來
+        String pattern = getPattern(allKeys); //組正則表達式
         Pattern regexPattern = Pattern.compile(pattern);
         Matcher matcher = regexPattern.matcher(origninalAddress);
         if (matcher.matches()) {
             return setAddress(matcher, address);
         }
         return address;
+    }
+
+    public String findSpecialArea(Map<String, Set<String>> allKeys, Address address, String origninalAddress) {
+        String newArea = "(" + String.join("|", allKeys.get("SPECIAL_AREA:")) + ")";
+        Pattern patternForSpecialArea = Pattern.compile(newArea);
+        Matcher matcherForSpecialArea = patternForSpecialArea.matcher(origninalAddress);
+        if (matcherForSpecialArea.find()) {
+            log.info(" special_area 匹配到的部分：{}", matcherForSpecialArea.group());
+            address.setArea(matcherForSpecialArea.group());
+            origninalAddress = origninalAddress.replace(matcherForSpecialArea.group(), "");
+        }
+        return origninalAddress;
     }
 
 
@@ -117,26 +132,24 @@ public class AddressParser {
 
 
 
-    private String getPattern() {
-        Map<String, Set<String>> allKeys = new LinkedHashMap<>();
+    private String getPattern(Map<String, Set<String>> allKeys) {
         try {
-            String[] keys = {"COUNTY_ALIAS:", "TOWN_ALIAS:", "VILLAGE_ALIAS:", "ROAD_ALIAS:", "SPECIAL_AREA:"};
-            allKeys = findAllKeys(keys); //redis查詢所有alias，要拼在正則後面
+            allKeys = findAllKeys(); //redis查詢所有alias，要拼在正則後面
         } catch (Exception e) {
             log.error("findAllKeys error: {}", e.getMessage());
         }
         String newCounty = String.format(COUNTY , String.join("|",allKeys.get("COUNTY_ALIAS:")));
         log.info("newCounty:{}",newCounty);
         String newTown = String.format(TOWN , String.join("|",allKeys.get("TOWN_ALIAS:")));
-        String newArea = String.format(SPECIAL_AREA , String.join("|",allKeys.get("SPECIAL_AREA:")));
         String newVillage = String.format(VILLAGE , "(?!"+String.join("|",allKeys.get("SPECIAL_AREA:"))+")",String.join("|",allKeys.get("VILLAGE_ALIAS:")));
         String newRoad = String.format(ROAD , String.join("|",allKeys.get("ROAD_ALIAS:")));
-        return newCounty + newTown + newVillage + NEIGHBOR + SPECIALLANE + newRoad + newArea + LANE + ALLEY + SUBALLEY + NUMFLR1 + NUMFLR2 + NUMFLR3 + NUMFLR4 + NUMFLR5 + CONTINUOUS_NUM + ROOM + BASEMENTSTR + REMARK + ADDRREMAINS;
+        return newCounty + newTown + newVillage + NEIGHBOR + SPECIALLANE + newRoad + LANE + ALLEY + SUBALLEY + NUMFLR1 + NUMFLR2 + NUMFLR3 + NUMFLR4 + NUMFLR5 + CONTINUOUS_NUM + ROOM + BASEMENTSTR + REMARK + ADDRREMAINS;
     }
 
 
 
-    private Map<String, Set<String>> findAllKeys(String[] keys) {
+    private Map<String, Set<String>> findAllKeys( ) {
+        String[] keys = {"COUNTY_ALIAS:", "TOWN_ALIAS:", "VILLAGE_ALIAS:", "ROAD_ALIAS:", "SPECIAL_AREA:"};
         Map<String, Set<String>> resultMap = new HashMap<>();
         RedisConnection connection = null;
         try {
@@ -185,10 +198,6 @@ public class AddressParser {
         address.setVillage(matcher.group("village"));
         address.setNeighbor(matcher.group("neighbor"));
         address.setRoad(matcher.group("road"));
-        address.setSpecialArea(matcher.group("area"));//帶有"村"的area會先歸在這裡
-        if(address.getSpecialArea()!=null){
-            address.setArea(address.getSpecialArea());
-        }
         address.setLane(matcher.group("speciallane") != null ? matcher.group("speciallane") : matcher.group("lane"));
         address.setAlley(matcher.group("alley"));
         address.setSubAlley(matcher.group("subAlley"));
