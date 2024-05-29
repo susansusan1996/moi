@@ -180,12 +180,7 @@ public class SingleQueryService {
 
     List <String> findSeqByMappingId(Address address) {
         List<String> seqList = new ArrayList<>();
-        for (String mappingId : address.getMappingId()) {
-            seqList.addAll(redisService.findListByKey(mappingId));
-            if (!seqList.isEmpty()) {
-                break; //有比到就可以跳出迴圈了
-            }
-        }
+        seqList.addAll(redisService.findListsByKeys(address.getMappingId()));
         return seqList;
     }
 

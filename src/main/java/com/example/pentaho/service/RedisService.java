@@ -61,13 +61,19 @@ public class RedisService {
 
     public List<String> findListsByKeys(List<String> keys) {
         List<String> resultList = new ArrayList<>();
-        for (String key : keys) {
-            log.info("key: {}", key);
-            ListOperations<String, String> listOps = stringRedisTemplate1.opsForList();
-            List<String> elements = listOps.range(key, 0, -1);
-            log.info("elements: {}", elements);
-            resultList.addAll(elements);
-//            resultMap.put(key, elements);
+        List<Object> results = stringRedisTemplate1.executePipelined((RedisCallback<List<String>>) connection -> {
+            StringRedisConnection stringRedisConn = (StringRedisConnection) connection;
+            for (String key : keys) {
+                stringRedisConn.lRange(key, 0, -1);
+            }
+            return null;
+        });
+        for (Object result : results) {
+            if (result instanceof List) {
+                @SuppressWarnings("unchecked")
+                List<String> elements = (List<String>) result;
+                resultList.addAll(elements);
+            }
         }
         return resultList;
     }
