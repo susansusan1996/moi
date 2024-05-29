@@ -325,7 +325,6 @@ public class AddressParser {
             if (matcher.find()) {
                 // 匹配到的部分
                 String match = matcher.group();
-                System.out.println("匹配到的部分：" + match);
                 // 找到匹配後可以在這裡執行其他邏輯，或者直接break跳出迴圈
                 break;
             }
