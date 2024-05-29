@@ -1,40 +1,4 @@
 #開發環境
-server:
-  port: 8080
-
-pentaho:
-  web-target: http://52.33.116.195:8080/pentaho
-  username: admin #issue
-  password: password
-
-directory:
-  path: C:\test2
-  target: C:\
-  #原始csv存放目錄
-  receive-file-dir: /home/ubuntu/addr/batch_data/receive/
-  #批次zip檔存放目錄
-  send-file-dir: /home/ubuntu/addr/batch_data/send/
-  big-data-receive-file-dir: /home/ubuntu/addr/big_data/receive/
-  big-data-send-file-dir: /home/ubuntu/addr/big_data/send/
-  local-temp-dir: D:\temp\
-  #  etl作業產出的檔案位置前綴
-  etl-output-file-dir-prefix: D:\home\ec2-user\test222\
-  # 模擬聖森存檔案
-  mock-etl-save-file-dir-prefix: D:\home\ec2-user\saveFile\
-  # etl .ktr檔的存放位置
-  ktr-file-path: D:\home\addr\prod\
-
-#如果是自己要在 aws api server上測試，要改成rsa.pub(用自己的公鑰)
-key:
-  pubkey-name: D:\key\ras.pub    #聖森公鑰
-  ap-prikey-name: D:\rsa_key\rsa.pri #AP私鑰
-  ap-pubkey-name: D:\rsa_key\rsa.pub #AP公鑰
-
-apserver:
-  #  批次查詢: 聖森接收批次結束檔案的api url
-  target-url: http://211.75.133.17:7008/addr/api/iisi
-  token: D:\token\token.txt
-
 spring:
   data:
     #    db0: 存refrsesh_token
@@ -90,6 +54,44 @@ spring:
         cachePrepStmts: true
         prepStmtCacheSize: 250
         prepStmtCacheSqlLimit: 2048
+
+server:
+  port: 8080
+
+pentaho:
+  web-target: http://52.33.116.195:8080/pentaho
+  username: admin #issue
+  password: password
+
+directory:
+  path: C:\test2
+  target: C:\
+  #原始csv存放目錄
+  receive-file-dir: /home/ubuntu/addr/batch_data/receive/
+  #批次zip檔存放目錄
+  send-file-dir: /home/ubuntu/addr/batch_data/send/
+  big-data-receive-file-dir: /home/ubuntu/addr/big_data/receive/
+  big-data-send-file-dir: /home/ubuntu/addr/big_data/send/
+  local-temp-dir: D:\temp\
+  #  etl作業產出的檔案位置前綴
+  etl-output-file-dir-prefix: D:\home\ec2-user\test222\
+  # 模擬聖森存檔案
+  mock-etl-save-file-dir-prefix: D:\home\ec2-user\saveFile\
+  # etl .ktr檔的存放位置
+  ktr-file-path: D:\home\addr\prod\
+
+#如果是自己要在 aws api server上測試，要改成rsa.pub(用自己的公鑰)
+key:
+  pubkey-name: D:\key\ras.pub    #聖森公鑰
+  ap-prikey-name: D:\rsa_key\rsa.pri #AP私鑰
+  ap-pubkey-name: D:\rsa_key\rsa.pub #AP公鑰
+
+apserver:
+  #  批次查詢: 聖森接收批次結束檔案的api url
+  target-url: http://211.75.133.17:7008/addr/api/iisi
+  token: D:\token\token.txt
+
+
 
 sftputils:
   host: 52.33.116.195
