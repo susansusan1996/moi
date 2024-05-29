@@ -42,7 +42,6 @@ public class RedisConfig {
             @Value("${spring.data.redis0.port}")
             int port
     ) {
-        log.info("password:{}",password);
         // connection config
         RedisStandaloneConfiguration configuration = new RedisStandaloneConfiguration();
         configuration.setHostName(host);

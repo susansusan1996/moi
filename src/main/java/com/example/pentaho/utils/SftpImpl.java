@@ -42,7 +42,6 @@ public class SftpImpl implements Sftp {
         log.info("in dev");
         try {
             JSch jsch = new JSch();
-            log.info("privateKey:{}",privateKey);
             String path = ResourceUtils.getFile(privateKey).getPath();
             jsch.addIdentity(path);
 
