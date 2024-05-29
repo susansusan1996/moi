@@ -279,6 +279,13 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
+
+		<!--計算字串的差異分數-->
+		<dependency>
+			<groupId>de.uni_jena.cs.fusion</groupId>
+			<artifactId>similarity.jarowinkler</artifactId>
+			<version>1.1.0</version>
+		</dependency>
 	</dependencies>
 
 	<build>

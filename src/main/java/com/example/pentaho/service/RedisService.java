@@ -192,20 +192,19 @@ public class RedisService {
                 } else {
                     log.info("redis<沒有>找到cd代碼，key: {}", key);
                     //如果找不到，就要用模糊搜尋
-                    String redisValue = null;
-                    // TODO: 2024/5/14 除了?還有方框，帶補上
-                    if(key.contains("?")){
-                        String scanKey = key.replace("?","*");
-                        log.info("replace奇怪字元後，scanKey: {}", scanKey);
-                        redisValue = String.join(",",scanKeysAndReturnList(scanKey));
-                        log.info("scanKey: {}, redisValue: {}", scanKey, redisValue);
+                    String[] parts = key.split(":");
+                    Set<String> scanSet = new HashSet<>();
+                    if (parts.length == 2 && !"null".equals(parts[1])) {
+                        scanSet = scanKeysAndReturnSet(key);
+                        log.info("模糊搜尋後的value: {}", scanSet);
                     }
-                    if(StringUtils.isNotNullOrEmpty(redisValue)){
-                        resultMap.put(key, redisValue); //模糊搜尋有找到
-                    }else{
+                    if (!scanSet.isEmpty()) {
+                        String value = String.join(",", scanSet);
+                        resultMap.put(key, value); //模糊搜尋有找到
+                    } else {
                         resultMap.put(key, keyMap.get(key)); // 如果找不到對應的value，就要放default value
                     }
-                    if(containsKeyword(key)){
+                    if (containsKeyword(key)) {
                         segmentExistNumberBuilder.append("0");
                     }
                 }
@@ -281,19 +280,41 @@ public class RedisService {
     /**
      * 模糊比對，找出相符的 KEY (redis: scan)，
      */
-    // TODO: 2024/5/14 速度慢，需要優化 
-    public Set<String> scanKeysAndReturnSet(String pattern) {
+    // TODO: 2024/5/14 速度慢 ??，需要優化
+    public Set<String> scanKeysAndReturnSet(String key) {
         Set<String> resultSet = new HashSet<>();
-        stringRedisTemplate2.execute((RedisCallback<Void>) connection -> {
-            try (Cursor<byte[]> cursor = connection.scan(ScanOptions.scanOptions().match(pattern).count(SCAN_SIZE).build())) {
-                while (cursor.hasNext()) {
-                    byte[] next = cursor.next();
-                    resultSet.addAll(getSet(new String(next)));
+        if(key.split(":")[1]!=null){
+            // TODO: 2024/5/29 除了 ? 還有方框，帶補上
+            // TODO: 2024/5/29 如果沒有?沒有方框，就不知道可以把甚麼字元挖掉用*取代。可能會造成 ex."民哈路"，無法找到 "民生路"
+            String scanKey = key.split(":")[0]+ ":*" + key.split(":")[1].replace("?", "*") + "*";
+            log.info("replace 問號、方框 後，scanKey: {}", scanKey);
+            stringRedisTemplate2.execute((RedisCallback<Void>) connection -> {
+                try (Cursor<byte[]> cursor = connection.scan(ScanOptions.scanOptions().match(scanKey).count(SCAN_SIZE).build())) {
+                    List<String> bestMatches = new ArrayList<>();
+                    //JaroWinklerDistance比較scan的key，取最高分的key們的value
+                    JaroWinklerDistance distance = new JaroWinklerDistance();
+                    double highestScore = 0.0;
+                    while (cursor.hasNext()) {
+                        byte[] next = cursor.next();
+                        String currentKey = new String(next);
+                        double score = distance.apply(key, currentKey);
+                        // TODO: LOG如果會影響速度，不需要可以拿掉 ><
+                        log.info("key:{}，currentKey:{}，score:{}",key,currentKey,score);
+                        if (score > highestScore) {
+                            highestScore = score;
+                            bestMatches.clear();
+                            bestMatches.add(currentKey);
+                        } else if (score == highestScore) {
+                            bestMatches.add(currentKey); //同分數
+                        }
+                    }
+                    for (String match : bestMatches) {
+                        resultSet.addAll(getSet(match));
+                    }
                 }
-            }
-            return null;
-        });
-
+                return null;
+            });
+        }
         return resultSet;
     }
 
