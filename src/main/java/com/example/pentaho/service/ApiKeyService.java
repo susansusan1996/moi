@@ -3,7 +3,7 @@ package com.example.pentaho.service;
 import com.example.pentaho.component.*;
 import com.example.pentaho.exception.MoiException;
 import com.example.pentaho.utils.RSAJWTUtils;
-import com.example.pentaho.utils.RsaUtils;
+import com.example.pentaho.utils.RsaReadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,7 +59,7 @@ public class ApiKeyService {
 
     public JwtReponse createApiKey(String userId, RefreshToken refreshToken, String type) throws Exception {
         User user = new User();
-        PrivateKey privateKey = RsaUtils.getPrivateKey((keyComponent.getApPrikeyName()));
+        PrivateKey privateKey = RsaReadUtils.getPrivateKey((keyComponent.getApPrikeyName()));
         //一般token
         user.setId(userId); //userId要用api帶過來的(如果是審核通過的)
         user.setTokenType("token");
@@ -97,7 +97,7 @@ public class ApiKeyService {
     //終端user持有效的refreshToken，來換取token
     public JwtReponse exchangeForNewToken(String userId) throws Exception {
         User user = new User();
-        PrivateKey privateKey = RsaUtils.getPrivateKey((keyComponent.getApPrikeyName()));
+        PrivateKey privateKey = RsaReadUtils.getPrivateKey((keyComponent.getApPrikeyName()));
         //一般token
         user.setId(userId); //userId要用api帶過來的(如果是審核通過的)
         user.setTokenType("token");
