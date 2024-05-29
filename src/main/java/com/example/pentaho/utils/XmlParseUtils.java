@@ -7,18 +7,32 @@ import org.w3c.dom.*;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
 import java.util.Map;
 
 public class XmlParseUtils {
-    
+
     private final static Logger log = LoggerFactory.getLogger(XmlParseUtils.class);
+    /*完全禁用*/
+    private final static String DISALLOW_DOCTYPE_DECL = "http://apache.org/xml/features/disallow-doctype-decl";
+    /*禁用外部dtd*/
+    private final static String LOAD_EXTERNAL_DTD = "http://apache.org/xml/features/nonvalidating/load-external-dtd";
+    /*禁止加载外部实体*/
+    private final static String EXTERNAL_GENERAL_ENITIES = "http://xml.org/sax/features/external-general-entities";
+    /*禁止加载参数实体*/
+    private final static String EXTERNAL_PARAMETER_ENITIES = "http://xml.org/sax/features/external-parameter-entities";
+    /*禁止加载HTTP参数*/
+    private final static String SECURE_PROCESSING = "http://javax.xml.XMLConstants/feature/secure-processing";
 
 
-    public DocumentBuilderFactory newDocumentBuilderFactory(){
+    public DocumentBuilderFactory newDocumentBuilderFactory() throws ParserConfigurationException {
+        String FEATURE = null;
+        FEATURE = EXTERNAL_PARAMETER_ENITIES;
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setFeature(FEATURE,factory.isValidating());
         /***/
-        factory.setFeature(VALID,factory.isValidating());
+        return factory;
     }
 
     public final static Element parser(String eleStr){
