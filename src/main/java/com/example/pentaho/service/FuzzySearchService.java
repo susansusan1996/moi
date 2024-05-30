@@ -25,6 +25,12 @@ public class FuzzySearchService {
         return  redisService.findListsByKeys(newMappingIdSet.stream().toList());
     }
 
+    /**
+     * 切割地址後組成的mappingId於redis不存在
+     * 要組成新的 mappingId
+     * @param address
+     * @return
+     */
     public Set<String> fuzzySearchMappingId(Address address) {
         Map<String, List<String>> map = buildMappingIdRegexString(address);
         List<String> newMappingId = map.get("newMappingId");
@@ -52,10 +58,12 @@ public class FuzzySearchService {
 
 
     private Map<String, List<String>> buildMappingIdRegexString(Address address) {
+        //裝新組成的mappindId
         List<String> newMappingIdList = new ArrayList<>();
+        //裝新組成的mappindId
         List<String> regexList = new ArrayList<>();
         String segNum = address.getSegmentExistNumber();//紀錄SingleQueryDTO
-         List<LinkedHashMap<String, String>> mapList = address.getMappingIdMap();
+        List<LinkedHashMap<String, String>> mapList = address.getMappingIdMap();
         mapList.forEach(map -> {
             LinkedHashMap<String, String> regexMap = new LinkedHashMap<>(map);
             LinkedHashMap<String, String> fuzzyMap = new LinkedHashMap<>(map);

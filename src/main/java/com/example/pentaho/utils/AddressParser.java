@@ -185,6 +185,8 @@ public class AddressParser {
     }
 
     /***
+     * matcher 有可能室比對第二次的物件，ex:有可能是轉換basement:X樓在一次進行切割後的物件
+     * address 第一次或上一次比對的物件丟進來
      * @param matcher
      * @param address
      * @return
@@ -195,7 +197,9 @@ public class AddressParser {
         String basementString = matcher.group("basementStr");
         // 特殊處理地下一層和地下的情況
         // 先parseBasement 再 切割一次地址(會被切到NumFlr1~5當中)
+
         if (StringUtils.isNotNullOrEmpty(basementString)) {
+            //todo:如果原本NumFlr1非空，會不會被basement的匹配結果覆蓋掉?
             return parseAddress(parseBasement(basementString, address.getCleanAddress(), address), address);
         }
         address.setZipcode(matcher.group("zipcode")); //郵遞區號5|3
@@ -270,15 +274,15 @@ public class AddressParser {
                     // 屋頂突出101層 -> basement:一百零一樓
                     origninalAddress = origninalAddress.replaceAll(basementString, "basement:" + replaceWithChineseNumber(numericPart) + "樓");
                     log.info("basementString 提取數字部分:{} ", numericPart);
-                    //todo:這裡要再補齊條件，屋頂层跟地下層會重複到，造成無法以BasementStr分配地上或屋頂
 //                    if(basemantMatcher.group().contains(keyWord)){
 //                      address.setBasementStr("2");
 //                    }else{
 //                      address.setBasementStr("1");
 //                    }
-                    if(basementString.contains("頂")){ //屋頂突出.*層
+                    if(basementString.contains("頂")){
                         address.setBasementStr("2");
                     }else{
+                        //todo:屋頂突出.*層 ->可能會被誤判到這裡
                         address.setBasementStr("1");
                     }
                     //todo:匹配到一個就停掉
@@ -290,6 +294,12 @@ public class AddressParser {
     }
 
 
+    /**
+     *
+     * @param input 有可能會室 basement:一樓
+     * @param address
+     * @return
+     */
     //再PARSE一次已經在FLR_NUM_1~5 的BF、B1F
     private String parseBasementForBF(String input, Address address) {
         if (StringUtils.isNotNullOrEmpty(input)) {

@@ -12,6 +12,7 @@ public class NumberParser {
     private static final Logger log = LoggerFactory.getLogger(NumberParser.class);
 
     /***
+     * 有可能會有 basement:一樓
      * [-－] 半形、全形- 用 之 取代
      * 其餘 表達數字的字符 轉為 半形數字
      * @param input
