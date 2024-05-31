@@ -1,6 +1,8 @@
 #開發環境
 server:
   port: 8080
+  servlet:
+    context-path: /iisi
 
 pentaho:
   web-target: http://52.33.116.195:8080/pentaho
