@@ -10,6 +10,7 @@ import com.example.pentaho.service.SingleTrackQueryService;
 import com.example.pentaho.utils.AddressParser;
 import com.example.pentaho.utils.UsageUtils;
 import com.example.pentaho.utils.UserContextUtils;
+import com.google.common.util.concurrent.RateLimiter;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -64,6 +65,8 @@ public class APIKeyResource {
     @Autowired
     private AddressParser  addressParser;
 
+
+    private RateLimiter rateLimiter = RateLimiter.create(1);
 
 
 
@@ -166,7 +169,7 @@ public class APIKeyResource {
     @Operation(description = "單筆未登入測試")
     @GetMapping("/forguest")
     @UnAuthorized
-    @RateLimiting(capacity = 20,tokens = 20,mintues = 1)
+    @RateLimiting(name="forguest",tokens = 0.3333)
     public ResponseEntity<String> forGuestUser() {
         return new ResponseEntity<>("用戶未登入", HttpStatus.OK);
     }
