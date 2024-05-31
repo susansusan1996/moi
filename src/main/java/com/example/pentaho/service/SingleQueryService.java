@@ -165,8 +165,7 @@ public class SingleQueryService {
     private void replaceJoinStepWhenMultiAdress(Address address, Set<String> seqSet) {
         if (address.getJoinStep() != null && seqSet.size() > 1) {
             switch (address.getJoinStep()) {
-                case "JA211", "JA311" -> address.setJoinStep("JD111");
-                case "JA212", "JA312" -> address.setJoinStep("JD112");
+                case "JA211", "JA311","JA212", "JA312" -> address.setJoinStep("JD111");
                 case "JB111", "JB112" -> address.setJoinStep("JD311");
                 case "JB311" -> address.setJoinStep("JD411");
                 case "JB312" -> address.setJoinStep("JD412");
