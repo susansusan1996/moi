@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BigDigitConvert {
 
@@ -84,6 +86,19 @@ public class BigDigitConvert {
      * @return
      */
     public static String convertToDigit(String upper){
+        Pattern regexPattern = Pattern.compile(".*[^壹貳參肆伍陸柒捌玖]拾[壹貳參肆伍陸柒捌玖]?.*|^拾[壹貳參肆伍陸柒捌玖].*?|^拾[^壹貳參肆伍陸柒捌玖].*?|^[^壹貳參肆伍陸柒捌玖]拾.*?|拾"); //特別處理11~19
+        Matcher matcher = regexPattern.matcher(upper);
+        if (matcher.matches() && upper.indexOf("拾") == upper.lastIndexOf("拾")) {
+            int number = 10;
+            String[] digits = {"'壹'", "貳", "參", "肆", "伍", "陸", "柒", "捌", "玖"};
+            String[] digitValues = {"1", "2", "3", "4", "5", "6", "7", "8", "9"};
+            for (int i = 0; i < digits.length; i++) {
+                if (upper.contains(digits[i])) {
+                    number += Integer.parseInt(digitValues[i]);
+                }
+            }
+            return String.valueOf(number);
+        }
         long digit = 1L;  //倍数
         long result = 0L; //最终结果
         long pre = 0L;    //前一次转换后的数

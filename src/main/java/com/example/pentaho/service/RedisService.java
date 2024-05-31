@@ -1,29 +1,23 @@
 package com.example.pentaho.service;
 
-import com.example.pentaho.component.Address;
-import com.example.pentaho.component.JwtReponse;
 import com.example.pentaho.component.RefreshToken;
 import com.example.pentaho.component.SingleQueryDTO;
-import com.example.pentaho.utils.AddressParser;
 import com.example.pentaho.utils.StringUtils;
+import org.apache.commons.text.similarity.JaroWinklerDistance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.connection.StringRedisConnection;
 import org.springframework.data.redis.core.*;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static com.example.pentaho.utils.NumberParser.*;
+import java.util.concurrent.*;
 
 @Service
 public class RedisService {
@@ -31,7 +25,7 @@ public class RedisService {
 
     private static Logger log = LoggerFactory.getLogger(SingleQueryService.class);
 
-    Integer SCAN_SIZE = 1000;
+    Integer SCAN_SIZE = 10000;
 
     @Autowired
     @Qualifier("stringRedisTemplate2")
@@ -60,13 +54,19 @@ public class RedisService {
 
     public List<String> findListsByKeys(List<String> keys) {
         List<String> resultList = new ArrayList<>();
-        for (String key : keys) {
-            log.info("key: {}", key);
-            ListOperations<String, String> listOps = stringRedisTemplate1.opsForList();
-            List<String> elements = listOps.range(key, 0, -1);
-            log.info("elements: {}", elements);
-            resultList.addAll(elements);
-//            resultMap.put(key, elements);
+        List<Object> results = stringRedisTemplate1.executePipelined((RedisCallback<List<String>>) connection -> {
+            StringRedisConnection stringRedisConn = (StringRedisConnection) connection;
+            for (String key : keys) {
+                stringRedisConn.lRange(key, 0, -1);
+            }
+            return null;
+        });
+        for (Object result : results) {
+            if (result instanceof List) {
+                @SuppressWarnings("unchecked")
+                List<String> elements = (List<String>) result;
+                resultList.addAll(elements);
+            }
         }
         return resultList;
     }
@@ -153,6 +153,10 @@ public class RedisService {
         return resultMap;
     }
 
+    private static final List<String> KEYWORDS = Arrays.asList(
+            "COUNTY", "TOWN", "VILLAGE", "ROAD", "AREA", "LANE", "ALLEY",
+            "NUM_FLR_1", "NUM_FLR_2", "NUM_FLR_3", "NUM_FLR_4", "NUM_FLR_5"
+    );
 
     public Map<String, String> findSetByKeys(Map<String, String> keyMap, String segmentExistNumber) {
         Map<String, String> resultMap = new HashMap<>();
@@ -178,38 +182,48 @@ public class RedisService {
                     log.info("redis<有>找到cd代碼，key: {}, value: {}", key, redisSet);
                     String redisValue = String.join(",", redisSet);
                     resultMap.put(key, redisValue);
-                    segmentExistNumberBuilder.append("1");
+                    //如果是 "COUNTY", "TOWN", "VILLAGE","ROAD", "AREA", "LANE", "ALLEY",
+                    // "NUM_FLR_1", "NUM_FLR_2", "NUM_FLR_3", "NUM_FLR_4", "NUM_FLR_5"
+                    //才需要判斷0或1
+                    if(containsKeyword(key)){
+                        segmentExistNumberBuilder.append("1");
+                    }
                 } else {
                     log.info("redis<沒有>找到cd代碼，key: {}", key);
                     //如果找不到，就要用模糊搜尋
-                    String redisValue = null;
-                    // TODO: 2024/5/14 除了?還有方框，帶補上
-                    if(key.contains("?")){
-                        String scanKey = key.replace("?","*");
-                        log.info("replace奇怪字元後，scanKey: {}", scanKey);
-                        redisValue = String.join(",",scanKeysAndReturnSet(scanKey));
-                        log.info("scanKey: {}, redisValue: {}", scanKey, redisValue);
+                    String[] parts = key.split(":");
+                    Set<String> scanSet = new HashSet<>();
+                    if (parts.length == 2 && !"null".equals(parts[1])) {
+                        scanSet = scanKeysAndReturnSet(key);
+                        log.info("模糊搜尋後的value: {}", scanSet);
                     }
-                    if(StringUtils.isNotNullOrEmpty(redisValue)){
-                        resultMap.put(key, redisValue); //模糊搜尋有找到
-                    }else{
+                    if (!scanSet.isEmpty()) {
+                        String value = String.join(",", scanSet);
+                        resultMap.put(key, value); //模糊搜尋有找到
+                    } else {
                         resultMap.put(key, keyMap.get(key)); // 如果找不到對應的value，就要放default value
                     }
-                    segmentExistNumberBuilder.append("0");
+                    if (containsKeyword(key)) {
+                        segmentExistNumberBuilder.append("0");
+                    }
                 }
             }
         } finally {
             connection.close();
         }
-
         resultMap.put("segmentExistNumber", segmentExistNumberBuilder.toString());
         return resultMap;
     }
 
 
-
-
-
+    private Boolean containsKeyword (String key) {
+        for (String keyword : KEYWORDS) {
+            if (key.split(":")[0].equals(keyword)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public List<String> findByKeys(Set<String> keys) {
         return stringRedisTemplate1.opsForValue().multiGet(keys.stream().toList());
@@ -219,43 +233,87 @@ public class RedisService {
     /**
      * 模糊比對，找出相符的 KEY (redis: scan)
      */
-    public Set<String> findListByScan(String key) {
-        Set<String> keySet = stringRedisTemplate1.execute((RedisCallback<Set<String>>) connection -> {
-            Set<String> keySetTemp = new ConcurrentSkipListSet<>();
+    public Set<String> findListByScan(List<String> keys) {
+        Set<String> keySet = new ConcurrentSkipListSet<>();
+        ExecutorService executorService = Executors.newFixedThreadPool(4);
+        try {
+            List<Future<Set<String>>> futures = executorService.invokeAll(createScanTasks(keys));
+            for (Future<Set<String>> future : futures) {
+                keySet.addAll(future.get());
+            }
+        } catch (Exception e) {
+            log.error("Error during Redis scan: {}", e.getMessage());
+        } finally {
+            executorService.shutdown();
+        }
+        log.info("keySet: {}", keySet);
+        return keySet;
+    }
+
+    private List<Callable<Set<String>>> createScanTasks(List<String> keys) {
+        return keys.stream().map(this::createScanTask).toList();
+    }
+
+    private Callable<Set<String>> createScanTask(String key) {
+        return () -> stringRedisTemplate1.execute((RedisCallback<Set<String>>) connection -> {
+            Set<String> localKeySet = new ConcurrentSkipListSet<>();
             try (Cursor<byte[]> cursor = connection.scan(ScanOptions.scanOptions()
-                    .match(key) //模糊比對
+                    .match(key)
                     .count(SCAN_SIZE)
                     .build())) {
-                while (cursor.hasNext() && keySetTemp.size() < SCAN_SIZE) {
-                    keySetTemp.add(new String(cursor.next(), "utf-8"));
+                while (cursor.hasNext()) {
+                    localKeySet.add(new String(cursor.next(), StandardCharsets.UTF_8));
                 }
             } catch (Exception e) {
                 log.error("redis，模糊比對錯誤:{}", e.getMessage());
             }
-            return keySetTemp;
+            return localKeySet;
         });
-        log.info("keySet:{}", keySet);
-        return keySet;
     }
+
+
+
 
 
 
     /**
      * 模糊比對，找出相符的 KEY (redis: scan)，
      */
-    // TODO: 2024/5/14 速度慢，需要優化 
-    public Set<String> scanKeysAndReturnSet(String pattern) {
+    // TODO: 2024/5/14 速度慢 ??，需要優化
+    public Set<String> scanKeysAndReturnSet(String key) {
         Set<String> resultSet = new HashSet<>();
-        stringRedisTemplate2.execute((RedisCallback<Void>) connection -> {
-            try (Cursor<byte[]> cursor = connection.scan(ScanOptions.scanOptions().match(pattern).build())) {
-                while (cursor.hasNext()) {
-                    byte[] next = cursor.next();
-                    resultSet.addAll(getSet(new String(next)));
+        if(key.split(":")[1]!=null){
+            // TODO: 2024/5/29 除了 ? 還有方框，帶補上
+            // TODO: 2024/5/29 如果沒有?沒有方框，就不知道可以把甚麼字元挖掉用*取代。可能會造成 ex."民哈路"，無法找到 "民生路"
+            String scanKey = key.split(":")[0]+ ":*" + key.split(":")[1].replace("?", "*") + "*";
+            log.info("replace 問號、方框 後，scanKey: {}", scanKey);
+            stringRedisTemplate2.execute((RedisCallback<Void>) connection -> {
+                try (Cursor<byte[]> cursor = connection.scan(ScanOptions.scanOptions().match(scanKey).count(SCAN_SIZE).build())) {
+                    List<String> bestMatches = new ArrayList<>();
+                    //JaroWinklerDistance比較scan的key，取最高分的key們的value
+                    JaroWinklerDistance distance = new JaroWinklerDistance();
+                    double highestScore = 0.0;
+                    while (cursor.hasNext()) {
+                        byte[] next = cursor.next();
+                        String currentKey = new String(next);
+                        double score = distance.apply(key, currentKey);
+                        // TODO: LOG如果會影響速度，不需要可以拿掉 ><
+                        log.info("key:{}，currentKey:{}，score:{}",key,currentKey,score);
+                        if (score > highestScore) {
+                            highestScore = score;
+                            bestMatches.clear();
+                            bestMatches.add(currentKey);
+                        } else if (score == highestScore) {
+                            bestMatches.add(currentKey); //同分數
+                        }
+                    }
+                    for (String match : bestMatches) {
+                        resultSet.addAll(getSet(match));
+                    }
                 }
-            }
-            return null;
-        });
-
+                return null;
+            });
+        }
         return resultSet;
     }
 
@@ -263,6 +321,31 @@ public class RedisService {
         SetOperations<String, String> setOperations = stringRedisTemplate2.opsForSet();
         return setOperations.members(key);
     }
+
+
+
+    public List<String> scanKeysAndReturnList(String pattern) {
+        List<String> resultList = new ArrayList<>();
+        stringRedisTemplate2.execute((RedisCallback<Void>) connection -> {
+            try (Cursor<byte[]> cursor = connection.scan(ScanOptions.scanOptions().match(pattern).count(SCAN_SIZE).build())) {
+                while (cursor.hasNext()) {
+                    byte[] next = cursor.next();
+                    resultList.addAll(getList(new String(next)));
+                }
+            }
+            return null;
+        });
+        return resultList;
+    }
+
+    public List<String> getList(String key) {
+        ListOperations<String, String> listOps = stringRedisTemplate2.opsForList();
+        List<String> elements = Optional.ofNullable(listOps.range(key, 0, -1)).orElse(Collections.emptyList());
+        log.info("elements: {}", elements);
+        return elements;
+    }
+
+
 
 
 

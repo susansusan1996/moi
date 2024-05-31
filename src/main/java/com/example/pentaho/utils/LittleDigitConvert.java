@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class LittleDigitConvert {
 
@@ -84,6 +86,19 @@ public class LittleDigitConvert {
      * @return
      */
     public static String convertToDigit(String upper){
+        Pattern regexPattern = Pattern.compile(".*[^一二三四五六七八九]十[一二三四五六七八九]?.*|^十[一二三四五六七八九].*?|^十[^一二三四五六七八九].*?|^[^一二三四五六七八九]十.*?|十"); //特別處理11~19
+        Matcher matcher = regexPattern.matcher(upper);
+        if (matcher.matches() && upper.indexOf("十") == upper.lastIndexOf("十")) {
+            int number = 10;
+            String[] digits = {"一", "二", "三", "四", "五", "六", "七", "八", "九"};
+            String[] digitValues = {"1", "2", "3", "4", "5", "6", "7", "8", "9"};
+            for (int i = 0; i < digits.length; i++) {
+                if (upper.contains(digits[i])) {
+                    number += Integer.parseInt(digitValues[i]);
+                }
+            }
+            return String.valueOf(number);
+        }
         long digit = 1L;  //倍数
         long result = 0L; //最终结果
         long pre = 0L;    //前一次转换后的数
@@ -125,6 +140,7 @@ public class LittleDigitConvert {
                 }
             }
         }
+        System.out.println("String.valueOf(result): "+String.valueOf(result));
         return String.valueOf(result);
     }
 }

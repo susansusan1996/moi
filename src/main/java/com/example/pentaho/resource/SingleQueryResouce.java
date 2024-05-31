@@ -48,18 +48,6 @@ public class SingleQueryResouce {
     private SystemUpdateService systemUpdateService;
 
 
-    /**
-     * 拆分地址
-     */
-    @GetMapping("/query-address")
-    @Hidden
-    public ResponseEntity<Address> queryData(@RequestBody SingleQueryDTO singleQueryDTO) {
-//        return ResponseEntity.ok(new Address(singleQueryDTO.getOriginalAddress()));
-        return ResponseEntity.ok(addressParser.parseAddress(singleQueryDTO.getOriginalAddress(),null,null));
-
-    }
-
-
 
     @Operation(description = "單筆查詢",
             parameters = {
@@ -80,13 +68,15 @@ public class SingleQueryResouce {
                     )
             )
             @RequestBody SingleQueryDTO singleQueryDTO
-    ) throws NoSuchFieldException, IllegalAccessException {
-//        try {
-        return ResponseEntity.ok(singleQueryService.findJson(singleQueryDTO));
-//        } catch (Exception e) {
-//            log.info("無法解析地址:{}", e.getMessage());
-//            return ResponseEntity.ok("無法解析地址");
-//        }
+    ) {
+        try {
+            return ResponseEntity.ok(singleQueryService.findJson(singleQueryDTO));
+        } catch (Exception e) {
+            log.info("無法解析地址:{}", e.getMessage());
+            SingleQueryResultDTO dto = new SingleQueryResultDTO();
+            dto.setText("無法解析地址");
+            return ResponseEntity.ok(dto);
+        }
     }
 
     /***

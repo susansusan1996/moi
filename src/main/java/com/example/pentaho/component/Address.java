@@ -18,6 +18,7 @@ public class Address {
     private String neighbor;
     private String neighborCd;
     private String road;
+    private String specialArea;
     private String area;
     private String roadAreaSn;
     private String lane;
@@ -44,10 +45,10 @@ public class Address {
     private String addrRemains;
     private boolean isParseSuccessed;
     private String originalAddress;
+    private String cleanAddress; //去除奇怪字元、去除台灣省後的地址
     private List<String> mappingId; //64碼
     private String segmentExistNumber; //紀錄user是否有輸入每個地址片段，有:1，沒有:0
     private List<LinkedHashMap<String, String>> mappingIdMap;
-    private List<List<String>> MappingIdList;
     private String joinStep; //地址比對代碼
     private Set<String> seqSet;
     private String numTypeCd; //臨建特附
@@ -423,20 +424,28 @@ public class Address {
         this.mappingIdMap = mappingIdMap;
     }
 
-    public List<List<String>> getMappingIdList() {
-        return MappingIdList;
-    }
-
-    public void setMappingIdList(List<List<String>> mappingIdList) {
-        MappingIdList = mappingIdList;
-    }
-
     public String getRemark() {
         return remark;
     }
 
     public void setRemark(String remark) {
         this.remark = remark;
+    }
+
+    public String getCleanAddress() {
+        return cleanAddress;
+    }
+
+    public void setCleanAddress(String cleanAddress) {
+        this.cleanAddress = cleanAddress;
+    }
+
+    public String getSpecialArea() {
+        return specialArea;
+    }
+
+    public void setSpecialArea(String specialArea) {
+        this.specialArea = specialArea;
     }
 
     @Override
@@ -452,6 +461,7 @@ public class Address {
                 ", neighbor='" + neighbor + '\'' +
                 ", neighborCd='" + neighborCd + '\'' +
                 ", road='" + road + '\'' +
+                ", specialArea='" + specialArea + '\'' +
                 ", area='" + area + '\'' +
                 ", roadAreaSn='" + roadAreaSn + '\'' +
                 ", lane='" + lane + '\'' +
@@ -478,10 +488,10 @@ public class Address {
                 ", addrRemains='" + addrRemains + '\'' +
                 ", isParseSuccessed=" + isParseSuccessed +
                 ", originalAddress='" + originalAddress + '\'' +
+                ", cleanAddress='" + cleanAddress + '\'' +
                 ", mappingId=" + mappingId +
                 ", segmentExistNumber='" + segmentExistNumber + '\'' +
                 ", mappingIdMap=" + mappingIdMap +
-                ", MappingIdList=" + MappingIdList +
                 ", joinStep='" + joinStep + '\'' +
                 ", seqSet=" + seqSet +
                 ", numTypeCd='" + numTypeCd + '\'' +
