@@ -93,7 +93,7 @@ public class UserResource {
         boolean isMatch = singleQueryDTO.getOriginalAddress().matches(continuteAddressRules);
         log.info("連號地址:{}",isMatch?":是":":否");
         /***
-         * 刪除重複出出現在originalAddress中的縣市、區
+         * 刪除重複出現在originalAddress中一次以上縣市、區
          */
         getCleanAddress("","","");
 
@@ -105,29 +105,20 @@ public class UserResource {
         singleQueryDTO.setOriginalAddress(singleQueryDTO.getOriginalAddress().replaceAll(specialWords,"").replaceAll(specialCommaRules,""));
         log.info("去除特殊字元後:{}",singleQueryDTO.getOriginalAddress());
 
-        /***
-         * 去redis撈出所有集合組正則
-         * ALLEY:
-         * AREA:
-         * COUNTY:
-         * LANE:
-         * NUM_FLR_1:
-         * NUM_FLR_2:
-         * NUM_FLR_3:
-         * NUM_FLR_4:
-         * ROAD:
-         * ROADAREA:
-         * ROAD_ALIAS:
-         * TOWN:
-         * VILLAGE:
+        /**
+         *  Redis.Set.Name
+         * "COUNTY_ALIAS:", "TOWN_ALIAS:", "VILLAGE_ALIAS:", "ROAD_ALIAS:", "SPECIAL_AREA:"
          */
         String[] setNames = {};
         Map<String, Set<String>> addressPartBySetName = findAddressPartBySetName(setNames);
 
         /**開始組正則*/
-        String pattern = getPattern();
+        pattern = getPattern();
+
         /**開始complie*/
-        matcherAndSetAddress(singleQueryDTO.getOriginalAddress(),null);
+        Matcher firstMatcher = matcher(singleQueryDTO.getOriginalAddress(), null);
+        Address firstParse = new Address();
+        setAddress(firstParse,firstMatcher);
         /**給 default numType
          * 檢查 addressRemain
          * 臨96、建97、特98、付99
@@ -147,7 +138,7 @@ public class UserResource {
             //開始比對addressTRemain 並給予NumType
             numTypeCd = getNumType(adderss);
             if(!"95".equals(numTypeCd)){
-                matcherAndSetAddress(adderss.getOriginalAddress(),adderss);
+                matcher(adderss.getOriginalAddress(),adderss);
             }else{
                 //
             }
@@ -182,23 +173,35 @@ public class UserResource {
     }
 
     @GetMapping("/test-matcher")
-    public Address matcherAndSetAddress(String inputAddress,Address address) throws InvocationTargetException, IllegalAccessException {
-         if(address == null){
-             address = new Address();
-         }
+    public Matcher matcher(String inputAddress,Address address) throws InvocationTargetException, IllegalAccessException {
+        if(address == null){
+            address = new Address();
+        }
+        log.info("Address:{}",address);
         Pattern compile = Pattern.compile(pattern);
         Matcher matcher = compile.matcher(inputAddress);
+        return matcher;
+    }
+
+    /***
+     * 處理 basementStr
+     * @param address
+     * @param matcher
+     */
+    public void setAddress(Address address,Matcher matcher) throws InvocationTargetException, IllegalAccessException {
+        log.info("address:{}",address);
+        if(StringUtils.isNotNullOrEmpty(matcher.group("basementStr"))){
+            log.info("basementStr{}:",matcher.group("basementStr"));
+            pasrseBasementStr(address.getOriginalAddress(),matcher.group("basementStr"),address);
+            matcher(address.getOriginalAddress(),address);
+
+        }
         if(matcher.matches()){
-//           "zipcode", "county", "town", "village", "neighbor", "speciallane", "road", "area",
-//           "lane", "alley", "subAlley", "numFlr1", "numFlr2", "numFlr3",
-//           "numFlr4", "numFlr5", "continuousNum", "room", "basementStr",
-//           "addrRemains", "remark"
             address.setZipcode(matcher.group("zipcode"));
             address.setCounty(matcher.group("county"));
             address.setTown(matcher.group("town"));
             address.setVillage(matcher.group("village"));
             address.setNeighbor(matcher.group("neighbor"));
-//            address.set(matcher.group("speciallane"));
             address.setRoad(matcher.group("road"));
             address.setArea(matcher.group("area"));
             address.setLane(matcher.group("lane"));
@@ -215,10 +218,142 @@ public class UserResource {
             address.setAddrRemains(matcher.group("addrRemains"));
             address.setRemark(matcher.group("remark"));
         }
-        log.info("Address:{}",address);
-        handleAddressRemain(address);
-        return address;
+
     }
+
+    /**
+     * basementStr 正則細分三類組
+     * 第一類組比對 地下|地下室|... keyWord 改成 一樓，Address.basementStr 改 1
+     * 第二類組比對 屋頂|頂樓|... keyWord 改成 ""，Address.basementStr 改 2
+     * 第三類組比對 屋頂突出.*層","地下.*層,keyWord 改成 basement:.*(阿拉伯數字)樓，Address.basementStr 改 1,2
+     * 用 Address.basementStr 分 0(非地下、屋頂), 1(地下) , 2(屋頂)
+     * ex: 地下 -> 一樓
+     *     屋頂 -> ""
+     *     地下貳層 -> basement:2樓,Address.basementStr = 1
+     *     屋頂突出拾八層 -> basement:18樓,Address.basementStr = 2
+     * @param basementStr
+     * @return
+     */
+    public void pasrseBasementStr(String originalAddress,String basementStr,Address address){
+         String[] basementPattern1 ={"地下","地下室","底層"};
+         String[] basementPattern2 ={"屋頂","頂樓","屋頂突出物","屋頂樓","頂層","頂加","頂"};
+         String[] basementPattern3 ={"屋頂突出.*層","地下.*層","地下.*樓"};
+         if(Arrays.asList(basementPattern1).contains(basementStr)){
+             String replacedStr = originalAddress.replaceAll(basementStr, "一樓");
+             address.setBasementStr("1");
+             address.setOriginalAddress(replacedStr);
+             return;
+         }
+
+        if(Arrays.asList(basementPattern2).contains(basementStr)){
+            String replacedStr = originalAddress.replaceAll(basementStr, "");
+            address.setBasementStr("2");
+            address.setOriginalAddress(replacedStr);
+            return;
+        }
+
+        //basementPattern是正則比對
+        Pattern compile = null;
+        Matcher matcher = null;
+        String patternStr = "";
+        for(String pattern:basementPattern3){
+            compile = Pattern.compile(pattern);
+            matcher = compile.matcher(basementStr);
+            if(matcher.find()){
+                log.info("正則:"+pattern+"比到:{}",matcher.group());
+                //取出數字部分並轉換成阿拉伯數字
+                String digitalNumer = mappingToDigitalNumer(matcher.group());
+                address.setOriginalAddress(originalAddress.replaceAll(matcher.group(),"basement:"+digitalNumer+"樓"));
+                patternStr = pattern;
+                break;
+            }
+        }
+
+        /**todo:不太有可能發生 basementStr一個正則都沒比到的情況**/
+        if(!StringUtils.isNullOrEmpty(patternStr)){
+            switch (patternStr){
+                case "屋頂突出.*層":
+                    address.setBasementStr("2");
+                    break;
+                case "地下.*層":
+                case "地下.*樓":
+                    address.setBasementStr("1");
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+
+    /**
+     * 把 content 內取出各種型態的數字換成阿拉伯數字
+     * todo:如果 A-ZＡ-Ｚa-zａ-ｚ 或  甲乙丙丁戊己庚 或 整棟 要替換為什麼數字?
+     * @param content
+     * @return
+     */
+    public String extractNumer(String content){
+        //
+        String[] numPatterns ={"[0-9]","[０-９]","[零一二三四五六七八九十百千壹貳參肆伍陸柒捌玖拾佰卅廿]"};
+        Pattern compile = null;
+        Matcher numberMatcher = null;
+        String result="";
+
+        for(int index = 0;index < numPatterns.length;index++){
+             compile = Pattern.compile(numPatterns[index]);
+             numberMatcher = compile.matcher(content);
+             if(numberMatcher.find()){
+                 if(index==0){
+                     return numberMatcher.group();
+                 }
+                 result = mappingToDigitalNumer(numberMatcher.group());
+             }
+        }
+        return result;
+    }
+
+    public String mappingToDigitalNumer(String pattern){
+        Map<String,String> mappingType1 = new HashMap(){{
+            put("零","0");
+            put("一","1");
+            put("二","2");
+            put("三","3");
+            put("四","4");
+            put("五","4");
+            put("六","6");
+            put("七","7");
+            put("八","8");
+            put("九","9'");
+            put("十","10");
+            put("百","100");
+            put("千","1000");
+            put("壹","1");
+            put("貳","2");
+            put("參","3");
+            put("肆","4");
+            put("伍","5");
+            put("陸","6");
+            put("柒","7");
+            put("捌","8");
+            put("玖","9");
+            put("拾","10");
+            put("佰","100");
+            put("卅","30");
+            put("廿","20");
+        }};
+
+        StringBuilder result = new StringBuilder("");
+        char[] chars = pattern.toCharArray();
+        for(char s:chars){
+            String word = String.valueOf(s);
+            if(mappingType1.containsKey(word)){
+                result.append(mappingType1.get(word));
+            }
+        }
+        log.info("numberPart:{}",result);
+        return result.toString();
+    }
+
 
 
     @GetMapping("/test-cleanAddress")
@@ -229,10 +364,12 @@ public class UserResource {
         singleQueryDTO.setCounty(county);
         singleQueryDTO.setTown(town);
         singleQueryDTO.setOriginalAddress(input);
+
         String newCounty = StringUtils.isNullOrEmpty(singleQueryDTO.getCounty()) ? "" : singleQueryDTO.getCounty();
         String newTown = StringUtils.isNullOrEmpty(singleQueryDTO.getTown()) ? "" : singleQueryDTO.getTown();
         /*正則**/
         log.info("點選縣市、區的正則:{}",newCounty+newTown);
+
         Pattern compile = Pattern.compile(newCounty + newTown);
         Matcher matcher = compile.matcher(singleQueryDTO.getOriginalAddress());
         /*假設點選縣市、區只會append一次在input**/
