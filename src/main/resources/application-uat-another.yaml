@@ -55,6 +55,8 @@ spring:
 
 server:
   port: 8080
+  servlet:
+    context-path: /iisi
 
 pentaho:
   #pentaho server IP (正式區) 8.3
