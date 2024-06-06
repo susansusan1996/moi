@@ -27,6 +27,11 @@ public class RedisService {
 
     Integer SCAN_SIZE = 10000;
 
+
+    @Autowired
+    @Qualifier("stringRedisTemplate4")
+    private StringRedisTemplate stringRedisTemplate4;
+
     @Autowired
     @Qualifier("stringRedisTemplate2")
     private StringRedisTemplate stringRedisTemplate2;
@@ -51,23 +56,33 @@ public class RedisService {
         return elements;
     }
 
-
+    /**
+     * 將所有 key帶入DB1查找對應的List
+     * 將所有 key的 List value 取出放入 resultList
+     * @param keys ->排列組合的mappingIds
+     * @return
+     */
     public List<String> findListsByKeys(List<String> keys) {
         List<String> resultList = new ArrayList<>();
         List<Object> results = stringRedisTemplate1.executePipelined((RedisCallback<List<String>>) connection -> {
             StringRedisConnection stringRedisConn = (StringRedisConnection) connection;
             for (String key : keys) {
+                // lRange 方法来获取每个 key 对应的 list 数据。
                 stringRedisConn.lRange(key, 0, -1);
             }
             return null;
         });
+        //results=[mappingId1:[JB411:5141047,...],mappingId2:[JB311:5141047,...],mappingId3:[JB411:5141047,...]..]
         for (Object result : results) {
+            //result =mappingId1:[JB411:5141047,...]
             if (result instanceof List) {
                 @SuppressWarnings("unchecked")
                 List<String> elements = (List<String>) result;
+                //result中的所有字串加入resultList
                 resultList.addAll(elements);
             }
         }
+        //resultList:[JB411:5141047,JB311:5141047,JB411:5141047,..]
         return resultList;
     }
 
@@ -160,8 +175,12 @@ public class RedisService {
 
     public Map<String, String> findSetByKeys(Map<String, String> keyMap, String segmentExistNumber) {
         Map<String, String> resultMap = new HashMap<>();
+        //redisKey =["COUNTY:新北市","TOWN:新莊渠",...]
         List<String> redisKeys = new ArrayList<>(keyMap.keySet());
+        //要件清單
         StringBuilder segmentExistNumberBuilder = new StringBuilder(segmentExistNumber);
+
+
         RedisConnection connection = stringRedisTemplate2.getConnectionFactory().getConnection();
         RedisSerializer<String> serializer = stringRedisTemplate2.getStringSerializer();
         try {
@@ -189,19 +208,24 @@ public class RedisService {
                         segmentExistNumberBuilder.append("1");
                     }
                 } else {
-                    log.info("redis<沒有>找到cd代碼，key: {}", key);
-                    //如果找不到，就要用模糊搜尋
+                    log.info("redis <沒有> 找到 <"+key+"> 的cd代碼，要用模糊搜尋");
+                    /* ex: key="COUNTY:新市" -> parts = ["COUNTY","新市"]**/
                     String[] parts = key.split(":");
                     Set<String> scanSet = new HashSet<>();
                     if (parts.length == 2 && !"null".equals(parts[1])) {
                         scanSet = scanKeysAndReturnSet(key);
                         log.info("模糊搜尋後的value: {}", scanSet);
                     }
+                      /* scanSet
+                      1) 模糊查詢有找到
+                      2) 模糊查詢沒有找到
+                      3) Exception
+                     */
                     if (!scanSet.isEmpty()) {
                         String value = String.join(",", scanSet);
                         resultMap.put(key, value); //模糊搜尋有找到
                     } else {
-                        resultMap.put(key, keyMap.get(key)); // 如果找不到對應的value，就要放default value
+                        resultMap.put(key, keyMap.get(key)); // 如果找不到對應的value，就要放default value(對應字數的0)
                     }
                     if (containsKeyword(key)) {
                         segmentExistNumberBuilder.append("0");
@@ -215,6 +239,66 @@ public class RedisService {
         return resultMap;
     }
 
+
+    /**
+     * 排列組合56碼mappingId作為key(setName),到 Redis DB4 找出 value
+     * @param mappingIds 所有可能的64碼(程式內擷取56碼)
+     * @return Map<String, String> key:比對到的56碼；value:所有value以",'區隔組成的字串
+     */
+    public Map<String, String> findOneSetByKeys(List<String> mappingIds) {
+        //key = MappingId(56碼)
+        Map<String, String> resultMap = new HashMap<>();
+
+        //取得連線
+        RedisConnection connection = stringRedisTemplate4.getConnectionFactory().getConnection();
+        RedisSerializer<String> serializer = stringRedisTemplate4.getStringSerializer();
+        try {
+            //開啟連線
+            connection.openPipeline();
+            //todo:循環mappingId，是否強迫全部mappingId跑完呢?
+            for (String mappingId : mappingIds) {
+                /**擷取56碼**/
+                String shortMappingId = mappingId.substring(8, 64);
+                log.info("尋找56碼:{}", shortMappingId);
+                //找出setName為56碼的values
+                connection.sMembers(serializer.serialize(shortMappingId));
+            }
+
+            //resultsList裝這次conection所有query的結果
+            //resultsList=[query:[],query2:[],...]
+            List<Object> resultsList = connection.closePipeline();
+            if(resultsList.isEmpty() || resultsList == null){
+                return resultMap;
+            }
+
+            for (int i = 0; i <resultsList.size(); i++) {
+                //把對應mappingId的value取出後轉為字串
+                Set<byte[]> byteSet = (Set<byte[]>) resultsList.get(i);
+                if(!byteSet.isEmpty() && byteSet!=null){
+                //表示這各mappingId有查找到喔~
+                //用來裝反序列後的values
+                Set<String> redisSet = new HashSet<>();
+                for (byte[] bytes : byteSet) {
+                    //redisSet=["63000320:JA111:seq","00000320:JA112:seq",...]
+                    redisSet.add(serializer.deserialize(bytes));
+                }
+
+                //有找到對應的value
+                if (!redisSet.isEmpty()) {
+                    //把values集結成一個以","相隔的字串
+                    String redisValue = String.join(",", redisSet);
+                    log.info("redis找到符合的56碼，56碼: {}, value: {}", mappingIds.get(i).substring(8, 64),redisValue);
+                    resultMap.put( mappingIds.get(i).substring(8, 64), redisValue);
+                    //有一組set找到就停
+                    return resultMap;
+                }
+               }
+             }
+        } finally {
+            connection.close();
+        }
+        return resultMap;
+    }
 
     private Boolean containsKeyword (String key) {
         for (String keyword : KEYWORDS) {
@@ -277,16 +361,20 @@ public class RedisService {
 
 
     /**
+     *  key="COUNTY:新市"
      * 模糊比對，找出相符的 KEY (redis: scan)，
      */
     // TODO: 2024/5/14 速度慢 ??，需要優化
     public Set<String> scanKeysAndReturnSet(String key) {
         Set<String> resultSet = new HashSet<>();
         if(key.split(":")[1]!=null){
-            // TODO: 2024/5/29 除了 ? 還有方框，帶補上
-            // TODO: 2024/5/29 如果沒有?沒有方框，就不知道可以把甚麼字元挖掉用*取代。可能會造成 ex."民哈路"，無法找到 "民生路"
+            // TODO: 2024/5/29 除了 ? 方框待補上(難判斷應該在哪個關鍵字的哪個index開始切去做模糊查)
+            // TODO: 2024/5/29 如果沒有 ?、方框(難字)，就不知道可以把甚麼字元挖掉用*取代。可能會造成 ex."民哈路"，無法找到 "民生路"
+            // TODO: 2024/6/3 目前只有對?、方框(難字)做模糊查詢*字轉換，其餘錯別字、錯字、同音字等很難去判斷該將從字元中的哪個字做*字轉換
             String scanKey = key.split(":")[0]+ ":*" + key.split(":")[1].replace("?", "*") + "*";
-            log.info("replace 問號、方框 後，scanKey: {}", scanKey);
+            log.info("*字取代 <?、方框> 後，scanKey: {}", scanKey);
+            /*有?、方框: key="COUNTY:新?市" -> "COUNTY:*新*市*" **/
+            /*無?、方框: key="COUNTY:新市 ->  "COUNTY:*新市*"  */
             stringRedisTemplate2.execute((RedisCallback<Void>) connection -> {
                 try (Cursor<byte[]> cursor = connection.scan(ScanOptions.scanOptions().match(scanKey).count(SCAN_SIZE).build())) {
                     List<String> bestMatches = new ArrayList<>();
@@ -311,9 +399,11 @@ public class RedisService {
                         resultSet.addAll(getSet(match));
                     }
                 }
+                //TODO:exception 返回null
                 return null;
             });
         }
+        //TODO:模糊查詢也找不到是空集合
         return resultSet;
     }
 
