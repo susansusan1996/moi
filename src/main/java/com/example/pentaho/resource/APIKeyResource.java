@@ -163,17 +163,6 @@ public class APIKeyResource {
     }
 
 
-    /**
-     * 單筆未登入測試
-     */
-    @Operation(description = "單筆未登入測試")
-    @GetMapping("/forguest")
-    @UnAuthorized
-    @RateLimiting(name="forguest",tokens = 0.3333)
-    public ResponseEntity<String> forGuestUser() {
-        return new ResponseEntity<>("用戶未登入", HttpStatus.OK);
-    }
-
 
     @PostMapping("/refreshToken")
     @UnAuthorized
