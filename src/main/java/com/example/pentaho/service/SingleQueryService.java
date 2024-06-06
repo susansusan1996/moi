@@ -463,7 +463,7 @@ public class SingleQueryService {
             if (matcherFirst.matches()) {
                 setFlrNum(count, matcherFirst.group("coutinuousNum1"), matcherFirst.group("coutinuousNum2"), address);
             } else if (matcherSecond.matches()) {
-                setFlrNum(count, matcherFirst.group("coutinuousNum1"), matcherFirst.group("coutinuousNum2"), address);
+                setFlrNum(count, matcherSecond.group("coutinuousNum1"), matcherSecond.group("coutinuousNum2"), address);
             }
         }
     }
