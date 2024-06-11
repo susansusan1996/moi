@@ -23,7 +23,7 @@ public class FuzzySearchService {
     public List<String> fuzzySearchSeq(Address address) {
         Set<String> newMappingIdSet = fuzzySearchMappingId(address);
         log.info("newMappingIdSet:{}", newMappingIdSet);
-        return  redisService.findListsByKeys(newMappingIdSet.stream().toList());
+        return redisService.findListsByKeys(newMappingIdSet.stream().toList());
     }
 
     public Set<String> fuzzySearchMappingId(Address address) {
@@ -53,25 +53,137 @@ public class FuzzySearchService {
         return resultSet;
     }
 
+    public Map<String,String> fuzzySearchSeqWithoutCountyAndTown(Address address) {
+        log.info("準備進行DB4 56碼搜尋");
+        Map<String,String> newMappingIdMap = fuzzySearchMappingIdWithoutCountyAndTown(address);
+        log.info("newMappingIdMap:{}", newMappingIdMap);
+        return newMappingIdMap;
+    }
 
+
+    /**
+     * Redis DB4
+     * @param address
+     * @return
+     */
+    public Map<String, String> fuzzySearchMappingIdWithoutCountyAndTown(Address address) {
+        log.info("DB4-56碼搜尋開始-排列組合56碼與DB4比對,找出唯一相符set");
+        Map<String, String> oneSetByKeys = redisService.findOneSetByKeys(address.getMappingId());
+        log.info("redis-56碼搜尋結束:{}", Instant.now());
+        return oneSetByKeys;
+    }
+
+
+
+    /**
+     * 有可能是county跟town都沒寫才會造成找不到進到這～
+     * address.mappingId = ["56碼1","56碼2",...]
+     * @param address
+     * @return
+     */
+    private Map<String, List<String>> buildMappingIdWithoutRegexString(Address address) {
+        //裝組好的redis正則
+        List<String> newMappingIdList = new ArrayList<>();
+        List<String> regexList = new ArrayList<>();
+        //要件清單
+        String segNum = address.getSegmentExistNumber();
+        /*mapList=[{
+        "COUNTY":"COUNTY"
+        }
+        ]*/
+        //一個map是一組mappingId的key&value
+        List<LinkedHashMap<String, String>> mapList = address.getMappingIdMap();
+        mapList.forEach(map -> {
+            // input的正則
+            LinkedHashMap<String, String> regexMap = new LinkedHashMap<>(map);
+            // redis的模糊查詢
+            LinkedHashMap<String, String> fuzzyMap = new LinkedHashMap<>(map);
+            StringBuilder newMappingId = new StringBuilder();
+
+            //COUNTY、TOWN 兩個都沒寫 redis 模糊查詢前8碼+ 後面所有可能的mappingId
+            if ("0".equals(String.valueOf(segNum.charAt(0))) && "0".equals(String.valueOf(segNum.charAt(1)))) {
+                regexMap.put("COUNTY", "\\d{8}");
+                regexMap.put("TOWN", "");
+
+                fuzzyMap.put("COUNTY", "*");
+                fuzzyMap.put("TOWN", "");
+            } else if ("1".equals(String.valueOf(segNum.charAt(0))) && "0".equals(String.valueOf(segNum.charAt(1)))) {
+                //COUNTY有寫；TOWN沒寫
+                // redis模糊查詢6~8碼
+                regexMap.put("TOWN", "\\d{3}");
+                fuzzyMap.put("TOWN", "*");
+            } else if ("0".equals(String.valueOf(segNum.charAt(0))) && "1".equals(String.valueOf(segNum.charAt(1)))) {
+                // redis模糊查詢前5碼
+                // 有TOWN，沒COUNTY
+                regexMap.put("COUNTY", "\\d{5}");
+                fuzzyMap.put("COUNTY", "*");
+            }
+            //都有寫的話就是空
+
+            /**regexMap.values() -> 地址片段cd */
+            StringBuilder regex = new StringBuilder();
+            //原本的key=COUNTY、TOWN，如果進到上面判斷式裡就會被取代掉
+            for (String value : regexMap.values()) {
+                //正則有三組可能
+                //(1) 都沒寫 -> \\{8}+56碼
+                //(2) 只寫county -> 5碼\\{3}+56碼
+                //(3) 只寫town -> \\{5}+3碼+56碼
+                regex.append(value);
+            }
+
+            //原本的key=COUNTY、TOWN，如果進到上面判斷式裡就會被取代掉
+            for (String value : fuzzyMap.values()) {
+                //正則有三組可能
+                //(1) 都沒寫 -> * + 56碼
+                //(2) 只寫county -> 5碼 + *{3} + 56碼
+                //(3) 只寫town ->   *{5} + 3碼 + 56碼
+                newMappingId.append(value);
+            }
+            //把每一組mappingId模糊查詢的正則放入List
+            regexList.add(String.valueOf(regex));
+            newMappingIdList.add(String.valueOf(newMappingId));
+        });
+        Map<String, List<String>> map = new HashMap<>();
+        map.put("regex", regexList); //帶有正則的mappingId(java比對redis模糊搜尋出來的結果)
+        map.put("newMappingId", newMappingIdList); //帶有**的mappingId(redis模糊搜尋)
+        return map;
+    }
+
+
+    /**
+     * address.mappingId = ["64碼1","64碼2",...]
+     * @param address
+     * @return
+     */
     private Map<String, List<String>> buildMappingIdRegexString(Address address) {
         List<String> newMappingIdList = new ArrayList<>();
         List<String> regexList = new ArrayList<>();
+        //要件清單
         String segNum = address.getSegmentExistNumber();
+        /*mapList=[{
+        "COUNTY":"COUNTY"
+        }
+        ]*/
         List<LinkedHashMap<String, String>> mapList = address.getMappingIdMap();
         mapList.forEach(map -> {
+            // input的正則
             LinkedHashMap<String, String> regexMap = new LinkedHashMap<>(map);
+            // redis的模糊查詢
             LinkedHashMap<String, String> fuzzyMap = new LinkedHashMap<>(map);
             StringBuilder newMappingId = new StringBuilder();
-                if ("0".equals(String.valueOf(segNum.charAt(0))) && "0".equals(String.valueOf(segNum.charAt(1)))) { //COUNTY
+            //COUNTY、TOWN 兩個都沒寫 redis 模糊查詢前8碼+ 後面所有可能的mappingId
+                if ("0".equals(String.valueOf(segNum.charAt(0))) && "0".equals(String.valueOf(segNum.charAt(1)))) {
                     regexMap.put("COUNTY", "\\d{8}");
                     regexMap.put("TOWN", "");
+
                     fuzzyMap.put("COUNTY", "*");
                     fuzzyMap.put("TOWN", "");
+                //COUNTY有寫；TOWN沒寫
                 } else if ("1".equals(String.valueOf(segNum.charAt(0))) && "0".equals(String.valueOf(segNum.charAt(1)))) {
                     // 有COUNTY，沒TOWN
                     regexMap.put("TOWN", "\\d{3}");
                     fuzzyMap.put("TOWN", "*");
+                //第1個字 -> COUNTY  第2個字 -> TOWN ; COUNTY沒寫；TOWN有寫
                 } else if ("0".equals(String.valueOf(segNum.charAt(0))) && "1".equals(String.valueOf(segNum.charAt(1)))) {
                     // 有TOWN，沒COUNTY
                     regexMap.put("COUNTY", "\\d{5}");

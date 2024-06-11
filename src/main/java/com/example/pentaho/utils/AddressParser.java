@@ -201,8 +201,8 @@ public class AddressParser {
         address.setLane(matcher.group("speciallane") != null ? matcher.group("speciallane") : matcher.group("lane"));
         address.setAlley(matcher.group("alley"));
         address.setSubAlley(matcher.group("subAlley"));
-        address.setNumFlr1(parseBasementForBF(matcher.group("numFlr1"), address));
-        address.setNumFlr2(parseBasementForBF(matcher.group("numFlr2"), address));
+        address.setNumFlr1(parseBasementForBF(matcher.group("numFlr1"), address)); //basementStr:1 ; NumFlr:一樓 (數字一律是中文) // basementStr:"";Numflr:XXXXXX
+        address.setNumFlr2(parseBasementForBF(matcher.group("numFlr2"), address)); //basementStr:1 ; NumFlr:十樓
         address.setNumFlr3(parseBasementForBF(matcher.group("numFlr3"), address));
         address.setNumFlr4(parseBasementForBF(matcher.group("numFlr4"), address));
         address.setNumFlr5(parseBasementForBF(matcher.group("numFlr5"), address));
@@ -250,6 +250,7 @@ public class AddressParser {
     //再PARSE一次已經在FLR_NUM_1~5 的BF、B1F
     private String parseBasementForBF(String input, Address address) {
         if (StringUtils.isNotNullOrEmpty(input)) {
+
             String[] basemantPattern1 = {"BF", "bf", "B1", "b1", "Ｂ１", "ｂ１", "ＢＦ", "ｂｆ"};
             String[] basemantPattern2 = {".*B.*樓",".*b.*樓",".*Ｂ.*樓",".*ｂ.*樓",".*B.*F", ".*b.*f", ".*Ｂ.*Ｆ", ".*ｂ.*ｆ"};
             if (Arrays.asList(basemantPattern1).contains(input)) {

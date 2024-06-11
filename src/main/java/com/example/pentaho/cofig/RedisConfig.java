@@ -166,6 +166,56 @@ public class RedisConfig {
 
     }
 
+
+    @Bean(name = "stringRedisTemplate4")
+    public StringRedisTemplate stringRedisTemplate4(
+            @Value("${spring.data.redis4.database}")
+            int database,
+            @Value("${spring.data.redis4.timeout:5}")
+            long timeout,
+            @Value("${spring.data.redis4.lettuce.pool.max-active}")
+            int maxActive,
+            @Value("${spring.data.redis4.lettuce.pool.max-wait}")
+            int maxWait,
+            @Value("${spring.data.redis4.lettuce.pool.max-idle}")
+            int maxIdle,
+            @Value("${spring.data.redis4.lettuce.pool.min-idle}")
+            int minIdle,
+            @Value("${spring.data.redis4.host}")
+            String host,
+            @Value("${spring.data.redis4.password}")
+            String password,
+            @Value("${spring.data.redis4.port}")
+            int port
+    ) {
+        // connection config
+        RedisStandaloneConfiguration configuration = new RedisStandaloneConfiguration();
+        configuration.setHostName(host);
+        configuration.setPort(port);
+        configuration.setPassword(RedisPassword.of(password));
+        configuration.setDatabase(database);
+
+        // pool config
+        GenericObjectPoolConfig genericObjectPoolConfig = new GenericObjectPoolConfig();
+        genericObjectPoolConfig.setMaxTotal(maxActive);
+        genericObjectPoolConfig.setMinIdle(minIdle);
+        genericObjectPoolConfig.setMaxIdle(maxIdle);
+        genericObjectPoolConfig.setMaxWaitMillis(maxWait);
+
+        // create connection factory
+        LettucePoolingClientConfiguration.LettucePoolingClientConfigurationBuilder builder = LettucePoolingClientConfiguration.builder();
+        builder.poolConfig(genericObjectPoolConfig);
+        builder.commandTimeout(Duration.ofSeconds(timeout));
+        LettuceConnectionFactory connectionFactory = new LettuceConnectionFactory(
+                configuration, builder.build()
+        );
+        connectionFactory.afterPropertiesSet();
+
+        // create redis template
+        return createStringRedisTemplate(connectionFactory);
+
+    }
+
     /**
      * 建立StringRedisTemplate
      * 此function不能加 @Bean 否则onnectionFactory 将会一律采用预设值
