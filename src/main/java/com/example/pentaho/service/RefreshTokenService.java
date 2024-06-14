@@ -164,7 +164,7 @@ public class RefreshTokenService {
     }
 
 
-    public RefreshToken findRefreshTokenByUserId(String id) {
+    public RefreshToken findRefreshTokenByUserId(String id,String username) {
         RefreshToken refreshToken = new RefreshToken();
         if (StringUtils.isNotNullOrEmpty(id)) {
             String reviewResult = stringRedisTemplate0.opsForValue().get(id + ":review_result");
@@ -180,8 +180,9 @@ public class RefreshTokenService {
             }else if("REJECT".equals(reviewResult)){
                 /**表示過去被拒絕，這次重新申請*/
                 refreshToken.setId(id);
-                refreshToken.setId(id);
+                refreshToken.setUsername(username);
                 refreshToken.setReviewResult(reviewResult);
+                return refreshToken;
             }else{
                 /*表示第一次申請**/
                 return null;

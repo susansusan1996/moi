@@ -12,6 +12,7 @@ import com.example.pentaho.utils.UsageUtils;
 import com.example.pentaho.utils.UserContextUtils;
 import com.google.common.util.concurrent.RateLimiter;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -183,6 +184,7 @@ public class APIKeyResource {
 
     @PostMapping("/refreshToken")
     @UnAuthorized
+    @Hidden
     public ResponseEntity<JwtReponse> refreshToken(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "用refreshToken取得新的token",
@@ -195,7 +197,7 @@ public class APIKeyResource {
             )
             @RequestBody RefreshToken request) {
         log.info("refreshToken:{}", request);
-        RefreshToken refreshToken = refreshTokenService.findRefreshTokenByUserId(request.getId());
+        RefreshToken refreshToken = refreshTokenService.findRefreshTokenByUserId(request.getId(),"");
         //檢查refresh_token跟id是一致的
         if (refreshToken != null &&  refreshToken.getRefreshToken().equals(request.getRefreshToken())) {
             try {

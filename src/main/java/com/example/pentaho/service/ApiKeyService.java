@@ -4,6 +4,7 @@ import com.example.pentaho.component.*;
 import com.example.pentaho.exception.MoiException;
 import com.example.pentaho.utils.RSAJWTUtils;
 import com.example.pentaho.utils.RsaUtils;
+import com.example.pentaho.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,9 +32,17 @@ public class ApiKeyService {
     public JwtReponse getApiKey(String userId,String username) throws Exception {
         JwtReponse jwtReponse = new JwtReponse();
         /*用userId找資料*/
-        RefreshToken refreshToken = refreshTokenService.findRefreshTokenByUserId(userId);
+        RefreshToken refreshToken = refreshTokenService.findRefreshTokenByUserId(userId,username);
         /*表示有資料**/
         if (refreshToken != null) {
+            //REJECT 表示什麼都沒有
+            if(StringUtils.isNotNullOrEmpty(refreshToken.getReviewResult()) && "REJECT".equals(refreshToken.getReviewResult())){
+                jwtReponse.setId(userId);
+                jwtReponse.setReviewResult(refreshToken.getReviewResult());
+                return jwtReponse;
+            }
+
+            //AGREE 表示會有token & refreshToken
             //token沒有過期
             if (refreshTokenService.verifyExpiration(userId, refreshToken.getToken(), "token")) {
                 log.info("token沒過期，直接返回資訊");
@@ -57,6 +66,7 @@ public class ApiKeyService {
                 return createApiKey(userId, username,null, "");
             }
         }
+        //沒有資訊，要申請
         return jwtReponse;
     }
 
@@ -90,7 +100,7 @@ public class ApiKeyService {
          * (1) 從 /get-api-key 街口進入，refreshToken沒有過期，重新眷apikey
          * */
         if (refreshToken == null) {
-            RefreshToken refreshTokenData = refreshTokenService.findRefreshTokenByUserId(userId);
+            RefreshToken refreshTokenData = refreshTokenService.findRefreshTokenByUserId(userId,username);
             /**
              * 用userId反查redis是否已申請過後，判斷下方條件
              * (1) refreshTokenData == null、fromApi，表示/create-api-key 接口過來的
