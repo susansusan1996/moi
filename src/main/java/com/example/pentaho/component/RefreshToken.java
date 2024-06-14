@@ -3,6 +3,7 @@ package com.example.pentaho.component;
 public class RefreshToken {
 
     private String id;
+    private String username;
     private String refreshToken;
     private String token;
     private String expiryDate;
@@ -16,6 +17,14 @@ public class RefreshToken {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getRefreshToken() {

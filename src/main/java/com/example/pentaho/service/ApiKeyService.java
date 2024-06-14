@@ -28,9 +28,11 @@ public class ApiKeyService {
     //返回該userID的api key
     //同時檢查token有沒有過期，有過期的話，看refresh_token有沒有過期，refresh_token沒有過期重新卷token即可
     //refresh_token有過期，整組要重建，並返回給前端
-    public JwtReponse getApiKey(String userId) throws Exception {
-        RefreshToken refreshToken = refreshTokenService.findRefreshTokenByUserId(userId);
+    public JwtReponse getApiKey(String userId,String username) throws Exception {
         JwtReponse jwtReponse = new JwtReponse();
+        /*用userId找資料*/
+        RefreshToken refreshToken = refreshTokenService.findRefreshTokenByUserId(userId);
+        /*表示有資料**/
         if (refreshToken != null) {
             //token沒有過期
             if (refreshTokenService.verifyExpiration(userId, refreshToken.getToken(), "token")) {
@@ -49,50 +51,72 @@ public class ApiKeyService {
                 //refreshToken沒有過期，卷token即可
                 if (refreshTokenService.verifyExpiration(userId, refreshToken.getRefreshToken(), "refresh_token")) {
                     log.info("token過期，重新卷token");
-                    return createApiKey(userId, refreshToken, "");
+                    return createApiKey(userId,username,refreshToken, "");
                 }
                 //refreshToken也過期，全部重卷
-                return createApiKey(userId, null, "");
+                return createApiKey(userId, username,null, "");
             }
         }
         return jwtReponse;
     }
 
-
-    public JwtReponse createApiKey(String userId, RefreshToken refreshToken, String type) throws Exception {
-        User user = new User();
+    /**
+     * AGREE 才會進來這裡
+     * @param userId
+     * @param refreshToken
+     * @param type
+     * @return
+     * @throws Exception
+     */
+    public JwtReponse createApiKey(String userId,String username,RefreshToken refreshToken, String type) throws Exception {
         PrivateKey privateKey = RsaUtils.getPrivateKey((keyComponent.getApPrikeyName()));
-        //一般token
-        user.setId(userId); //userId要用api帶過來的(如果是審核通過的)
+        /*用來用token的playload**/
+        User user = new User();
+        user.setId(userId);
+        //表示這組token是APIKEY(acessToken)
         user.setTokenType("token");
-        Map<String, Object> toeknMap = RSAJWTUtils.generateTokenExpireInMinutes(user, privateKey, VALID_TIME); //一般TOKEN效期先設一天
+        //產生APIKEY效期先設一天,tokenMap:{token:XXXX,expiryDate:XXXXX}
+        Map<String, Object> toeknMap = RSAJWTUtils.generateTokenExpireInMinutes(user, privateKey, VALID_TIME);
+        //已用Token物件
         Token token = new Token((String) toeknMap.get("token"), (String) toeknMap.get("expiryDate"));
+
         //refresh_token
         Map<String, Object> refreshTokenMap = null;
+        /***
+         * refreshToken==null
+         * (1) 從 /create-api-key 接口進入
+         * (2) 從 /get-api-key 街口進入，且apikey + refreshToken都過期重眷
+         * refreshToken != null
+         * (1) 從 /get-api-key 街口進入，refreshToken沒有過期，重新眷apikey
+         * */
         if (refreshToken == null) {
             RefreshToken refreshTokenData = refreshTokenService.findRefreshTokenByUserId(userId);
-            //refreshTokenData == null、fromApi，表示/create-api-key過來的
-            //refreshTokenData != null、fromApi、"REJECT"，表示之前有被拒絕過，又重新AGREE的申請
-            //refreshTokenData != null、!fromApi，表示get-api-key時，發現refresh_token也過期，重產refresh_token
+            /**
+             * 用userId反查redis是否已申請過後，判斷下方條件
+             * (1) refreshTokenData == null、fromApi，表示/create-api-key 接口過來的
+             * (2) refreshTokenData != null(有id,username,reviewResult)、fromApi、"REJECT"，表示之前有被拒絕過，又重新AGREE的申請
+             * (3) refreshTokenData != null(userId撈出發現已過期)、!fromApi(從/get-api-key接口來的)，表示get-api-key時，發現refresh_token也過期，重產refresh_token
+             * */
             if ((refreshTokenData == null && "fromApi".equals(type)) ||
                     (refreshTokenData != null && "fromApi".equals(type) && "REJECT".equals(refreshTokenData.getReviewResult()))||
                     (refreshTokenData != null && !"fromApi".equals(type))
             ) {
+                /**refreshToken 的 playload*/
                 user.setTokenType("refresh_token");
+                /**生成refreshToken refreshTokenMap ={tokem:xxxxx,exprirDate:XXXX} */
                 refreshTokenMap = RSAJWTUtils.generateTokenExpireInMinutes(user, privateKey, VALID_TIME * 2);  //REFRESH_TOKEN效期先設2天
-//                //token存redis
-//                refreshTokenService.saveRefreshToken(userId, toeknMap, refreshTokenMap, "AGREE");
             } else {
                 throw new MoiException("該用戶已申請過ApiKey");
             }
         }
         //設定返回給前端的物件
         JwtReponse jwtReponse = new JwtReponse();
+        /**是否有重新生成refreshToken*/
         jwtReponse.setRefreshToken(refreshTokenMap == null ? refreshToken.getRefreshToken() : (String) refreshTokenMap.get("token"));
         jwtReponse.setRefreshTokenExpiryDate(refreshTokenMap == null ? String.valueOf(refreshToken.getRefreshTokenExpiryDate()) : (String) refreshTokenMap.get("expiryDate"));
         jwtReponse.setToken(token.getToken());
         jwtReponse.setExpiryDate(token.getExpiryDate());
-        refreshTokenService.saveRefreshToken(userId, toeknMap, refreshTokenMap, "AGREE");
+        refreshTokenService.saveRefreshToken(userId,username,toeknMap, refreshTokenMap, "AGREE");
         return jwtReponse;
     }
 
