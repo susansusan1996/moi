@@ -14,6 +14,8 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import com.example.pentaho.service.SystemUpdateService;
 
+import javax.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -72,6 +75,7 @@ public class SingleQueryResouce {
         try {
             return ResponseEntity.ok(singleQueryService.findJson(singleQueryDTO));
         } catch (Exception e) {
+            log.info("e:{}",e.toString());
             log.info("無法解析地址:{}", e.getMessage());
             SingleQueryResultDTO dto = new SingleQueryResultDTO();
             dto.setText("無法解析地址");
@@ -115,6 +119,53 @@ public class SingleQueryResouce {
         }finally {
             User user = UserContextUtils.getUserHolder();
             systemUpdateService.singleQuerySystemUpdate(user.getId(),"CHANGE");
+        }
+    }
+
+
+    /**
+     * 單筆未登入測試
+     */
+    @Operation(description = "單筆未登入測試")
+    @GetMapping("/query-single-forguest")
+    @UnAuthorized
+    @RateLimiting(name="forguest",tokens = 0.3333)
+    public ResponseEntity<SingleQueryResultDTO> forGuestUser(
+            @Parameter(
+                    description ="輸入地址" ,
+                    required = true,
+                    schema = @Schema(type = "string", example = "台南市東區衛國里007鄰衛國街１１４巷９弄１０號之五3樓"))
+            @NotNull
+            @RequestParam("inputAddress") String inputAddress,
+            @Parameter(
+                    description ="選擇縣市" ,
+                    required = true,
+                    schema = @Schema(type = "string", example = "台南市(可為空)"))
+            @Nullable
+            @RequestParam("county") String county,
+            @Parameter(
+                    description ="選擇鄉鎮市區" ,
+                    required = true,
+                    schema = @Schema(type = "string", example = "東區(可為空)"))
+            @Nullable
+            @RequestParam("town") String town
+    ) {
+
+        SingleQueryDTO singleQueryDTO = new SingleQueryDTO(inputAddress, county, town);
+        log.info("SingleQueryDTO:{}",singleQueryDTO);
+        try{
+            SingleQueryResultDTO result = singleQueryService.findJson(singleQueryDTO);
+            List<IbdTbAddrCodeOfDataStandardDTO> datas = result.getData();
+            datas.forEach(data->{
+                data.setAddressId(null);
+            });
+            return new ResponseEntity<>(result, HttpStatus.OK);
+        } catch (Exception e) {
+            log.info("e:{}",e.toString());
+            log.info("無法解析地址:{}", e.getMessage());
+            SingleQueryResultDTO dto = new SingleQueryResultDTO();
+            dto.setText("無法解析地址");
+            return ResponseEntity.ok(dto);
         }
     }
 
