@@ -37,26 +37,37 @@ public class RefreshTokenService {
     @Qualifier("stringRedisTemplate0")
     private StringRedisTemplate stringRedisTemplate0;
 
-    public RefreshToken saveRefreshToken(String id, Map<String, Object> tokenMap, Map<String, Object> refreshTokenMap, String reviewResult) throws ParseException {
+    /**
+     *
+     * @param applicantId
+     * @param tokenMap
+     * @param refreshTokenMap
+     * @param reviewResult
+     * @return
+     * @throws ParseException
+     */
+    public RefreshToken saveRefreshToken(String applicantId, String applicantName,Map<String, Object> tokenMap, Map<String, Object> refreshTokenMap, String reviewResult) throws ParseException {
         RefreshToken refreshToken = new RefreshToken();
-//        if("AGREE".equals(reviewResult)) {
-            User user = UserContextUtils.getUserHolder();
-            log.info("user:{}", user);
-            refreshToken.setId(id);
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            if (refreshTokenMap != null) {
-                refreshToken.setRefreshToken((String) refreshTokenMap.get("token"));
-                Date refreshTokenExpiryDate = dateFormat.parse(String.valueOf(refreshTokenMap.get("expiryDate")));
-                refreshToken.setRefreshTokenExpiryDate(refreshTokenExpiryDate.toInstant().toString()); //refresh_token，效期先設2天
-            }
-            if(tokenMap != null){
-                refreshToken.setToken((String) tokenMap.get("token"));
-                Date expiryDate = dateFormat.parse(String.valueOf(tokenMap.get("expiryDate")));
-                refreshToken.setExpiryDate(String.valueOf(expiryDate.toInstant())); //refresh_token，效期先設1天
-            }
+        /*不管 AGREE或REJECT 都要存的資料 */
+        refreshToken.setId(applicantId);
+        refreshToken.setName(applicantName);
         refreshToken.setReviewResult(reviewResult);
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        /*表示AGREE*/
+        if (refreshTokenMap != null) {
+            refreshToken.setRefreshToken((String) refreshTokenMap.get("token"));
+            Date refreshTokenExpiryDate = dateFormat.parse(String.valueOf(refreshTokenMap.get("expiryDate")));
+            refreshToken.setRefreshTokenExpiryDate(refreshTokenExpiryDate.toInstant().toString()); //refresh_token，效期先設2天
+        }
+        /*表示AGREE*/
+        if(tokenMap != null){
+            refreshToken.setToken((String) tokenMap.get("token"));
+            Date expiryDate = dateFormat.parse(String.valueOf(tokenMap.get("expiryDate")));
+            refreshToken.setExpiryDate(String.valueOf(expiryDate.toInstant())); //acess_token，效期先設1天
+        }
+
         saveRefreshToken(refreshToken);
-//        }
+
         return refreshToken;
     }
 
@@ -126,10 +137,13 @@ public class RefreshTokenService {
 
     /**
      * redis存refresh_token
+     * REJECT的會只有reviewResult,userId有值，其餘""
+     *
      */
     public void saveRefreshToken(RefreshToken refreshToken) {
         String id = refreshToken.getId();
         Map<String, String> valuesToSet = new HashMap<>();
+        valuesToSet.put("username",refreshToken.getName());
         valuesToSet.put("token", refreshToken.getToken());
         valuesToSet.put("refresh_token", refreshToken.getRefreshToken());
         valuesToSet.put("expiry_date", refreshToken.getExpiryDate());
@@ -139,11 +153,14 @@ public class RefreshTokenService {
             String key = entry.getKey();
             String value = entry.getValue();
             if (value != null) {
+                //建立一個set,key為applicantId:token",並放入對應的value
                 stringRedisTemplate0.opsForValue().set(id + ":" + key, value);
             } else {
+                //當REJECT時，token,refresh_token,expiry_date,refresh_token_expiry_date會沒有值，所以要刪除
                 stringRedisTemplate0.delete(id + ":" + key);
             }
         }
+        //REJECT || AGREE　都要存建立時間
         stringRedisTemplate0.opsForValue().set(id + ":create_timestamp", Instant.now().toString());
     }
 
@@ -162,16 +179,26 @@ public class RefreshTokenService {
         RefreshToken refreshToken = new RefreshToken();
         if (StringUtils.isNotNullOrEmpty(id)) {
             String reviewResult = stringRedisTemplate0.opsForValue().get(id + ":review_result");
+            //表示過去申請成功
             if ("AGREE".equals(reviewResult)) {
                 refreshToken.setId(id);
+                refreshToken.setName(stringRedisTemplate0.opsForValue().get(id + ":username"));
                 refreshToken.setToken(stringRedisTemplate0.opsForValue().get(id + ":token"));
                 refreshToken.setRefreshToken(stringRedisTemplate0.opsForValue().get(id + ":refresh_token"));
                 refreshToken.setExpiryDate(stringRedisTemplate0.opsForValue().get(id + ":expiry_date"));
                 refreshToken.setRefreshTokenExpiryDate(stringRedisTemplate0.opsForValue().get(id + ":refresh_token_expiry_date"));
                 refreshToken.setReviewResult(stringRedisTemplate0.opsForValue().get(id + ":review_result"));
                 return refreshToken;
+            }else if ("REJECT".equals(reviewResult)){
+                //表示過去申請拒絕
+                refreshToken.setId(id);
+                refreshToken.setReviewResult(stringRedisTemplate0.opsForValue().get(id + ":review_result"));
+                return refreshToken;
             }
+            //表示之前沒申請過
+            return null;
         }
+        //表示之前沒申請過
         return null;
     }
 }

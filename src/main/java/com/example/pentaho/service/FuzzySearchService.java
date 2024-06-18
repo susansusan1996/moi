@@ -53,9 +53,9 @@ public class FuzzySearchService {
         return resultSet;
     }
 
-    public Map<String,String> fuzzySearchSeqWithoutCountyAndTown(Address address) {
+    public Map<String,String> findSeqsWithoutCountyAndTown(Address address) {
         log.info("準備進行DB4 56碼搜尋");
-        Map<String,String> newMappingIdMap = fuzzySearchMappingIdWithoutCountyAndTown(address);
+        Map<String,String> newMappingIdMap = findOneMappingIdWithoutCountyAndTown(address);
         log.info("newMappingIdMap:{}", newMappingIdMap);
         return newMappingIdMap;
     }
@@ -63,13 +63,20 @@ public class FuzzySearchService {
 
     /**
      * Redis DB4
+     * 只會有一個完全相等的mappingId
      * @param address
      * @return
      */
-    public Map<String, String> fuzzySearchMappingIdWithoutCountyAndTown(Address address) {
+    public Map<String, String> findOneMappingIdWithoutCountyAndTown(Address address) {
+//        long startTime = System.currentTimeMillis();
         log.info("DB4-56碼搜尋開始-排列組合56碼與DB4比對,找出唯一相符set");
-        Map<String, String> oneSetByKeys = redisService.findOneSetByKeys(address.getMappingId());
-        log.info("redis-56碼搜尋結束:{}", Instant.now());
+        //單個query出去
+//        Map<String, String> oneSetByKeys =redisService.findOneSetByKeysWithoutCountyAndTown2(address.getMappingId());
+        //批次query
+      Map<String, String> oneSetByKeys = redisService.findOneSetByKeysWithoutCountyAndTown(address.getMappingId());
+//        long endTime = System.currentTimeMillis();
+//        long elapsedTime = endTime - startTime;
+//        log.info("處理時間:{}",elapsedTime);
         return oneSetByKeys;
     }
 

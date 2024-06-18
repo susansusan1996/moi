@@ -217,7 +217,13 @@ public class NumberParser {
         return "";
     }
 
-    //補0
+    /***
+     * Num_FLR redis找不到，手動補0用
+     * @param comparisonValue
+     * @param numPart
+     * @return
+     */
+
     public static String padNumber(String comparisonValue, String numPart) {
         // 計算需要補充0的個數
         int zeroPaddingCount = Math.max(0, comparisonValue.length() - numPart.length());

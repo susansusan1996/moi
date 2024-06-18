@@ -245,7 +245,7 @@ public class RedisService {
      * @param mappingIds 所有可能的64碼(程式內擷取56碼)
      * @return Map<String, String> key:比對到的56碼；value:所有value以",'區隔組成的字串
      */
-    public Map<String, String> findOneSetByKeys(List<String> mappingIds) {
+    public Map<String, String> findOneSetByKeysWithoutCountyAndTown(List<String> mappingIds) {
         //key = MappingId(56碼)
         Map<String, String> resultMap = new HashMap<>();
 
@@ -253,15 +253,18 @@ public class RedisService {
         RedisConnection connection = stringRedisTemplate4.getConnectionFactory().getConnection();
         RedisSerializer<String> serializer = stringRedisTemplate4.getStringSerializer();
         try {
-            //開啟連線
+            //todo:批量送出模式
             connection.openPipeline();
-            //todo:循環mappingId，是否強迫全部mappingId跑完呢?
+            //todo:批次送出會循環所有mappingId，要改嗎
             for (String mappingId : mappingIds) {
                 /**擷取56碼**/
                 String shortMappingId = mappingId.substring(8, 64);
                 log.info("尋找56碼:{}", shortMappingId);
                 //找出setName為56碼的values
-                connection.sMembers(serializer.serialize(shortMappingId));
+                Set<byte[]> bytes = connection.sMembers(serializer.serialize(mappingId));
+                if(bytes == null){
+                    log.info("bytes:{}",bytes);
+                }
             }
 
             //resultsList裝這次conection所有query的結果
@@ -288,7 +291,7 @@ public class RedisService {
                     //把values集結成一個以","相隔的字串
                     String redisValue = String.join(",", redisSet);
                     log.info("redis找到符合的56碼，56碼: {}, value: {}", mappingIds.get(i).substring(8, 64),redisValue);
-                    resultMap.put( mappingIds.get(i).substring(8, 64), redisValue);
+                    resultMap.put(mappingIds.get(i).substring(8, 64), redisValue);
                     //有一組set找到就停
                     return resultMap;
                 }
@@ -299,6 +302,68 @@ public class RedisService {
         }
         return resultMap;
     }
+
+
+    /**
+     * 單個query
+     * @param mappingIds
+     * @return
+     */
+    public Map<String, String> findOneSetByKeysWithoutCountyAndTown2(List<String> mappingIds) {
+        //resultMap = { "MappingId(56碼)":"value1,value2,..."
+        Map<String, String> resultMap = new HashMap<>();
+
+        //取得連線
+        RedisConnection connection = stringRedisTemplate4.getConnectionFactory().getConnection();
+        RedisSerializer<String> serializer = stringRedisTemplate4.getStringSerializer();
+        Set<byte[]> byteSet  = null;
+        String targetCd = "";
+        try {
+            //todo:批次送出會循環所有mappingId，要改嗎
+            for (String mappingId : mappingIds) {
+                /**擷取56碼**/
+                String shortMappingId = mappingId.substring(8, 64);
+                log.info("尋找56碼:{}", shortMappingId);
+                //找出setName為56碼的values
+                byteSet = connection.sMembers(serializer.serialize(shortMappingId));
+                if(byteSet != null){
+                    targetCd = mappingId;
+                    log.info("對應56碼:{},結果集:{}",targetCd,byteSet);
+                    break;
+                }
+            }
+
+            //resultsList裝這次conection所有query的結果
+            //resultsList=[query:[],query2:[],...]
+
+            if(byteSet.isEmpty() || byteSet == null){
+                return resultMap;
+            }
+
+            //表示這各mappingId有查找到喔~
+            //用來裝反序列後的values
+            Set<String> redisSet = new HashSet<>();
+            for (byte[] bytes : byteSet) {
+                //redisSet=["63000320:JA111:seq","00000320:JA112:seq",...]
+                redisSet.add(serializer.deserialize(bytes));
+            }
+
+            //有找到對應的value
+            if (!redisSet.isEmpty()) {
+                //把values集結成一個以","相隔的字串
+                String redisValue = String.join(",", redisSet);
+                log.info("redis找到符合的56碼，56碼: {}, 結果集轉成一個字串: {}", targetCd,redisValue);
+                resultMap.put(targetCd, redisValue);
+                return resultMap;
+            }
+
+
+        } finally {
+            connection.close();
+        }
+        return resultMap;
+    }
+
 
     private Boolean containsKeyword (String key) {
         for (String keyword : KEYWORDS) {

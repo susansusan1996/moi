@@ -44,7 +44,8 @@ public class AddressParser {
     private final String LANE = "(?<lane>.*?巷)?";
     private final String ALLEY = "(?<alley>" + ALL_CHAR_FOR_ALLEY + "+弄" + DYNAMIC_ALLEY_PART + ")?";
     private final String SUBALLEY = "(?<subAlley>" + ALL_CHAR + "+[衖衕橫]{1})?";
-    private final String NUMFLR1 = "(?<numFlr1>" + ALL_CHAR + "+[\\-號Ff樓之區棟]{1}|" + BASEMENT_PATTERN + ")?";
+    //todo:NUMFLR1~5補一個ALL_CHAR比對的正則
+    private final String NUMFLR1 = "(?<numFlr1>" + ALL_CHAR + "+[\\-號Ff樓之區棟]{1} |" + BASEMENT_PATTERN + ")?";
     private final String NUMFLR2 = "(?<numFlr2>"+ALL_CHAR + "+[\\-－號樓FｆＦf之區棟]{1}|" +"[之\\-－]{1}" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + ALL_CHAR+"+[FｆＦf]{1}|"+  BASEMENT_PATTERN + "|" + ALL_CHAR + "+(?!室))?";
     private final String NUMFLR3 = "(?<numFlr3>"+ALL_CHAR + "+[\\-－號樓FｆＦf之區棟]{1}|" +"[之\\-－]{1}" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + ALL_CHAR+"+[FｆＦf]{1}|"+  BASEMENT_PATTERN + "|" + ALL_CHAR + "+(?!室))?";
     private final String NUMFLR4 = "(?<numFlr4>"+ALL_CHAR + "+[\\-－號樓FｆＦf之區棟]{1}|" +"[之\\-－]{1}" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + ALL_CHAR+"+[FｆＦf]{1}|"+  BASEMENT_PATTERN + "|" + ALL_CHAR + "+(?!室))?";
@@ -56,15 +57,35 @@ public class AddressParser {
     private final String REMARK = "(?<remark>[\\(\\{\\〈\\【\\[\\〔\\『\\「\\「\\《\\（](.*?)[\\)\\〉\\】\\]\\〕\\』\\」\\}\\」\\》\\）])?";
     //〈〉【】[]〔〕()『』「」{}「」《》（）
 
+
+    /**
+     * 地址切割
+     * @param origninalAddress
+     * @param address
+     * @return
+     */
     public Address parseAddress(String origninalAddress, Address address) {
-        if (address == null) { //表示初次切割，如果有切完第一次有REMAIN或是地下室的狀況，才會再把地址丟進來再切一次
+
+        /**表示初次切割**/
+        /** 第二次切割條件：地下室、臨建特附、地名
+         * (1) setAddress() 會將address.originalAddress中的 basementStr為 basement:一樓放入address物件後丟進來再切一次
+         * (2-1) handleAddressRemains() 會將 address.originalAddress中 臨建特附 拔除，給予address.numType值後，再丟進來切割
+         * (2-1) handleAddressRemains() 會取出 address.addressRemains的 中文 放入address.area後，並從address.originalAddress中移除後，，再丟進來切割
+         */
+        if (address == null) {
             address = new Address();
         }
+
         address.setCleanAddress(cleanAddress(origninalAddress));
-        //先把有鄉鎮市區村里字眼的area拿出來
+
+        //先把有 鄉、鎮、市、區、村、里、樓 等字眼的area拿出來 -> Redis.key = SPECIAL_AREA:
         Map<String, Set<String>> allKeys = new LinkedHashMap<>();
-        allKeys = findAllKeys(); //redis查詢所有alias，要拼在正則後面
-        origninalAddress = findSpecialArea(allKeys, address, origninalAddress); //先把帶有"村"、"鄉"、"鎮"、"市"、"區"的area抓出來
+        //redis查詢所有alias，要拼在正則後面
+        //這裡find一次
+        allKeys = findAllKeys();
+        log.info("第一次 allKeys :{}",allKeys);
+        //先把帶有"村"、"鄉"、"鎮"、"市"、"區"的特殊字眼放入area(SPECIAL_AREA)，從原始地址中拔除
+        origninalAddress = findSpecialArea(allKeys, address, origninalAddress);
         String pattern = getPattern(allKeys); //組正則表達式
         Pattern regexPattern = Pattern.compile(pattern);
         Matcher matcher = regexPattern.matcher(origninalAddress);
@@ -74,10 +95,21 @@ public class AddressParser {
         return address;
     }
 
+    /***
+     * 只有初次切割會來這
+     * VILLIAGE 的特殊情況
+     * 如果有符合特殊條件，會放入setArea,然後從原始地址中拔出
+     * @param allKeys
+     * @param address
+     * @param origninalAddress
+     * @return
+     */
     public String findSpecialArea(Map<String, Set<String>> allKeys, Address address, String origninalAddress) {
         String newArea = "(" + String.join("|", allKeys.get("SPECIAL_AREA:")) + ")";
+        log.info("newArea:{}",newArea);
         Pattern patternForSpecialArea = Pattern.compile(newArea);
         Matcher matcherForSpecialArea = patternForSpecialArea.matcher(origninalAddress);
+        /**如果有符合特殊情況，會setArea,然後從原始地址中拔出*/
         if (matcherForSpecialArea.find()) {
             log.info(" special_area 匹配到的部分：{}", matcherForSpecialArea.group());
             address.setArea(matcherForSpecialArea.group());
@@ -87,6 +119,11 @@ public class AddressParser {
     }
 
 
+    /**
+     * 去除特殊字元
+     * @param originalAddress
+     * @return
+     */
     public static String cleanAddress(String originalAddress) {
         if (originalAddress == null || originalAddress.isEmpty()) {
             return originalAddress;
@@ -97,7 +134,11 @@ public class AddressParser {
     }
 
 
-    //切出找不到的area
+    /**
+     * 有remain，但不是臨建特附
+     * @param address
+     * @return
+     */
     public Address parseArea(Address address) {
         log.info("從remains切地名:{}", address.getAddrRemains());
         String[] regexArray = {
@@ -131,13 +172,22 @@ public class AddressParser {
     }
 
 
+    /**
+     * SPECIAL_AREA:XXX ->是給VILLIAGE用的特殊情況
+     * SPECIALLANE -> 鐵路.*巷|丹路.*巷
+     * @param allKeys
+     * @return
+     */
 
     private String getPattern(Map<String, Set<String>> allKeys) {
         try {
-            allKeys = findAllKeys(); //redis查詢所有alias，要拼在正則後面
+            //這裡又find一次
+            //redis查詢所有alias，要拼在正則後面
+            allKeys = findAllKeys();
         } catch (Exception e) {
             log.error("findAllKeys error: {}", e.getMessage());
         }
+        log.info("第二次 allKeys:{}",allKeys);
         String newCounty = String.format(COUNTY , String.join("|",allKeys.get("COUNTY_ALIAS:")));
         log.info("newCounty:{}",newCounty);
         String newTown = String.format(TOWN , String.join("|",allKeys.get("TOWN_ALIAS:")));
@@ -248,31 +298,47 @@ public class AddressParser {
 
 
     //再PARSE一次已經在FLR_NUM_1~5 的BF、B1F
+
+    /**
+     * todo:要再加一段整段'整棟樓'的正則，有的話 '整棟樓' 從numFlr拿掉 ,basementStr == 0
+     * @param input
+     * @param address
+     * @return
+     */
     private String parseBasementForBF(String input, Address address) {
         if (StringUtils.isNotNullOrEmpty(input)) {
-
             String[] basemantPattern1 = {"BF", "bf", "B1", "b1", "Ｂ１", "ｂ１", "ＢＦ", "ｂｆ"};
             String[] basemantPattern2 = {".*B.*樓",".*b.*樓",".*Ｂ.*樓",".*ｂ.*樓",".*B.*F", ".*b.*f", ".*Ｂ.*Ｆ", ".*ｂ.*ｆ"};
+            String[] basemantPattern3 = {"整棟樓"};
             if (Arrays.asList(basemantPattern1).contains(input)) {
                 log.info("basemantPattern1:{}", input);
                 address.setBasementStr("1");
                 return "一樓";
-            } else {
-                for (String basemantPattern : basemantPattern2) {
-                    Pattern regex = Pattern.compile(basemantPattern);
-                    Matcher basemantMatcher = regex.matcher(input);
-                    if (basemantMatcher.matches()) {
-                        // 提取數字
-                        String numericPart = extractNumericPart(input);
-                        log.info("basementString 提取數字部分:{} ", numericPart);
-                        address.setBasementStr("1");
-                        return replaceWithChineseNumber(numericPart) + "樓";
+            }
 
-                    }
+            if(Arrays.asList(basemantPattern3).contains(input)){
+                log.info("basemantPattern3:{}",input);
+                address.setBasementStr("0");
+                return "";
+            }
+
+            for (String basemantPattern : basemantPattern2) {
+                Pattern regex = Pattern.compile(basemantPattern);
+                Matcher basemantMatcher = regex.matcher(input);
+                if (basemantMatcher.matches()) {
+                    // 提取數字
+                    String numericPart = extractNumericPart(input);
+                    log.info("basementString 提取數字部分:{} ", numericPart);
+                    address.setBasementStr("1");
+                    //換成中文數字+樓
+                    return replaceWithChineseNumber(numericPart) + "樓";
+
                 }
             }
         }
-        return input; //如果都沒有符合b1的格式，表示沒有地下室的字眼，就返回原字串即可
+        //todo:整棟樓
+        //如果都沒有符合b1的格式，表示沒有地下室的字眼，就返回原字串即可
+        return input;
     }
 
 
