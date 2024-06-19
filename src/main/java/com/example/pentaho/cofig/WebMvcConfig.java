@@ -40,22 +40,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
         MainHandlerInterceptor mainHandlerInterceptor = new MainHandlerInterceptor(interceptors);
         registry
                 .addInterceptor(mainHandlerInterceptor);
-//                .addPathPatterns("/api/**");
-//        registry
-//                .addInterceptor(authorizationHandlerInterceptor)
-//                .addPathPatterns(
-//                        "/api/kettle/**",
-//                        "/api/batchForm/**",
-//                        "/api/redis/**",
-//                        "/api/singlequery/**",
-//                        "/api/single-track-query/**",
-//                        "/api/bigdata/**",
-//                        "/api/api-key/get-api-key",
-//                        "/api/api-key/create-api-key",
-//                        "/api/api-key/forapikey",
-//                        "/api/api-key/forguest"
-//                        );
-
     }
 
 }

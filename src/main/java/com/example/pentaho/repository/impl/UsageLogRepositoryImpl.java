@@ -27,7 +27,7 @@ public class UsageLogRepositoryImpl implements UsageLogRepository {
     }
     @Override
     public void saveUsageLog(List<String[]> logs) {
-        String sql = "insert into addr_ods.USAGE_LOG (ip,user_id, uri, params,dateTimeTrace) \n";
+        String sql = "insert into addr_system.USAGE_LOG (ip,user_id, uri, params,dateTimeTrace) \n";
         for(int i = 0; i<logs.size();i++){
             String[] line = logs.get(i);
             /**整理line*/
@@ -56,7 +56,7 @@ public class UsageLogRepositoryImpl implements UsageLogRepository {
         boolean useIps = usageLogDTO.getIps() != null && !usageLogDTO.getIps().isEmpty();
                 Query query = Query.builder()
                 .append("SELECT user_id, uri, params, dateTimeTrace, ip \n")
-                .append("FROM addr_ods.USAGE_LOG \n")
+                .append("FROM addr_system.USAGE_LOG \n")
                 .append("where 1 = 1 \n")
                 .appendWhen(useUserId, "and user_id in (:userIds) \n", usageLogDTO.getUserIds())
                 .appendWhen(useUri, "and uri in (:uris) \n", usageLogDTO.getUris())
@@ -80,7 +80,7 @@ public class UsageLogRepositoryImpl implements UsageLogRepository {
                 " cast(dateTimeTrace as DATE) as date_time,\n" +
                 " uri,\n" +
                 " count(*) api_cnt\n" +
-                "from addr_ods.USAGE_LOG \n")
+                "from addr_system.USAGE_LOG \n")
                 .append("where dateTimeTrace between cast(" + startDate + " as datetime) AND cast( " + endDate + " as datetime) ")
                 .append("group by 1,2\n" +
                 ")\n" +

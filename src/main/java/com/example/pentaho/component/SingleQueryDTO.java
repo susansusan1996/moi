@@ -23,6 +23,16 @@ public class SingleQueryDTO {
 
     private String town;  //區(選填)
 
+
+    public SingleQueryDTO() {
+    }
+
+    public SingleQueryDTO(String originalAddress, String county, String town) {
+        this.originalAddress = originalAddress;
+        this.county = county;
+        this.town = town;
+    }
+
     public String getRedisKey() {
         return redisKey;
     }

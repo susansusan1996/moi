@@ -12,6 +12,7 @@ import com.example.pentaho.utils.UsageUtils;
 import com.example.pentaho.utils.UserContextUtils;
 import com.google.common.util.concurrent.RateLimiter;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -81,6 +82,11 @@ public class APIKeyResource {
                             name = "userId",
                             description = "query字串要帶被審核通過的該userId ex. ?userId=673f7eec-8ae5-4e79-ad3a-42029eedf742",
                             required = true,
+                            schema = @Schema(type = "string")),
+                    @Parameter(in = ParameterIn.QUERY,
+                            name = "username",
+                            description = "query字串要帶被審核通過的該userId ex. ?username=username12345",
+                            required = true,
                             schema = @Schema(type = "string"))}
             ,
             responses = {
@@ -89,8 +95,8 @@ public class APIKeyResource {
     )
     @GetMapping("/get-api-key")
     @Authorized(keyName = "SHENG")
-    public ResponseEntity<JwtReponse> getAPIKey(@RequestParam String userId) throws Exception {
-        return new ResponseEntity<>(apiKeyService.getApiKey(userId), HttpStatus.OK);
+    public ResponseEntity<JwtReponse> getAPIKey(@RequestParam("userId") String userId,@RequestParam("username") String username) throws Exception {
+        return new ResponseEntity<>(apiKeyService.getApiKey(userId,username), HttpStatus.OK);
     }
 
 
@@ -106,6 +112,11 @@ public class APIKeyResource {
                             required = true,
                             schema = @Schema(type = "string")),
                     @Parameter(in = ParameterIn.QUERY,
+                            name = "username",
+                            description = "query字串要帶被審核通過的該userId ex. ?username=username12345",
+                            required = true,
+                            schema = @Schema(type = "string")),
+                    @Parameter(in = ParameterIn.QUERY,
                             name = "reviewResult",
                             description = "query字串帶審核結果(AGREE、REJECT) ex. reviewResult=AGREE，或是 reviewResult=REJECT",
                             required = true,
@@ -117,16 +128,22 @@ public class APIKeyResource {
     )
     @PostMapping("/create-api-key")
     @Authorized(keyName = "SHENG")
-    public ResponseEntity<JwtReponse> createApiKey(@RequestParam String userId, @RequestParam String reviewResult) throws ParseException {
+    public ResponseEntity<JwtReponse> createApiKey(@RequestParam("userId")String userId,@RequestParam("username")String username, @RequestParam("reviewResult") String reviewResult) throws ParseException {
+        /*回應內容*/
         JwtReponse response = new JwtReponse();
         if (reviewResult.equals("REJECT") || reviewResult.equals("AGREE")){
+            /**拒絕->redis找有沒有存在，把token,refreshToken清掉，重新存入result*/
             if ("REJECT".equals(reviewResult)) {
-                refreshTokenService.saveRefreshToken(userId, null, null, reviewResult);
+                refreshTokenService.saveRefreshToken(userId,username,null, null, reviewResult);
                 response.setErrorResponse("已儲存被拒絕申請的使用者資訊");
                 return new ResponseEntity<>(response, HttpStatus.OK);
             }
             try {
-                return new ResponseEntity<>(apiKeyService.createApiKey(userId, null, "fromApi"), HttpStatus.OK);
+                /**同意 用userid找redis有沒有存在
+                 * 存在:直接返回查找內容
+                 * 不存在:產生token,refreshtokeen 存入redis
+                 * */
+                return new ResponseEntity<>(apiKeyService.createApiKey(userId,username ,null, "fromApi"), HttpStatus.OK);
             } catch (MoiException e) {
                 response.setErrorResponse(String.valueOf(e));
                 return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
@@ -135,6 +152,7 @@ public class APIKeyResource {
                 throw new MoiException("generate error");
             }
         }else{
+            /**不會有REJECT | AGREE 以外的結果**/
             response.setErrorResponse("參數錯誤");
             return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
         }
@@ -163,20 +181,10 @@ public class APIKeyResource {
     }
 
 
-    /**
-     * 單筆未登入測試
-     */
-    @Operation(description = "單筆未登入測試")
-    @GetMapping("/forguest")
-    @UnAuthorized
-    @RateLimiting(name="forguest",tokens = 0.3333)
-    public ResponseEntity<String> forGuestUser() {
-        return new ResponseEntity<>("用戶未登入", HttpStatus.OK);
-    }
-
 
     @PostMapping("/refreshToken")
     @UnAuthorized
+    @Hidden
     public ResponseEntity<JwtReponse> refreshToken(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "用refreshToken取得新的token",
@@ -189,7 +197,7 @@ public class APIKeyResource {
             )
             @RequestBody RefreshToken request) {
         log.info("refreshToken:{}", request);
-        RefreshToken refreshToken = refreshTokenService.findRefreshTokenByUserId(request.getId());
+        RefreshToken refreshToken = refreshTokenService.findRefreshTokenByUserId(request.getId(),"");
         //檢查refresh_token跟id是一致的
         if (refreshToken != null &&  refreshToken.getRefreshToken().equals(request.getRefreshToken())) {
             try {
