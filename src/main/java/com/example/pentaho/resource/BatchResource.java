@@ -296,13 +296,14 @@ public class BatchResource {
             @RequestBody ColumnSelection columnSelection
             ){
         log.info("大量查詢條件:{}",columnSelection);
-        if(StringUtils.isNullOrEmpty(columnSelection.getUserId()) || StringUtils.isNullOrEmpty(columnSelection.getFormId()) || StringUtils.isNullOrEmpty(columnSelection.getFormName())){
+        if(StringUtils.isNullOrEmpty(columnSelection.getUserId()) || StringUtils.isNullOrEmpty(columnSelection.getFormName()) || StringUtils.isNullOrEmpty(columnSelection.getFormId())){
             return new ResponseEntity("申請者Id、表單Id、表單編號皆不得為空",HttpStatus.FORBIDDEN);
         }
 
         BigDataParams bigDataParams = isValid(columnSelection.getShowFields());
         bigDataParams.setUserId(columnSelection.getUserId());
         bigDataParams.setFormId(columnSelection.getFormId());
+        bigDataParams.setFormName(columnSelection.getFormName());
         log.info("bigDataParams:{}",bigDataParams);
         boolean result = bigDataService.saveConditions(bigDataParams);
         return result ? new ResponseEntity("成功",HttpStatus.OK):new ResponseEntity("發生錯誤",HttpStatus.INTERNAL_SERVER_ERROR);
