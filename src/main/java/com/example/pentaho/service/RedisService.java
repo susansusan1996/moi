@@ -13,6 +13,8 @@ import org.springframework.data.redis.connection.StringRedisConnection;
 import org.springframework.data.redis.core.*;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.stereotype.Service;
+import redis.clients.jedis.ScanParams;
+import redis.clients.jedis.ScanResult;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -344,9 +346,6 @@ public class RedisService {
         log.info("elements: {}", elements);
         return elements;
     }
-
-
-
 
 
 }

@@ -7,9 +7,7 @@ import com.example.pentaho.service.RedisService;
 import com.example.pentaho.service.RefreshTokenService;
 import com.example.pentaho.service.SingleQueryService;
 import com.example.pentaho.service.SingleTrackQueryService;
-import com.example.pentaho.utils.AddressParser;
-import com.example.pentaho.utils.UsageUtils;
-import com.example.pentaho.utils.UserContextUtils;
+import com.example.pentaho.utils.*;
 import com.google.common.util.concurrent.RateLimiter;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -29,8 +27,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.security.PrivateKey;
 import java.text.ParseException;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /***
  * 產生APIKey & 使用APIKey驗證的API
@@ -44,7 +45,10 @@ public class APIKeyResource {
     /**
      * API效期先設定1天
      **/
-    private static final int VALID_TIME = 1440;
+    private final int VALID_TIME = 1440;
+
+
+    private KeyComponent keyComponent;
 
 
     @Autowired
@@ -67,10 +71,13 @@ public class APIKeyResource {
     private AddressParser  addressParser;
 
 
+
     private RateLimiter rateLimiter = RateLimiter.create(1);
 
 
-
+    public APIKeyResource(KeyComponent keyComponent) {
+        this.keyComponent = keyComponent;
+    }
 
     @Operation(description = "獲取APIKEY",
             parameters = {
@@ -196,6 +203,7 @@ public class APIKeyResource {
                     )
             )
             @RequestBody RefreshToken request) {
+        /**/
         log.info("refreshToken:{}", request);
         RefreshToken refreshToken = refreshTokenService.findRefreshTokenByUserId(request.getId(),"");
         //檢查refresh_token跟id是一致的
@@ -214,6 +222,67 @@ public class APIKeyResource {
             }
         }
         return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
+
+
+    @GetMapping("/refresh-api-key")
+    @UnAuthorized
+    public ResponseEntity<String> refreshToken(
+            @RequestParam("refreshToken") String refreshToken) throws Exception {
+        log.info("refreshToken:{}", refreshToken);
+        JwtReponse jwtReponse = new JwtReponse();
+        /*資拓公鑰解密*/
+        String apPubkeyName = keyComponent.getApPubkeyName();
+        /*result: isValid(可解密未過期)、ExpiredJwtException(可解密過期)、Exception(其他錯誤)*/
+        String result = Token.isVaildRSAJWTToken(refreshToken, apPubkeyName);
+        switch (result){
+            case "isValid":
+                /*有userId,userType*/
+                User user = Token.extractUserFromRSAJWTToken(refreshToken, apPubkeyName);
+                if(!"refresh_token".equals(user.getTokenType())){
+                    jwtReponse.setErrorResponse("請使用刷新金鑰");
+                    return new ResponseEntity<>("請使用刷新金鑰",HttpStatus.OK);
+                }
+                /*用userId找出refreshToken物件*/
+                RefreshToken refreshTokenObj = refreshTokenService.findRefreshTokenByUserId(user.getId());
+                /*檢查reviewResult*/
+                /*應該是不會進到這裡，因為Reject後就只保留userId,username,reviewResult**/
+                if("REJECT".equals(refreshTokenObj.getReviewResult())){
+                    jwtReponse.setErrorResponse("申請遭拒，請重新申請");
+                    return new ResponseEntity<>("申請遭拒，請重新申請",HttpStatus.OK);
+                }
+
+                /*表示AGREE 檢查APIKEY有沒有過期*/
+                String vaildAPIKEY = Token.isVaildRSAJWTToken(refreshTokenObj.getToken(),apPubkeyName);
+                if("isValid".equals(vaildAPIKEY)){
+                    log.info("apikey未過期");
+                    /*未過期直接返回即可*/
+                    jwtReponse.setToken(refreshTokenObj.getToken());
+                    return new ResponseEntity<>(refreshTokenObj.getToken(),HttpStatus.OK);
+                }
+                /*apikey過期 重新眷*/
+                if("ExpiredJwtException".equals(vaildAPIKEY)){
+                    log.info("apikey過期充新眷");
+                    /*type換回token再放進playload**/
+                    user.setTokenType("token");
+                    PrivateKey privateKey = RsaUtils.getPrivateKey((keyComponent.getApPrikeyName()));
+                    Map<String, Object> tokenMap = RSAJWTUtils.generateTokenExpireInMinutes(user, privateKey, VALID_TIME);
+                    /**更新redis的apiKey*/
+                    refreshTokenService.updateTokenByUserId(user.getId(),(String)tokenMap.get("token"),(String) tokenMap.get("expiryDate"));
+                    jwtReponse.setToken((String)tokenMap.get("token"));
+                    return new ResponseEntity<>((String)tokenMap.get("token"),HttpStatus.OK);
+                }
+                break;
+            case "ExpiredJwtException" :
+                jwtReponse.setErrorResponse("刷新金鑰已過期，請重新整理");
+                return new ResponseEntity<>("刷新金鑰已過期，請重新整理",HttpStatus.OK);
+
+            default:
+                jwtReponse.setErrorResponse("發生錯誤，請聯絡管理員");
+                return new ResponseEntity<>("發生錯誤，請聯絡管理員",HttpStatus.OK);
+        }
+        jwtReponse.setErrorResponse("發生錯誤，請聯絡管理員");
+        return new ResponseEntity<>("發生錯誤，請聯絡管理員",HttpStatus.OK);
     }
 
 

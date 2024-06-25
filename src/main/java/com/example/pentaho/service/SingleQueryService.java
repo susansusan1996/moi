@@ -264,7 +264,7 @@ public class SingleQueryService {
         address.setNumFlr4Id(setNumFlrId(resultMap, address, "NUM_FLR_4"));
         address.setNumFlr5Id(setNumFlrId(resultMap, address, "NUM_FLR_5"));
         String basementStr = address.getBasementStr() == null ? "0" : address.getBasementStr();
-        //===========處理numFlrPos===========================
+        //===========處理numFlrPos(０００號:1,零樓:2,０００之:3,之０００:4)===========================
         String numFlrPos = getNumFlrPos(address);
         address.setNumFlrPos(numFlrPos);
         address.setRoomIdSn(resultMap.get("ROOM:" + replaceWithHalfWidthNumber(room)));
@@ -465,8 +465,14 @@ public class SingleQueryService {
     }
 
     public String getNumFlrPos(Address address) {
-        String[] patternFlr1 = {".+號$", ".+樓$", ".+之$"};
+        //(1) ０００號 -> 1
+        //(2) 零樓 -> 2
+        //(3) ０００之 -> 3
+        //(4) 之０００-> 4
+        String[] patternFlr1 = {".+號$", ".+樓$", ".+之$"}; //1,2,3
+        //todo:1,2,3,4, 5,6,7,8是什麼
         String[] patternFlr2 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^之.+號", "^[A-ZＡ-Ｚ]+$"};
+        //1,2,
         String[] patternFlr3 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
         String[] patternFlr4 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
         String[] patternFlr5 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
@@ -475,6 +481,12 @@ public class SingleQueryService {
                 getNum(address.getNumFlr5(), patternFlr5);
     }
 
+    /**
+     *
+     * @param inputString  = 367號
+     * @param patternArray  = {".+號$", ".+樓$", ".+之$"};
+     * @return
+     */
     private String getNum(String inputString, String[] patternArray) {
         if (inputString != null && !inputString.isEmpty()) {
             for (int i = 0; i < patternArray.length; i++) {
