@@ -200,6 +200,7 @@ public class RefreshTokenService {
         return null;
     }
 
+    //todo:可能要改用scan prefix
     public RefreshToken findRefreshTokenByUserId(String id) {
         RefreshToken refreshToken = new RefreshToken();
         if (StringUtils.isNotNullOrEmpty(id)) {

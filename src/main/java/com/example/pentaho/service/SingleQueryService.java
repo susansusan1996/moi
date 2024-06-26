@@ -143,7 +143,10 @@ public class SingleQueryService {
         if (!seqList.isEmpty()) {
             log.info("第一次就有比到!!");
         }
-        else { //沒找到，模糊搜尋(可能是COUNTY或TOWN沒有寫)
+        else {
+            //沒找到，模糊搜尋(可能是COUNTY或TOWN沒有寫)
+            //目前是只有拔county town 去比對
+            //seqList = 模糊查詢找出可以的mappingId,拿去撈seq
             seqList.addAll(fuzzySearchService.fuzzySearchSeq(address));
         }
         seqSet = splitSeqAndStep(address, seqList, seqSet);

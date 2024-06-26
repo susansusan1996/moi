@@ -233,6 +233,7 @@ public class RedisService {
 
 
     /**
+     *
      * 模糊比對，找出相符的 KEY (redis: scan)
      */
     public Set<String> findListByScan(List<String> keys) {
@@ -252,6 +253,11 @@ public class RedisService {
         return keySet;
     }
 
+    /**
+     *
+     * @param keys 加入 * mappingId
+     * @return
+     */
     private List<Callable<Set<String>>> createScanTasks(List<String> keys) {
         return keys.stream().map(this::createScanTask).toList();
     }
