@@ -46,11 +46,10 @@ public class RefreshTokenService {
      * @return
      * @throws ParseException
      */
-    public RefreshToken saveRefreshToken(String applicantId, String applicantName,Map<String, Object> tokenMap, Map<String, Object> refreshTokenMap, String reviewResult) throws ParseException {
+    public RefreshToken saveRefreshToken(String applicantId,Map<String, Object> tokenMap, Map<String, Object> refreshTokenMap, String reviewResult) throws ParseException {
         RefreshToken refreshToken = new RefreshToken();
         /*不管 AGREE或REJECT 都要存的資料 */
         refreshToken.setId(applicantId);
-        refreshToken.setName(applicantName);
         refreshToken.setReviewResult(reviewResult);
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         /*表示AGREE*/
@@ -143,7 +142,6 @@ public class RefreshTokenService {
     public void saveRefreshToken(RefreshToken refreshToken) {
         String id = refreshToken.getId();
         Map<String, String> valuesToSet = new HashMap<>();
-        valuesToSet.put("username",refreshToken.getName());
         valuesToSet.put("token", refreshToken.getToken());
         valuesToSet.put("refresh_token", refreshToken.getRefreshToken());
         valuesToSet.put("expiry_date", refreshToken.getExpiryDate());
@@ -182,7 +180,6 @@ public class RefreshTokenService {
             //表示過去申請成功
             if ("AGREE".equals(reviewResult)) {
                 refreshToken.setId(id);
-                refreshToken.setName(stringRedisTemplate0.opsForValue().get(id + ":username"));
                 refreshToken.setToken(stringRedisTemplate0.opsForValue().get(id + ":token"));
                 refreshToken.setRefreshToken(stringRedisTemplate0.opsForValue().get(id + ":refresh_token"));
                 refreshToken.setExpiryDate(stringRedisTemplate0.opsForValue().get(id + ":expiry_date"));
