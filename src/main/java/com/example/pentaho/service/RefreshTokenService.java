@@ -163,6 +163,14 @@ public class RefreshTokenService {
         }
     }
 
+    public void updateTokenByUserId(String id,String apiKey,String expiryDate) {
+        if (StringUtils.isNotNullOrEmpty(id)) {
+            stringRedisTemplate0.opsForValue().set(id + ":token", apiKey);
+            stringRedisTemplate0.opsForValue().set(id + ":expiry_date", expiryDate);
+            stringRedisTemplate0.opsForValue().set(id + ":create_timestamp", Instant.now().toString());
+        }
+    }
+
 
     public RefreshToken findRefreshTokenByUserId(String id,String username) {
         RefreshToken refreshToken = new RefreshToken();
@@ -191,4 +199,34 @@ public class RefreshTokenService {
         /*參數不符規定，開頭就會擋掉了**/
         return null;
     }
+
+    //todo:可能要改用scan prefix
+    public RefreshToken findRefreshTokenByUserId(String id) {
+        RefreshToken refreshToken = new RefreshToken();
+        if (StringUtils.isNotNullOrEmpty(id)) {
+            String reviewResult = stringRedisTemplate0.opsForValue().get(id + ":review_result");
+            if ("AGREE".equals(reviewResult)) {
+                /**表示已申請成功*/
+                refreshToken.setId(id);
+                refreshToken.setToken(stringRedisTemplate0.opsForValue().get(id + ":token"));
+                refreshToken.setRefreshToken(stringRedisTemplate0.opsForValue().get(id + ":refresh_token"));
+                refreshToken.setExpiryDate(stringRedisTemplate0.opsForValue().get(id + ":expiry_date"));
+                refreshToken.setRefreshTokenExpiryDate(stringRedisTemplate0.opsForValue().get(id + ":refresh_token_expiry_date"));
+                refreshToken.setReviewResult(stringRedisTemplate0.opsForValue().get(id + ":review_result"));
+                return refreshToken;
+            }else if("REJECT".equals(reviewResult)){
+                /**表示過去被拒絕，這次重新申請*/
+                refreshToken.setId(id);
+                refreshToken.setReviewResult(reviewResult);
+                return refreshToken;
+            }else{
+                /*表示第一次申請**/
+                return null;
+            }
+        }
+        /*參數不符規定，開頭就會擋掉了**/
+        return null;
+    }
+
+
 }
