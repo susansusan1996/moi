@@ -59,7 +59,7 @@ public class RedisService {
     /**
      * 將所有 key帶入DB1查找對應的List
      * 將所有 key的 List value 取出放入 resultList
-     * @param keys ->排列組合的mappingIds
+     * @param keys ->排列組合的mappingId
      * @return
      */
     public List<String> findListsByKeys(List<String> keys) {
@@ -67,17 +67,19 @@ public class RedisService {
         List<Object> results = stringRedisTemplate1.executePipelined((RedisCallback<List<String>>) connection -> {
             StringRedisConnection stringRedisConn = (StringRedisConnection) connection;
             for (String key : keys) {
-                // lRange 方法来获取每个 key 对应的 list 数据。
-                stringRedisConn.lRange(key, 0, -1);
+                // lRange for List ,smember for Set
+                log.info("56 key:{}",key);
+                stringRedisConn.sMembers(key);
+
             }
             return null;
         });
         //results=[mappingId1:[JB411:5141047,...],mappingId2:[JB311:5141047,...],mappingId3:[JB411:5141047,...]..]
         for (Object result : results) {
             //result =mappingId1:[JB411:5141047,...]
-            if (result instanceof List) {
+            if (result instanceof Set) {
                 @SuppressWarnings("unchecked")
-                List<String> elements = (List<String>) result;
+                Set<String> elements = (Set<String>) result;
                 //result中的所有字串加入resultList
                 resultList.addAll(elements);
             }
@@ -173,9 +175,10 @@ public class RedisService {
             "NUM_FLR_1", "NUM_FLR_2", "NUM_FLR_3", "NUM_FLR_4", "NUM_FLR_5"
     );
 
+
     public Map<String, String> findSetByKeys(Map<String, String> keyMap, String segmentExistNumber) {
         Map<String, String> resultMap = new HashMap<>();
-        //redisKey =["COUNTY:新北市","TOWN:新莊渠",...]
+        //redisKeys =["COUNTY:新北市","TOWN:新莊渠",...]
         List<String> redisKeys = new ArrayList<>(keyMap.keySet());
         //要件清單
         StringBuilder segmentExistNumberBuilder = new StringBuilder(segmentExistNumber);
@@ -186,16 +189,19 @@ public class RedisService {
         try {
             connection.openPipeline();
             for (String key : redisKeys) {
+                /*getSet<String>byKey*/
                 connection.sMembers(serializer.serialize(key));
             }
             List<Object> results = connection.closePipeline();
 
             for (int i = 0; i < results.size(); i++) {
+                /*redisSet是key的value*/
                 Set<byte[]> redisSetBytes = (Set<byte[]>) results.get(i);
                 Set<String> redisSet = new HashSet<>();
                 for (byte[] bytes : redisSetBytes) {
                     redisSet.add(serializer.deserialize(bytes));
                 }
+                /*有序*/
                 String key = redisKeys.get(i);
                 if (!redisSet.isEmpty()) {
                     log.info("redis<有>找到cd代碼，key: {}, value: {}", key, redisSet);

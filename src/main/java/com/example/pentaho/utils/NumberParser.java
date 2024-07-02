@@ -11,6 +11,11 @@ import java.util.regex.Pattern;
 public class NumberParser {
     private static final Logger log = LoggerFactory.getLogger(NumberParser.class);
 
+    /**
+     * 半形數字
+     * @param input
+     * @return
+     */
     public static String replaceWithHalfWidthNumber(String input) {
         if (input != null && !input.isEmpty()) {
             input = input.replaceAll("[-－]", "之");

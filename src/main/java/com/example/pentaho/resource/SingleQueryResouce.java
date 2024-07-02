@@ -24,8 +24,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import com.example.pentaho.service.SystemUpdateService;
-
-import javax.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -177,7 +175,4 @@ public class SingleQueryResouce {
         boolean isValidate = singleQueryTrackService.checkSum(addressId);
         log.info("isValidate:{}",isValidate);
     }
-
-
-
 }
