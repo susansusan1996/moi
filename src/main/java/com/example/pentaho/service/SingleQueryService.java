@@ -211,11 +211,12 @@ public class SingleQueryService {
         mappingResults.forEach(result->{
             String[] split = result.split(":");
             String addressCd = split[0];
-            String joinStep = split[1];
-            joinStepSet.add(joinStep);
             String seq = split[2];
+            String joinStep = split[1];
             if(countyAndTown.equals(addressCd)){
+                log.info("符合的result:{}",result);
                 seqSet.add(seq);
+                joinStepSet.add(joinStep);
             }
         });
 

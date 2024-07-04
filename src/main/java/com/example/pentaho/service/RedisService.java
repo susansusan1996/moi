@@ -68,7 +68,6 @@ public class RedisService {
             StringRedisConnection stringRedisConn = (StringRedisConnection) connection;
             for (String key : keys) {
                 // lRange for List ,smember for Set
-                log.info("56 key:{}",key);
                 stringRedisConn.sMembers(key);
 
             }
@@ -85,6 +84,7 @@ public class RedisService {
             }
         }
         //resultList:[JB411:5141047,JB311:5141047,JB411:5141047,..]
+        log.info("resultList:{}",resultList);
         return resultList;
     }
 

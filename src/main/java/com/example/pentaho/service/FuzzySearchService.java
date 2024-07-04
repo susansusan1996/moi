@@ -62,7 +62,7 @@ public class FuzzySearchService {
      * @return
      */
     public List<String> fuzzySearchSeqWith50(Address address) {
-        /** *50碼所有可能的mappingId*/
+        /** 以模糊查詢50碼找到的mappingId*/
         Set<String> newMappingIdSet = fuzzySearch50MappingId(address);
         log.info("newMappingIdSet:{}", newMappingIdSet);
         Set<String> filternewMappingIdSet = fitlerNewMappingIdSet(address, newMappingIdSet);
