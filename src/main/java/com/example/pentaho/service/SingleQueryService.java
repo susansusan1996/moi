@@ -198,6 +198,8 @@ public class SingleQueryService {
                 seqAndStep = seq.split(":");
                 seqSet.add(seqAndStep[1]);
             }
+
+
             if ("JC211".equals(address.getJoinStep()) && StringUtils.isNullOrEmpty(address.getArea())) {
                 address.setJoinStep("JC311"); //路地名，連寫都沒寫
             }
@@ -529,6 +531,8 @@ public class SingleQueryService {
         List<String> countys = new ArrayList<>(splitAndAddToList(address.getCountyCd()));
         List<String> townCds = new ArrayList<>(splitAndAddToList(address.getTownCd()));
         List<String> villageCds = new ArrayList<>(splitAndAddToList(address.getVillageCd()));
+        //todo:彌補'鄰'代碼是由程式判斷產出，非與redis比對，不能確保cd一定存在
+        List<String> neighbors = Arrays.asList(address.getNeighborCd(), "000");
         List<String> roadAreaCds = new ArrayList<>(splitAndAddToList(address.getRoadAreaSn()));
         List<String> lanes = new ArrayList<>(splitAndAddToList(address.getLaneCd())); // Add lanes here
         List<LinkedHashMap<String, String>> mappingIdMapList = new ArrayList<>();
@@ -537,13 +541,14 @@ public class SingleQueryService {
         for (String countyCd : countys) {
             for (String townCd : townCds) {
                 for (String villageCd : villageCds) {
-                    for (String roadAreaCd : roadAreaCds) {
-                        for (String laneCd : lanes) { // Add this loop for lanes
+                    for(String neighbor:neighbors){
+                        for (String roadAreaCd : roadAreaCds) {
+                            for (String laneCd : lanes) { // Add this loop for lanes
                             LinkedHashMap<String, String> mappingIdMap = new LinkedHashMap<>();
                             mappingIdMap.put("COUNTY", countyCd);
                             mappingIdMap.put("TOWN", townCd);
                             mappingIdMap.put("VILLAGE", villageCd);//里
-                            mappingIdMap.put("NEIGHBOR", address.getNeighborCd());
+                            mappingIdMap.put("NEIGHBOR", neighbor);
                             mappingIdMap.put("ROADAREA", roadAreaCd);
                             mappingIdMap.put("LANE", laneCd);
                             mappingIdMap.put("ALLEY", address.getAlleyIdSn());//弄
@@ -557,7 +562,7 @@ public class SingleQueryService {
                             mappingIdMap.put("NUMFLRPOS", address.getNumFlrPos());
                             mappingIdMap.put("ROOM", address.getRoomIdSn());
                             List<String> mappingIdList = Stream.of(
-                                            countyCd, townCd, villageCd, address.getNeighborCd(),
+                                            countyCd, townCd, villageCd, neighbor,
                                             roadAreaCd, laneCd, address.getAlleyIdSn(), numTypeCd,
                                             address.getNumFlr1Id(), address.getNumFlr2Id(), address.getNumFlr3Id(), address.getNumFlr4Id(),
                                             address.getNumFlr5Id(), basementStr, address.getNumFlrPos(), address.getRoomIdSn())
@@ -571,6 +576,7 @@ public class SingleQueryService {
                             mappingIdMap.put("NUMFLRPOS", oldPos); //還原
                         }
                     }
+                }
                 }
             }
         }
