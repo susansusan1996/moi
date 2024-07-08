@@ -14,6 +14,7 @@ import java.util.Set;
 
 @RestController
 @RequestMapping("/api/redis")
+@Hidden
 public class RedisResouce {
 
     private static Logger log = LoggerFactory.getLogger(RedisResouce.class);

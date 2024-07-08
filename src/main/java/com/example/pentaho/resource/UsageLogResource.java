@@ -28,6 +28,8 @@ import java.util.*;
 @RestController
 @RequestMapping("/api/usage-log")
 @SecurityRequirement(name = "Authorization")
+@Hidden
+
 public class UsageLogResource {
 
     final static Logger log = LoggerFactory.getLogger(UsageLogResource.class);

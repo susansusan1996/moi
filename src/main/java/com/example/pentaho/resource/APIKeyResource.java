@@ -102,6 +102,7 @@ public class APIKeyResource {
     )
     @GetMapping("/get-api-key")
     @Authorized(keyName = "SHENG")
+    @Hidden
     public ResponseEntity<JwtReponse> getAPIKey(@RequestParam("userId") String userId,@RequestParam("username") String username) throws Exception {
         return new ResponseEntity<>(apiKeyService.getApiKey(userId,username), HttpStatus.OK);
     }
@@ -135,6 +136,7 @@ public class APIKeyResource {
     )
     @PostMapping("/create-api-key")
     @Authorized(keyName = "SHENG")
+    @Hidden
     public ResponseEntity<JwtReponse> createApiKey(@RequestParam("userId")String userId,@RequestParam("username")String username, @RequestParam("reviewResult") String reviewResult) throws ParseException {
         /*回應內容*/
         JwtReponse response = new JwtReponse();
@@ -181,6 +183,7 @@ public class APIKeyResource {
             })
     @PostMapping("/forapikey")
     @Authorized(keyName = "AP")
+    @Hidden
     public ResponseEntity<String> forAPIKeyUser() {
         User user = UserContextUtils.getUserHolder();
         log.info("user:{}", user);

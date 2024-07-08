@@ -31,6 +31,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/singlequery")
 @SecurityRequirement(name = "Authorization")
+@Hidden
 public class SingleQueryResouce {
 
     private static Logger log = LoggerFactory.getLogger(SingleQueryResouce.class);

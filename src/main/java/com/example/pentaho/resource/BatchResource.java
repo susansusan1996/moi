@@ -48,6 +48,7 @@ import java.util.concurrent.CompletableFuture;
 @RestController
 @RequestMapping("/api/batchForm")
 @SecurityRequirement(name = "Authorization")
+@Hidden
 public class BatchResource {
 
     private final static Logger log = LoggerFactory.getLogger(BatchResource.class);
