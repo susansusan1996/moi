@@ -3,6 +3,7 @@ package com.example.pentaho.service;
 import com.example.pentaho.component.*;
 import com.example.pentaho.exception.MoiException;
 import com.example.pentaho.utils.ResourceUtils;
+import com.example.pentaho.utils.StringUtils;
 import com.example.pentaho.utils.custom.Sftp;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jcraft.jsch.SftpException;
@@ -225,7 +226,7 @@ public class FileOutputService {
 
 
     /**
-     *  post給聖森
+     *  post給聖森(未使用)
      * @param sourceFilePath
      * @param action
      * @param bigDataParams
@@ -266,7 +267,7 @@ public class FileOutputService {
     }
 
     /**
-     * 大量查詢
+     * 大量查詢(未使用)
      * sftp抓檔
      * 撈log
      * post給聖森
@@ -294,15 +295,15 @@ public class FileOutputService {
 
     public int postBatchFormRequest(String action, Object params, String filePath) throws IOException {
         String targerUrl = apServerComponent.getTargetUrl() + action;
-        log.info("targetUrl:{}",targerUrl);
+        log.info("聖森URL:{}",targerUrl);
 
         File file = null;
         String fileName ="";
-        if(!"".equals(filePath)){
+        if(StringUtils.isNotNullOrEmpty(filePath)){
            file = new File(filePath);
             if (file.exists()) {
                 fileName = String.valueOf(Path.of(filePath).getFileName());
-                log.info("fileName:{}",fileName);
+                log.info("完成檔名:{}",fileName);
 //            throw new IOException("File not found: " + filePath);
             }
         }
@@ -316,8 +317,11 @@ public class FileOutputService {
         /**necessay**/
         String boundary = UUID.randomUUID().toString();
         con.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+
+
         Path path = Path.of(apServerComponent.getToken());
         String token = Files.readString(path, StandardCharsets.UTF_8);
+
         con.setRequestProperty("Authorization",token);
 
         try (OutputStream out = con.getOutputStream();
@@ -337,10 +341,11 @@ public class FileOutputService {
 //            writer.append("--").append(boundary).append("\r\n");
 //            writer.append("Content-Disposition: form-data; name=\"status\"\r\n\r\n");
 //            writer.append(params.getStatus()).append("\r\n");
+            /**取得請求體*/
             String content = getContent(boundary, params);
             writer.append(content);
 
-            if (!"".equals(fileName)) {
+            if (StringUtils.isNotNullOrEmpty(fileName)) {
                 // 如果檔案名稱非空，則將檔案內容寫入請求主體
                 writer.append("--").append(boundary).append("\r\n");
                 writer.append("Content-Disposition: form-data; name=\"file\"; filename=\"").append(fileName).append("\"\r\n");
