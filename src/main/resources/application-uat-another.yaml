@@ -51,6 +51,7 @@ server:
 pentaho:
   #pentaho server IP (正式區) 8.3
   web-target: http://10.199.1.116:8080/pentaho
+  encodeAuth: /home/moi/app/pentaho/token.txt
 
 
 directory:
