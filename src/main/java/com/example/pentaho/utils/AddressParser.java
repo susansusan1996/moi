@@ -408,6 +408,31 @@ public class AddressParser {
         return map;
     }
 
+    /***
+     * segExistNum 長度10
+     * "COUNTY", "TOWN", "VILLAGE", "ROAD", "AREA", "LANE", "ALLEY", (inedex:0~6)
+     * "NUM_FLR_1", "NUM_FLR_2", "NUM_FLR_3", "NUM_FLR_4", "NUM_FLR_5" (index:7,有寫1個value就為1)
+     * 新增: "NEIGHBOR,""ROOM" (index 8,9)
+     * @param fullAddress
+     * @param segExistNum
+     * @return
+     */
+    public String parseNeighborAndRoom(String fullAddress,String segExistNum){
+        char[] segArray = segExistNum.toCharArray();
+        Pattern pattern = Pattern.compile(NEIGHBOR);
+            Matcher matcher = pattern.matcher(fullAddress);
+            if(matcher.find()){
+                return "0".equals(segArray[8])? "JA2":"";
+            }
+
+            pattern = Pattern.compile(ROOM);
+            matcher = pattern.matcher(fullAddress);
+            if(matcher.find()){
+                return "0".equals(segArray[9])? "JB1":"";
+            }
+           return "";
+    }
+
 
 }
 

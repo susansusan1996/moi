@@ -39,6 +39,14 @@ public class SingleQueryService {
     private FuzzySearchService fuzzySearchService;
 
     String segmentExistNumber = ""; //紀錄user是否有輸入每個地址片段，有:1，沒有:0
+
+    /***
+     * JE621
+     * JD721
+     * JE431
+     * JE421
+     * JE511
+     */
     private static final Set<String> EXCLUDED_JOIN_STEPS = Set.of("JE621", "JD721", "JE431", "JE421", "JE511");
 
 
@@ -68,16 +76,24 @@ public class SingleQueryService {
         /**=== 切地址 + 取得地址cd組合成mappingIdList ===**/
         Address address = parseAddressAndFindMappingId(cleanAddress);
         log.info("排列組合56碼mappingIdList:{}", address.getMappingId());
+
+        String segmentExistNumber = address.getSegmentExistNumber();
         /**=== 排列組合後56碼mappingId找seq ===**/
         address = findSeq(address);
         Set<String> seqSet = address.getSeqSet();
         //seqSet可能是空集合
         if (!seqSet.isEmpty()) {
-            log.info("seq:{}", seqSet);
-            list = queryAddressData(address); //db取資料
-            //放地址比對代碼
+            log.info("有可能的seqs:{}", seqSet);
+            //db取地址資料
+            list = queryAddressData(address);
+            //放返回的資料
             Address finalAddress = address;
+            //IbdTbAddrDataRepositoryNewdto = 各seq對應的資料
             list.forEach(IbdTbAddrDataRepositoryNewdto -> {
+                /***
+                 * (1) 撈出的join_step 為空
+                 * (2) DB撈出join_step + redis+程式比對的join_step 都不含 "JE621", "JD721", "JE431", "JE421", "JE511"
+                 */
                 if (
                         IbdTbAddrDataRepositoryNewdto.getJoinStep() == null
                                 || (!EXCLUDED_JOIN_STEPS.contains(IbdTbAddrDataRepositoryNewdto.getJoinStep()) &&
@@ -85,10 +101,19 @@ public class SingleQueryService {
                 ) {
                     IbdTbAddrDataRepositoryNewdto.setJoinStep(finalAddress.getJoinStep());
                 }
+
+                /**
+                 *(1)確認地址是否有neighbor & room 然後與 segmentExistNumber比對
+                 */
+                String startWith = addressParser.parseNeighborAndRoom(IbdTbAddrDataRepositoryNewdto.getFullAddress(),segmentExistNumber);
+                if(StringUtils.isNotNullOrEmpty(startWith)){
+                    renewJoinStep(startWith,IbdTbAddrDataRepositoryNewdto);
+                }
             });
         }
-        //沒有找到任何一個seq ,list -> 空集合
-        setJoinStepWhenResultIsEmpty(list, result, address); //查無資料，JE431、JE421、JE511、JE311會在這邊寫入
+        //查無資料，JE431、JE421、JE511、JE311會在這邊寫入
+        //list -> 空集合;沒有找到任何一個seq
+        setJoinStepWhenResultIsEmpty(list, result, address);
         result.setData(list);
         return result;
     }
@@ -172,7 +197,6 @@ public class SingleQueryService {
      * @return
      */
     Address findSeq(Address address) {
-        Map<String, String> resultMap = new HashMap<>();
         Set<String> seqSet = new HashSet<>();
         log.info("排列組合56碼mappingIdList:{}", address.getMappingId());
         /**=== 排列組合 mappingId，進redis db1 找有沒有符合的 56碼 ==**/
@@ -182,23 +206,36 @@ public class SingleQueryService {
             //resultsBeforeSplit = ["00000000:JB411:5141047","00000001:JB311:5141047","12345:001:JB411:5141047",...]
             splitSeqAndStep(address,resultsBeforeSplit,seqSet);
         } else {
-            log.info("拔neighbor & village進行模糊查詢");
-            //所有56碼都沒找到，模糊查詢(拆neighbor & village) -> 前6碼換成*
-            //fuzzyMappingIds:["000000:JB411:5141047","000001::JB311:5141047","005001:JB411:5141047",..]
-            List<String> mappingResults = fuzzySearchService.fuzzySearchSeqWith50(address);
-            //連模糊查詢都找不到東西
-            if(mappingResults.isEmpty() || mappingResults == null){
+            log.info("所有56碼都沒找到 拔 neighbor & village 進行查詢");
+            //(2) redis key查詢 -> 000000 + 50碼
+            build50MappingIds(address);
+            List<String> resultsBy50 = findSeqByMappingId(address);
+            //拔鄰、裡查詢後還是都找不到東西
+            if(resultsBy50.isEmpty() || resultsBy50 == null){
+                log.info("拔鄰、裡查詢後還是都找不到東西");
                 //放入空集合
                 address.setSeqSet(seqSet);
                 return address;
             }
 
-            //===== 開始比對county,town 並取得address.joinStep & seqSet =====//
-             seqSet = filterCountyAndTown(address, mappingResults);
+            //開始比對地址片段
+
+
+
+//            (1) redis 模糊查詢 -> * + 50碼,
+//            List<String> mappingResults = fuzzySearchService.fuzzySearchSeqWith50(address);
+//          if(resultsBy50.isEmpty() || resultsBy50 == null){
+//                log.info("拔鄰、裡查詢後還是都找不到東西");
+//                //放入空集合
+//                address.setSeqSet(seqSet);
+//                return address;
+//            }
+//            findSeqByMappingId(address);
+//            ===== 開始比對county,town 並取得address.joinStep & seqSet =====//
+//            seqSet = filterCountyAndTown(address, resultsBy50);
         }
 
-        //==========================================================//
-        //多址判斷；seqSet有可能是空集合
+        //===========================多址判斷；seqSet有可能是空集合===============================//
         replaceJoinStepWhenMultiAdress(address,seqSet);
         address.setSeqSet(seqSet);
         return address;
@@ -207,6 +244,9 @@ public class SingleQueryService {
     public Set<String> filterCountyAndTown(Address address,List<String> mappingResults){
         Set<String> seqSet = new HashSet<>();
         Set<String> joinStepSet = new HashSet<>();
+        String neighborCd = address.getNeighborCd();
+        String villageCd = address.getVillage();
+        //地址片段
         String countyAndTown = address.getCountyCd() + address.getTownCd();
         mappingResults.forEach(result->{
             String[] split = result.split(":");
@@ -269,9 +309,17 @@ public class SingleQueryService {
     List<String> findSeqByMappingId(Address address) {
         List<String> seqList = new ArrayList<>();
         /**排除重複*/
-        seqList.addAll(redisService.findListsByKeys(address.getMappingId()));
-        log.info("用排列組合的56碼mappingId找到各組seq並組成不重複的List ex:[\"00000000:JA112:1234567\"]:{}", seqList);
+        seqList.addAll(redisService.findSetsByKeys(address.getMappingId()));
+        log.info("用排列組合的56碼mappingId找到value:{}", seqList);
         return seqList;
+    }
+
+
+    Map<String,List<String>> findMapByMappingId(Address address) {
+        Map<String,List<String>> result = new HashMap();
+        /**排除重複*/
+         redisService.findSetsByKeys(address.getMappingId());
+         return result;
     }
 
     /**
@@ -283,28 +331,39 @@ public class SingleQueryService {
      */
     void splitSeqAndStep(Address address, List<String> resultsBeforeSplit, Set<String> seqSet) {
         Set<String> joinStepSet = new HashSet<>();
-        /**找到相對應的56碼*/
+        /**有找到相對應的56碼*/
         if (!resultsBeforeSplit.isEmpty()) {
-            /**先對county + town*/
+            /**input的county + town*/
             String countyAndTown = address.getCountyCd() + address.getTownCd();
+            /**與redis value比對**/
             for(String seqsStr:resultsBeforeSplit){
                 String[] seqArray = seqsStr.split(":");
                 String addressCd = seqArray[0];
-                String joinStep = seqArray[1];
-                joinStepSet.add(joinStep);
-                String seq = seqArray[2];
+                /**有相符才取其join_step & seq*/
                 if(countyAndTown.equals(addressCd)){
+                    String joinStep = seqArray[1];
+                    joinStepSet.add(joinStep);
+                    String seq = seqArray[2];
                     seqSet.add(seq);
                 }
             }
+            //join_step排序
+            List<String> sortedJoinStepList = joinStepSet.stream().sorted().toList();
 
-            List<String> sortedJoinStepList = joinStepSet.stream().sorted().toList(); //排序
             address.setJoinStep(sortedJoinStepList.get(0));
+
             if ("JC211".equals(address.getJoinStep()) && StringUtils.isNullOrEmpty(address.getArea())) {
                 address.setJoinStep("JC311"); //路地名，連寫都沒寫
             }
         }
     }
+
+
+    void renewJoinStep(String newStartedcode,IbdTbAddrCodeOfDataStandardDTO ibdTbAddrCodeOfDataStandardDTO){
+        log.info("revise join_step:{}",newStartedcode+ibdTbAddrCodeOfDataStandardDTO.getJoinStep().substring(3, 5));
+        ibdTbAddrCodeOfDataStandardDTO.setJoinStep(newStartedcode+ibdTbAddrCodeOfDataStandardDTO.getJoinStep().substring(3, 5));
+    }
+
 
     /**
      * @param address
@@ -389,6 +448,9 @@ public class SingleQueryService {
      */
     public Address findCdAndMappingId(Address address) {
         log.info("address:{}", address);
+        //"COUNTY", "TOWN", "VILLAGE", "ROAD", "AREA", "LANE", "ALLEY", 1~7
+        //"NUM_FLR_1", "NUM_FLR_2", "NUM_FLR_3", "NUM_FLR_4", "NUM_FLR_5" 8
+        //"ROOM" 9
         segmentExistNumber = "";
         /*===========取各地址片段===========================*/
         /**========縣市=========**/
@@ -611,7 +673,8 @@ public class SingleQueryService {
      * @return
      */
     public static String combineSegment(String segmentExistNumber) {
-        if (segmentExistNumber.length() < 12) {
+
+        if (segmentExistNumber.length() < 13) {
             throw new IllegalArgumentException("segmentExistNumber initial value 應為 12 碼");
         }
         String flrSegNum = "0";
@@ -624,8 +687,10 @@ public class SingleQueryService {
             }
         }
 
+        String roonSegNum = segmentExistNumber.substring(segmentExistNumber.length() - 1, segmentExistNumber.length());
+
         // 保留segmentExistNumber的1到7碼(index=0~6)，並把index 7的值改成flrSegNum
-        return segmentExistNumber.substring(0, 7) + flrSegNum;
+        return segmentExistNumber.substring(0, 7) + flrSegNum+roonSegNum;
     }
 
 
@@ -990,14 +1055,15 @@ public class SingleQueryService {
 
     /**
      * 會到這個階段的地址都是前幾個階段沒有比對到母體的地址的前提下
+     * 查無資料，JE431、JE421、JE511、JE311會在這邊寫入
      */
     void setJoinStepWhenResultIsEmpty(List<IbdTbAddrCodeOfDataStandardDTO> list, SingleQueryResultDTO result, Address address) {
         if (list.isEmpty()) {
-            log.info("查無資料");
+            log.info("DB查無資料");
             IbdTbAddrCodeOfDataStandardDTO dto = new IbdTbAddrCodeOfDataStandardDTO();
             String segNum = address.getSegmentExistNumber();
-            log.info("查無資料，segNum:{}", segNum);
-            log.info("address.getCleanAddress():{}", address.getCleanAddress());
+            log.info("要件清單:{}", segNum);
+            log.info("乾淨地址", address.getCleanAddress());
             if (!segNum.startsWith("11")) {
                 //JE431
                 //todo:可能會有join_step是JE431但有找得到地址的情況
@@ -1026,7 +1092,18 @@ public class SingleQueryService {
                 result.setText("查無地址");
             }
             list.add(dto);
+        }else{
+
         }
+        //多增加判斷NEIGHBOR、ROOM 確保JOIN_STEP不會跑掉
+    }
+
+    void reviseJoinStep(List<IbdTbAddrCodeOfDataStandardDTO> list, SingleQueryResultDTO result, Address address){
+        list.forEach(IbdTbAddrCodeOfDataStandardDTO->{
+            //是否含鄰、含室
+            IbdTbAddrCodeOfDataStandardDTO.getFullAddress();
+
+        });
     }
 
     private void setResult(IbdTbAddrCodeOfDataStandardDTO dto, SingleQueryResultDTO result, String joinStep, String text) {
@@ -1054,6 +1131,7 @@ public class SingleQueryService {
     }
 
     private List<IbdTbAddrCodeOfDataStandardDTO> queryAddressData(Address address) {
+        /**不影響後續判斷*/
         if ('2' == address.getJoinStep().charAt(3)) {
             //檢查是否history(歷史門牌)，2的話就是history
             log.info("歷史門牌!");
@@ -1064,4 +1142,14 @@ public class SingleQueryService {
         }
     }
 
+
+
+    void build50MappingIds(Address address){
+        List<String> newMappingIds =new ArrayList<>();
+        address.getMappingId().forEach(mappingId->{
+            String newId = "000000" + mappingId.substring(6, mappingId.length());
+            newMappingIds.add(newId);
+        });
+       address.setMappingId(newMappingIds);
+    }
 }

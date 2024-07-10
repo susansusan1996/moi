@@ -57,12 +57,11 @@ public class RedisService {
     }
 
     /**
-     * 將所有 key帶入DB1查找對應的List
-     * 將所有 key的 List value 取出放入 resultList
+     * 將所有 key帶入DB1查找對應的Set<String>
      * @param keys ->排列組合的mappingId
-     * @return
+     * @return resultList -> 每個value
      */
-    public List<String> findListsByKeys(List<String> keys) {
+    public List<String> findSetsByKeys(List<String> keys) {
         List<String> resultList = new ArrayList<>();
         List<Object> results = stringRedisTemplate1.executePipelined((RedisCallback<List<String>>) connection -> {
             StringRedisConnection stringRedisConn = (StringRedisConnection) connection;
@@ -73,20 +72,53 @@ public class RedisService {
             }
             return null;
         });
-        //results=[mappingId1:[JB411:5141047,...],mappingId2:[JB311:5141047,...],mappingId3:[JB411:5141047,...]..]
+
+        //results=[[JB411:5141047,...](key1的value),[JB311:5141047,...](key2的value),[JB411:5141047,...](key1的value),...]
         for (Object result : results) {
-            //result =mappingId1:[JB411:5141047,...]
+            //result=[JB411:5141047,...]
             if (result instanceof Set) {
                 @SuppressWarnings("unchecked")
                 Set<String> elements = (Set<String>) result;
-                //result中的所有字串加入resultList
+                //elements = [JB411:5141047,...]
                 resultList.addAll(elements);
             }
         }
-        //resultList:[JB411:5141047,JB311:5141047,JB411:5141047,..]
-        log.info("resultList:{}",resultList);
+        //resultList:[00000000:JE431:12345,63000123:JA111:12345,.....]
+//        log.info("resultList:{}",resultList);
         return resultList;
     }
+
+    /**
+     * 將所有 key帶入DB1查找對應的Set<String>
+     * @param keys ->排列組合的mappingId
+     * @return resultList -> 每個value
+     */
+//    public Map<String,List<String>> findMapsByKeys(List<String> keys) {
+//        Map<String,List<String>> resultList = new HashMap<>();
+//        List<Object> results = stringRedisTemplate1.executePipelined((RedisCallback<List<String>>) connection -> {
+//            StringRedisConnection stringRedisConn = (StringRedisConnection) connection;
+//            for (String key : keys) {
+//                // lRange for List ,smember for Set
+//                stringRedisConn.sMembers(key);
+//
+//            }
+//            return null;
+//        });
+//
+//        //results=[[JB411:5141047,...](key1的value),[JB311:5141047,...](key2的value),[JB411:5141047,...](key1的value),...]
+//        for (Object result : results) {
+//            //result=[JB411:5141047,...]
+//            if (result instanceof Set) {
+//                @SuppressWarnings("unchecked")
+//                Set<String> elements = (Set<String>) result;
+//                //elements = [JB411:5141047,...]
+//                resultList.addAll(elements);
+//            }
+//        }
+//        //resultList:[00000000:JE431:12345,63000123:JA111:12345,.....]
+////        log.info("resultList:{}",resultList);
+//        return resultList;
+//    }
 
 
     /**
@@ -172,7 +204,7 @@ public class RedisService {
 
     private static final List<String> KEYWORDS = Arrays.asList(
             "COUNTY", "TOWN", "VILLAGE", "ROAD", "AREA", "LANE", "ALLEY",
-            "NUM_FLR_1", "NUM_FLR_2", "NUM_FLR_3", "NUM_FLR_4", "NUM_FLR_5"
+            "NUM_FLR_1", "NUM_FLR_2", "NUM_FLR_3", "NUM_FLR_4", "NUM_FLR_5","ROOM"
     );
 
 

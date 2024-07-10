@@ -23,7 +23,7 @@ public class FuzzySearchService {
     public List<String> fuzzySearchSeq(Address address) {
         Set<String> newMappingIdSet = fuzzySearchMappingId(address);
         log.info("newMappingIdSet:{}", newMappingIdSet);
-        return redisService.findListsByKeys(newMappingIdSet.stream().toList());
+        return redisService.findSetsByKeys(newMappingIdSet.stream().toList());
     }
 
     public Set<String> fuzzySearchMappingId(Address address) {
@@ -62,12 +62,12 @@ public class FuzzySearchService {
      * @return
      */
     public List<String> fuzzySearchSeqWith50(Address address) {
-        /** 以模糊查詢50碼找到的mappingId*/
+        /**以000000 +50碼找到的mappingId*/
         Set<String> newMappingIdSet = fuzzySearch50MappingId(address);
-        log.info("newMappingIdSet:{}", newMappingIdSet);
+        log.info("以000000 +50碼找到的mappingId:{}", newMappingIdSet);
         Set<String> filternewMappingIdSet = fitlerNewMappingIdSet(address, newMappingIdSet);
         //送進來前要先fliter newMappingIdSet
-        return redisService.findListsByKeys(filternewMappingIdSet.stream().toList());
+        return redisService.findSetsByKeys(filternewMappingIdSet.stream().toList());
     }
 
 
@@ -151,23 +151,17 @@ public class FuzzySearchService {
     }
 
     /**
-     * todo:reids -> * +50碼 / java正則: /d{6}+50碼
-     * address.mappingId = ["56碼1","56碼2",...]
+     * 改成 redis模糊查詢 * +50碼
+     * java正則: /d{6}+50碼
      * @param address
-     * @return
+     * @return address.mappingId = ["56碼1","56碼2",...]
      */
     private Map<String, List<String>> build50MappingIdRegexString(Address address) {
         /*for redis fuzzy*/
         List<String> newMappingIdList = new ArrayList<>();
         /*for java check the redis funzzyMapping result*/
         List<String> regexList = new ArrayList<>();
-        //要件清單
-        String segNum = address.getSegmentExistNumber();
-        /*mapList=[{
-        "COUNTY":"COUNTY"
-        }
-        ]*/
-        /*omap的value合起來是一組56碼mappingId**/
+
         List<LinkedHashMap<String, String>> mapList = address.getMappingIdMap();
 
         mapList.forEach(map -> {
@@ -177,14 +171,15 @@ public class FuzzySearchService {
             LinkedHashMap<String, String> fuzzyMap = new LinkedHashMap<>(map);
             StringBuilder newMappingId = new StringBuilder();
 
-            //todo:改成先模糊查詢，再用程式判斷
+            //(1)拚模糊查詢的方式改成前6碼一律當作沒寫
             regexMap.put("VILLAGE", "\\d{6}");
             regexMap.put("NEIGHBOR", "");
 
             fuzzyMap.put("VILLAGE", "*");
             fuzzyMap.put("NEIGHBOR", "");
 
-            //neighbor、villiage兩個都沒寫 redis 模糊查詢前6碼+ 後面所有可能的mappingId
+//            (2) 判斷neighbor、villiage有無填寫
+//            neighbor、villiage兩個都沒寫 redis 模糊查詢前6碼+ 後面所有可能的mappingId
 //            if ("0".equals(String.valueOf(segNum.charAt(2))) && "0".equals(String.valueOf(segNum.charAt(3)))) {
 //                regexMap.put("VILLAGE", "\\d{6}");
 //                regexMap.put("NEIGHBOR", "");
@@ -203,6 +198,7 @@ public class FuzzySearchService {
 //                //*001~
 //                fuzzyMap.put("VILLAGE", "*");
 //            }
+
             //拼出給程式的正則
             StringBuilder regex = new StringBuilder();
             for (String value : regexMap.values()) {
