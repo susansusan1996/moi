@@ -219,9 +219,6 @@ public class SingleQueryService {
             }
 
             //開始比對地址片段
-
-
-
 //            (1) redis 模糊查詢 -> * + 50碼,
 //            List<String> mappingResults = fuzzySearchService.fuzzySearchSeqWith50(address);
 //          if(resultsBy50.isEmpty() || resultsBy50 == null){
@@ -960,47 +957,57 @@ public class SingleQueryService {
         String basementStr = address.getBasementStr() == null ? "0" : address.getBasementStr();
         //ex:address.getCountyCd() - > "12345,54321" (同名不同cd)
 
+        //todo:
+        List<String> neighborCds = Arrays.asList(address.getNeighborCd(), "000");
         List<String> villageCds = new ArrayList<>(splitAndAddToList(address.getVillageCd()));
         List<String> roadAreaCds = new ArrayList<>(splitAndAddToList(address.getRoadAreaSn()));
         List<String> lanes = new ArrayList<>(splitAndAddToList(address.getLaneCd())); // Add lanes here
+        List<String> roomIdSns = Arrays.asList(address.getRoomIdSn(), "00000");
+
         List<LinkedHashMap<String, String>> mappingIdMapList = new ArrayList<>();
         List<String> mappingIdStringList = new ArrayList<>();
+
+        //
         for (String villageCd : villageCds) {
-            for (String roadAreaCd : roadAreaCds) {
-                for (String laneCd : lanes) { // Add this loop for lanes
-                    //一個 mappingIdMap 所有value組成一個 String 是一組mappingId
-                    LinkedHashMap<String, String> mappingIdMap = new LinkedHashMap<>();
-                    mappingIdMap.put("VILLAGE", villageCd);//里
-                    mappingIdMap.put("NEIGHBOR", address.getNeighborCd());
-                    mappingIdMap.put("ROADAREA", roadAreaCd);
-                    mappingIdMap.put("LANE", laneCd);
-                    mappingIdMap.put("ALLEY", address.getAlleyIdSn());//弄
-                    mappingIdMap.put("NUMTYPE", numTypeCd);
-                    mappingIdMap.put("NUM_FLR_1", address.getNumFlr1Id());
-                    mappingIdMap.put("NUM_FLR_2", address.getNumFlr2Id());
-                    mappingIdMap.put("NUM_FLR_3", address.getNumFlr3Id());
-                    mappingIdMap.put("NUM_FLR_4", address.getNumFlr4Id());
-                    mappingIdMap.put("NUM_FLR_5", address.getNumFlr5Id());
-                    mappingIdMap.put("BASEMENT", basementStr);
-                    mappingIdMap.put("NUMFLRPOS", address.getNumFlrPos());
-                    mappingIdMap.put("ROOM", address.getRoomIdSn());
-                    List<String> mappingIdList = Stream.of(
-                                    villageCd, address.getNeighborCd(),
-                                    roadAreaCd, laneCd, address.getAlleyIdSn(), numTypeCd,
-                                    address.getNumFlr1Id(), address.getNumFlr2Id(), address.getNumFlr3Id(), address.getNumFlr4Id(),
-                                    address.getNumFlr5Id(), basementStr, address.getNumFlrPos(), address.getRoomIdSn())
-                            .map(Object::toString)
-                            .collect(Collectors.toList());
-                    //一個 mappingIdMap 所有value組成一個 String 是一組mappingId
-                    mappingIdMapList.add(mappingIdMap);
-                    mappingIdStringList.add(String.join("", mappingIdList));
-                    // 將NUMFLRPOS 00000的組合拼回 mappingId，組成64碼
-                    String oldPos = mappingIdMap.get("NUMFLRPOS");
-                    mappingIdStringList.add(replaceNumFlrPosWithZero(mappingIdMap));
-                    mappingIdMap.put("NUMFLRPOS", oldPos); //還原
+            for(String neighbor:neighborCds){
+                for (String roadAreaCd : roadAreaCds) {
+                    for (String laneCd : lanes) { // Add this loop for lanes
+                        for(String roomIdsn:roomIdSns){
+                        //一個 mappingIdMap 所有value組成一個 String 是一組mappingId
+                        LinkedHashMap<String, String> mappingIdMap = new LinkedHashMap<>();
+                        mappingIdMap.put("VILLAGE", villageCd);//里
+                        mappingIdMap.put("NEIGHBOR", neighbor);
+                        mappingIdMap.put("ROADAREA", roadAreaCd);
+                        mappingIdMap.put("LANE", laneCd);
+                        mappingIdMap.put("ALLEY", address.getAlleyIdSn());//弄
+                        mappingIdMap.put("NUMTYPE", numTypeCd);
+                        mappingIdMap.put("NUM_FLR_1", address.getNumFlr1Id());
+                        mappingIdMap.put("NUM_FLR_2", address.getNumFlr2Id());
+                        mappingIdMap.put("NUM_FLR_3", address.getNumFlr3Id());
+                        mappingIdMap.put("NUM_FLR_4", address.getNumFlr4Id());
+                        mappingIdMap.put("NUM_FLR_5", address.getNumFlr5Id());
+                        mappingIdMap.put("BASEMENT", basementStr);
+                        mappingIdMap.put("NUMFLRPOS", address.getNumFlrPos());
+                        mappingIdMap.put("ROOM", roomIdsn);
+                        List<String> mappingIdList = Stream.of(
+                                        villageCd, neighbor,
+                                        roadAreaCd, laneCd, address.getAlleyIdSn(), numTypeCd,
+                                        address.getNumFlr1Id(), address.getNumFlr2Id(), address.getNumFlr3Id(), address.getNumFlr4Id(),
+                                        address.getNumFlr5Id(), basementStr, address.getNumFlrPos(), roomIdsn)
+                                .map(Object::toString)
+                                .collect(Collectors.toList());
+                        //一個 mappingIdMap 所有value組成一個 String 是一組mappingId
+                        mappingIdMapList.add(mappingIdMap);
+                        mappingIdStringList.add(String.join("", mappingIdList));
+                        // 將NUMFLRPOS 00000的組合拼回 mappingId，組成64碼
+                        String oldPos = mappingIdMap.get("NUMFLRPOS");
+                        mappingIdStringList.add(replaceNumFlrPosWithZero(mappingIdMap));
+                        mappingIdMap.put("NUMFLRPOS", oldPos); //還原
+                    }
                 }
             }
         }
+    }
 
 
         address.setMappingIdMap(mappingIdMapList);
@@ -1063,7 +1070,7 @@ public class SingleQueryService {
             IbdTbAddrCodeOfDataStandardDTO dto = new IbdTbAddrCodeOfDataStandardDTO();
             String segNum = address.getSegmentExistNumber();
             log.info("要件清單:{}", segNum);
-            log.info("乾淨地址", address.getCleanAddress());
+            log.info("乾淨地址:{}", address.getCleanAddress());
             if (!segNum.startsWith("11")) {
                 //JE431
                 //todo:可能會有join_step是JE431但有找得到地址的情況
@@ -1151,5 +1158,6 @@ public class SingleQueryService {
             newMappingIds.add(newId);
         });
        address.setMappingId(newMappingIds);
+        log.info("模糊查詢的mappingIds:{}",address.getMappingId());
     }
 }
