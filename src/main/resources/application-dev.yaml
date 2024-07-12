@@ -37,6 +37,8 @@ apserver:
   target-url: http://211.75.133.17:7008/addr/api/iisi
   token: D:\token\token.txt
 
+
+
 spring:
   data:
     #    db0: 存refrsesh_token
@@ -97,7 +99,10 @@ sftputils:
   host: 52.33.116.195
   port: 22
   username: ubuntu
-  private-key: D:\moi_key\moi-addr-privatekey.pem
+  private-key: D:\moi_key\moi-addr-privatekey.pem #aws 3台主機都是同個private-key
+  ap-user-name: ubuntu
+  ap-host: 34.211.215.66
+  ap-pwd: 1qaz@WSX
 
 LogsLocation: D:/temp/aplog/
 UsageLogsLocation: D:/temp/usagelog/

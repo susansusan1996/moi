@@ -1,13 +1,8 @@
 package com.example.pentaho.utils;
 
 import com.example.pentaho.utils.custom.Sftp;
-import com.jcraft.jsch.Channel;
-import com.jcraft.jsch.ChannelSftp;
+import com.jcraft.jsch.*;
 import com.jcraft.jsch.ChannelSftp.LsEntry;
-import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.Session;
-import com.jcraft.jsch.SftpATTRS;
-import com.jcraft.jsch.SftpException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -29,11 +24,20 @@ public class SftpImpl implements Sftp {
     private String host;
     private String username;
     private int port;
+    
     private String privateKey;
-
+    
+    private String apUserName;
+    
+    private String apHost;
+    
+    private String apPwd;
+    
     private Session session;
 
     private ChannelSftp sftp;
+    
+    
 
     /**
      * 建立SFTP連線
@@ -273,6 +277,68 @@ public class SftpImpl implements Sftp {
             return false;
         }
     }
+
+
+    public void commandExce(String command) throws Exception {
+        log.info("SSH 開始");
+        JSch jsch = new JSch();
+        log.info("privateKey:{}",privateKey);
+        String path = ResourceUtils.getFile(privateKey).getPath();
+        jsch.addIdentity(path);
+
+        Session session = jsch.getSession(apUserName, apHost, 22);
+        Properties sshConfig = new Properties();
+        sshConfig.put("StrictHostKeyChecking", "no");
+        session.setConfig(sshConfig);
+        session.connect();
+
+        if (log.isInfoEnabled()) {
+            log.info("SSH 成功，執行command");
+            executeCommand(session,command,apPwd);
+        }
+
+        session.disconnect();
+    }
+
+    private static void executeCommand(Session session, String command, String password) throws Exception {
+        ChannelShell channelShell = (ChannelShell) session.openChannel("shell");
+        InputStream inputStream = channelShell.getInputStream();
+        OutputStream outputStream = channelShell.getOutputStream();
+        channelShell.connect();
+
+        outputStream.write((command + "\n").getBytes());
+        outputStream.flush();
+
+        if (StringUtils.isNotNullOrEmpty(password)) {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                log.info(line);
+                if (line.trim().endsWith("[sudo] password for")) {
+                    outputStream.write((password + "\n").getBytes());
+                    outputStream.flush();
+                    break;
+                }
+            }
+        }
+
+        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+        String line;
+        StringBuilder outputBuffer = new StringBuilder();
+        StringBuilder errorBuffer = new StringBuilder();
+
+        log.info("Command Output:");
+        while ((line = reader.readLine()) != null) {
+            outputBuffer.append(line).append("\n");
+            log.info(line);
+        }
+
+        log.info("Command executed with output:{}",outputBuffer);
+        log.info("Command executed with error:{}",errorBuffer);
+
+        channelShell.disconnect();
+    }
+
 
     public String getHost() {
         return host;
