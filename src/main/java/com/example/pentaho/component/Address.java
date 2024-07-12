@@ -58,17 +58,19 @@ public class Address {
     public Address() {
     }
 
-    public void setProperty(String propertyName, String value) throws NoSuchFieldException, IllegalAccessException {
-        Field field = getClass().getDeclaredField(propertyName);
-        field.setAccessible(true);
-        field.set(this, value);
-    }
+   //todo:fotify -> fortify  Broken Access Control 弱點，剛好未使用到
+//    public void setProperty(String propertyName, String value) throws NoSuchFieldException, IllegalAccessException {
+//        Field field = getClass().getDeclaredField(propertyName);
+//        field.setAccessible(true);
+//        field.set(this, value);
+//    }
 
-    public String getProperty(String propertyName) throws NoSuchFieldException, IllegalAccessException {
-        Field field = getClass().getDeclaredField(propertyName);
-        field.setAccessible(true);
-        return (String) field.get(this);
-    }
+    //todo:fotify getProperty -> fortify  Broken Access Control 弱點，剛好未使用到
+//    public String getProperty(String propertyName) throws NoSuchFieldException, IllegalAccessException {
+//        Field field = getClass().getDeclaredField(propertyName);
+//        field.setAccessible(true);
+//        return (String) field.get(this);
+//    }
 
     public Address(String address) {
         this.originalAddress = address;

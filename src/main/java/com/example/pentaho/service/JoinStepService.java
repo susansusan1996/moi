@@ -339,22 +339,29 @@ public class JoinStepService {
     }
 
 
+    /**
+     * todo:此方法 no usages + 調用到有弱點程式 -> 可刪除
+     * @return
+     */
+
     private void exchangeFlr(Address address) throws NoSuchFieldException, IllegalAccessException {
-        String[] flrArray = {address.getNumFlr1(), address.getNumFlr2(), address.getNumFlr3(), address.getNumFlr4(), address.getNumFlr5()};
-        int index = address.getNumFlrPos().indexOf(NEW_POSITION_2); //找到"號之"在 postition number 的index
-        //交換
-        if (index != -1) {
-            String num1 = address.getProperty("numFlr" + (index + 1));
-            String num2 = address.getProperty("numFlr" + (index + 2));
-            log.info("交換前 num1 :{}", num1);
-            log.info("交換前 num2 :{}", num2);
-            address.setProperty("numFlr" + (index + 1), flrArray[index + 1]);
-            address.setProperty("numFlr" + (index + 2), flrArray[index]);
-            num1 = address.getProperty("numFlr" + (index + 1));
-            num2 = address.getProperty("numFlr" + (index + 2));
-            log.info("交換後 num1 :{}", num1);
-            log.info("交換後 num2 :{}", num2);
-        }
+//        String[] flrArray = {address.getNumFlr1(), address.getNumFlr2(), address.getNumFlr3(), address.getNumFlr4(), address.getNumFlr5()};
+//        int index = address.getNumFlrPos().indexOf(NEW_POSITION_2); //找到"號之"在 postition number 的index
+//        //交換
+//        if (index != -1) {
+             //todo: getProperty -> fortify  Broken Access Control 弱點
+//            String num1 = address.getProperty("numFlr" + (index + 1));
+//            String num2 = address.getProperty("numFlr" + (index + 2));
+//            log.info("交換前 num1 :{}", num1);
+//            log.info("交換前 num2 :{}", num2);
+             //todo: setProperty & getProperty -> fortify  Broken Access Control 弱點
+//            address.setProperty("numFlr" + (index + 1), flrArray[index + 1]);
+//            address.setProperty("numFlr" + (index + 2), flrArray[index]);
+//            num1 = address.getProperty("numFlr" + (index + 1));
+//            num2 = address.getProperty("numFlr" + (index + 2));
+//            log.info("交換後 num1 :{}", num1);
+//            log.info("交換後 num2 :{}", num2);
+//        }
     }
 
     private String checkIfHistory(String step, String seq) {

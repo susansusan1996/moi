@@ -351,7 +351,7 @@ public class FileOutputService {
                 writer.append("Content-Disposition: form-data; name=\"file\"; filename=\"").append(fileName).append("\"\r\n");
                 writer.append("Content-Type: application/zip\r\n\r\n");
                 writer.flush();
-                log.info("filePath:{}",filePath);
+//                log.info("filePath:{}",filePath);
                 Files.copy(file.toPath(), out);
                 out.flush();
                 writer.append("\r\n");
@@ -363,8 +363,8 @@ public class FileOutputService {
 
         int responseCode = con.getResponseCode();
         String responseMessage = con.getResponseMessage();
-        log.info("Response Code: " + responseCode);
-        log.info("Response Message: " + responseMessage);
+//        log.info("Response Code: " + responseCode);
+//        log.info("Response Message: " + responseMessage);
 
         con.disconnect();
         return responseCode;
