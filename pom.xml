@@ -342,15 +342,16 @@
 			</plugin>
 
 			<!-- Maven Jar Plugin for excluding classes -->
-			<!--編譯時並不能排除原始碼文件，所以只能排除編譯後的檔案-->
+			<!--編譯時並不能排除原始碼文件，所以只能排除打包(war or jar)後的檔案-->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
 				<version>3.2.0</version>
 				<configuration>
 					<excludes>
-						<!--  -->
-						<exclude>com/example/pentaho/utils/RsaGenerateUtils.class</exclude>
+						<exclude>**/*Test.class</exclude>
+						<exclude>**/test/**</exclude>
+						<exclude>**/tests/**</exclude>
 					</excludes>
 				</configuration>
 			</plugin>

@@ -66,6 +66,7 @@ pentaho:
   web-target: http://52.33.116.195:8080/pentaho
   username: admin
   password: password
+  encodeAuth: /home/ubuntu/app/pentaho/basic-auth.txt
 
 directory:
   #pentaho server IP

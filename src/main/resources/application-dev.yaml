@@ -8,6 +8,7 @@ pentaho:
   web-target: http://52.33.116.195:8080/pentaho
   username: admin
   password: password
+  encodeAuth: D:\app\pentaho\basic-auth.txt
 
 directory:
   path: C:\test2

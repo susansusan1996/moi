@@ -9,8 +9,6 @@ import com.example.pentaho.service.JobService;
 import com.example.pentaho.service.SingleTrackQueryService;
 import com.example.pentaho.utils.FileUtils;
 import com.example.pentaho.utils.StringUtils;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -40,6 +38,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -52,8 +51,8 @@ public class BatchResource {
 
     private final static Logger log = LoggerFactory.getLogger(BatchResource.class);
 
-
     private final static ObjectMapper objectMapper = new ObjectMapper();
+
     @Autowired
     private JobService jobService;
 
@@ -69,32 +68,6 @@ public class BatchResource {
     @Autowired
     private BigDataService bigDataService;
 
-
-
-
-
-
-
-    /**
-     * 測試啟動帶有parameter的transformation
-     */
-    public ResponseEntity<Integer> excuteTransWithParams(@RequestBody JobParams jobParams) throws IOException {
-        log.info("ETL作業開始，參數為{}: ", jobParams.toString());
-        Integer responseCode = jobService.excuteTransWithParams(jobParams);
-        if (responseCode == 200) {
-            return new ResponseEntity<>(responseCode, HttpStatus.OK);
-        }
-        return new ResponseEntity<>(responseCode, HttpStatus.FORBIDDEN);
-    }
-
-
-    /**
-     * etl結束，並傳送檔案給聖森
-     */
-    public void etlFinishedAndSendFile(@RequestBody JobParams jobParams) throws IOException {
-        log.info("ETL回CALL API，參數為{}: ", jobParams.toString());
-        fileOutputService.etlFinishedAndSendFile(jobParams);
-    }
 
 
     /**
@@ -125,7 +98,6 @@ public class BatchResource {
                     @Parameter(in = ParameterIn.HEADER,
                             name = "Authorization",
                             description = "jwt token,body附帶userInfo={\"Id\":\"673f7eec-8ae5-4e79-ad3a-42029eedf742\",\"orgId\":\"ADMIN\"}",
-//                            required = true,
                             schema = @Schema(type = "string"))}
     ,
         responses = {
@@ -176,7 +148,10 @@ public class BatchResource {
 
         if (!file.getOriginalFilename().endsWith(".csv")) {
             return new ResponseEntity<>("檔案須為CSV",HttpStatus.INTERNAL_SERVER_ERROR);
+        }
 
+        if(!formName.startsWith("BC") && !formName.startsWith("BS")){
+            return new ResponseEntity<>("錯誤表單名稱",HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         /**依據申請單號進行分流**/
@@ -202,6 +177,7 @@ public class BatchResource {
         /*filePath:../yyyyMMdd/formBuilderOrgId*/
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
         String dateStamp = dateFormat.format(new Date());
+        /*要丟給pentaho的參數**/
         JobParams jobParams = new JobParams(formName, Id, originalFileId, formBuilderId, formBuilderOrgId,dateStamp);
         log.info("jobParams:{}",jobParams);
         /*result:response的內容*/
@@ -350,10 +326,24 @@ public class BatchResource {
         }
     }
 
+    /***
+     * 測試xml
+     */
     @GetMapping("/simple-job")
     @Profile("dev")
-    public void simpleJob(){
+    public void simpleJob() throws ParseException {
         jobService.simpleJob();
+    }
+
+
+
+    /***
+     * 測試 kettle/status
+     */
+    @GetMapping("/get-job-status-by-id")
+    @Profile("dev")
+    public ResponseEntity<Map<String,String>> getJobStatusById(@RequestParam("id") String id){
+      return new ResponseEntity<>(jobService.getJobStatusById(id),HttpStatus.OK);
     }
 
 }

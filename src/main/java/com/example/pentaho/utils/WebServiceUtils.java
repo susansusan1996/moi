@@ -49,14 +49,23 @@ public class WebServiceUtils {
     private final static Logger log = LoggerFactory.getLogger(WebServiceUtils.class);
 
 
+    /**
+     * call pentaho job
+     * @param webService
+     * @param jobParams
+     * @param result
+     * @return
+     */
 
     public Map<String,String> getConnection(String webService, JobParams jobParams, Map<String,String> result){
         HttpURLConnection con = null;
+        //todo:default 設失敗?
         String status ="CALL_JOB_ERROR";
         result.put("status",status);
         try {
-            log.info("再確認一次要轉成url的job參數:{}",jobParams);
+            log.info("再確認一次要轉成url的參數:{}",jobParams);
             StringBuilder temp = new StringBuilder(pentahoComponent.getWebTarget() + webService);
+            /*uri + params 組成完整url**/
             String fullUrl = getFullUrl(temp,jobParams);
             log.info("fullUrl:{}",fullUrl);
             URL url = new URL(fullUrl);
@@ -66,25 +75,34 @@ public class WebServiceUtils {
             //todo:可能需要設定一個timeOut時間
             //con.setConnectTimeout(30);
             int responseCode = con.getResponseCode();
-            log.info("responseCode:{}",responseCode);
             if(responseCode == 200){
                 status="CALL_JOB_SUCESS";
                 result.put("status",status);
-                /*responseContent*/
+                /*todo:目前程式會解析放入result*/
+                //todo:成功呼叫解析後會是:result=OK, id=f44c9a72-4813-4b3a-a920-efc095838bcc, message=Job started, status=CALL_JOB_SUCESS
                 XmlParseUtils.parser(con.getInputStream(),result);
             }
         }catch (Exception e){
             log.info("e:{}",e.toString());
         }finally {
-            if(con!=null){
-                con.disconnect();
-            }
-            log.info("result:{}",result);
+            closeConnection(con);
         }
+        /***/
         jobParams.setStatus(status);
+        log.info("result:{}",result);
         return result;
     }
 
+
+    /**
+     * 關閉連線
+     * @param con
+     */
+    private void closeConnection(HttpURLConnection con){
+        if(con != null){
+            con.disconnect();
+        }
+    }
 
 
     /***
@@ -121,23 +139,25 @@ public class WebServiceUtils {
     }
 
 
-    public Map<String,String> getJobStatus(Map<String,String> result){
+    public void getJobStatus(Map<String,String> result){
         StringBuilder temp = new StringBuilder(pentahoComponent.getWebTarget());
         String fullURL =
-                temp.append(PentahoWebService.jobStatusById)
-                        .append("id" + equal + result.get("id"))
-                        .toString();
+                String.format(temp.append(PentahoWebService.jobStatusById).toString(), result.get("id"));
+//                        .append("id" + equal + result.get("id"))
+//                        .toString();
         log.info("fullURL:{}",fullURL);
+        HttpURLConnection con =null;
         try {
             URL url = new URL(fullURL);
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con = (HttpURLConnection) url.openConnection();
             basicAuthentication(con);
             XmlParseUtils.parser(con.getInputStream(),result);
-            log.info("result:{}",result);
-            return result;
+//            log.info("result:{}",result);
         }catch (Exception e){
             log.info("e:{}",e.toString());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+        }finally {
+            closeConnection(con);
         }
     }
 

@@ -5,9 +5,14 @@ import com.example.pentaho.component.JobParams;
 import com.example.pentaho.component.PentahoComponent;
 import com.example.pentaho.component.PentahoWebService;
 import com.example.pentaho.exception.MoiException;
+import com.example.pentaho.repository.JobStatusRepository;
+import com.example.pentaho.utils.StringUtils;
 import com.example.pentaho.utils.WebServiceUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.opencsv.CSVReader;
+import org.apache.commons.lang3.time.DateUtils;
+import org.checkerframework.checker.units.qual.A;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +26,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 
@@ -42,9 +49,13 @@ public class JobService {
     @Autowired
     private FileUploadService fileUploadService;
 
+    @Autowired
+    private JobStatusRepository jobStatusRepository;
+
     private final String sperator = "&";
 
     private Gson gson = new Gson();
+
 
     private final static Logger log = LoggerFactory.getLogger(JobService.class);
 
@@ -398,11 +409,10 @@ public class JobService {
      * 上傳檔案至Pentaho Server & call Job
      * @param file
      * @param jobParams
-     * @param result response content
+     * @param result response content -> 目前只有用到status
      * @return
      * @throws IOException
      */
-
     public Map<String, String> sftpUploadAndExecuteTrans(MultipartFile file,JobParams jobParams,Map<String,String> result) throws IOException {
         /*PROCESSED_COUNTS(檔案筆數): Pentaho Server & Shengsen 的參數*/
         jobParams.setPROCESSED_COUNTS(CSVReader(file));
@@ -421,27 +431,46 @@ public class JobService {
             result.put("status",status);
             return result;
         }
-        /*SFTP成功，準備呼叫job， result 中放 PentahoWebService 回傳內容的key*/
-        result.put("result","");
-        result.put("id","");
-        result.put("message","");
-        return webServiceUtils.getConnection(PentahoWebService.executeJobs,jobParams,result);
+        //todo:SFTP成功，準備呼叫job， result 中放 PentahoWebService 回傳內容的key(可參考官方文件)*/
+        webServiceUtils.getConnection(PentahoWebService.executeJobs, jobParams, result);
+        //todo: 要存到DB嗎
+//        String jsonStr = gson.toJson(jobParams);
+//        Date date = DateUtils.parseDate(new Date().toString(), "yyyy-mm-dd");
+//        result.put("jobParamsJsonStr",jsonStr);
+//        result.put("formName",jobParams.getFORM_NAME());
+//        result.put("executeDate",date.toString());
+//        result.put("updateDate",date.toString());
+//        jobStatusRepository.insertJobStatus(result);
+        return result;
     }
 
 
-    public void simpleJob(){
+    /**
+     * 模擬calljob
+     */
+    public void simpleJob() throws ParseException {
+        /*RequestParams*/
         JobParams jobParams = new JobParams();
+        /*Response*/
         HashMap<String, String> result = new HashMap<>();
-        result.put("result","");
-        result.put("id","");
-        result.put("message","");
         webServiceUtils.getConnection(PentahoWebService.simpleExecuteJob,jobParams,result);
+        String jsonStr = gson.toJson(jobParams);
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        String formatDate = simpleDateFormat.format(new Date());
+        result.put("jobParamsJsonStr",jsonStr);
+        result.put("formName", StringUtils.isNullOrEmpty(jobParams.getFORM_NAME())?"formName":jobParams.getFORM_NAME());
+        result.put("executeDate",formatDate);
+        result.put("updateDate",formatDate);
+        jobStatusRepository.insertJobStatus(result);
     }
 
 
-    public Map<String,String> getJobStatusById(Map<String,String> result){
-        result.put("jobname","");
-        result.put("status_desc","");
+    /**
+     * @return
+     */
+    public Map<String,String> getJobStatusById(String id){
+        Map<String,String> result = new HashMap<>();
+        result.put("id",id);
         webServiceUtils.getJobStatus(result);
         return result;
     }

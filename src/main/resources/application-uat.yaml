@@ -64,6 +64,7 @@ pentaho:
   web-target: http://10.32.32.74:8080/pentaho
   username: v_iisi_6008
   password: iisi!F327019
+  encodeAuth: /home/moi/app/pentaho/basic-auth.txt
 
 
 directory:

@@ -95,9 +95,4 @@ public class BatchService {
         String encode = Files.readString(path, StandardCharsets.UTF_8);
         connection.setRequestProperty("Authorization",encode);
     }
-
-
-//    public void webService(JobParams jobParams){
-//        webServiceUtils.getUrl(PentahoWebService.executeTrans, gson.toJson(jobParams));
-//    }
 }
