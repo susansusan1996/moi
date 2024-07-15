@@ -90,6 +90,8 @@ public class SingleQueryService {
             Address finalAddress = address;
             //IbdTbAddrDataRepositoryNewdto = 各seq對應的資料
             list.forEach(IbdTbAddrDataRepositoryNewdto -> {
+
+
                 /***
                  * (1) 撈出的join_step 為空
                  * (2) DB撈出join_step + redis+程式比對的join_step 都不含 "JE621", "JD721", "JE431", "JE421", "JE511"
@@ -101,14 +103,14 @@ public class SingleQueryService {
                 ) {
                     IbdTbAddrDataRepositoryNewdto.setJoinStep(finalAddress.getJoinStep());
                 }
-
                 /**
                  *(1)確認地址是否有neighbor & room 然後與 segmentExistNumber比對
                  */
-                String startWith = addressParser.parseNeighborAndRoom(IbdTbAddrDataRepositoryNewdto.getFullAddress(),segmentExistNumber);
+                String startWith = addressParser.parseNeighborAndRoom(IbdTbAddrDataRepositoryNewdto.getFullAddress(),segmentExistNumber,finalAddress.getJoinStep());
                 if(StringUtils.isNotNullOrEmpty(startWith)){
                     renewJoinStep(startWith,IbdTbAddrDataRepositoryNewdto);
                 }
+
             });
         }
         //查無資料，JE431、JE421、JE511、JE311會在這邊寫入
@@ -209,7 +211,9 @@ public class SingleQueryService {
             log.info("所有56碼都沒找到 拔 neighbor & village 進行查詢");
             //(2) redis key查詢 -> 000000 + 50碼
             build50MappingIds(address);
-            List<String> resultsBy50 = findSeqByMappingId(address);
+            /**沒有mappingId回去比對*/
+//            List<String> resultsBy50 = findSeqByMappingId(address);
+            Map<String, Set<String>> resultsBy50  = findMapsByKeys(address);
             //拔鄰、裡查詢後還是都找不到東西
             if(resultsBy50.isEmpty() || resultsBy50 == null){
                 log.info("拔鄰、裡查詢後還是都找不到東西");
@@ -217,6 +221,11 @@ public class SingleQueryService {
                 address.setSeqSet(seqSet);
                 return address;
             }
+
+            //todo:比對撈出的mappingId -> county & twon , vlaue ->  village,neighbor
+            fiterCountyTownVillageNeighbor(address,resultsBy50);
+
+
 
             //開始比對地址片段
 //            (1) redis 模糊查詢 -> * + 50碼,
@@ -232,10 +241,64 @@ public class SingleQueryService {
 //            seqSet = filterCountyAndTown(address, resultsBy50);
         }
 
+
         //===========================多址判斷；seqSet有可能是空集合===============================//
         replaceJoinStepWhenMultiAdress(address,seqSet);
         address.setSeqSet(seqSet);
         return address;
+    }
+
+    /**
+     *
+     * @param resultMap
+     * @return ->符合條件的 value
+     */
+    Set<String> fiterCountyTownVillageNeighbor(Address address,Map<String,Set<String>> resultMap){
+        Set<String> set = new HashSet<>();
+        List<String> list1 = fiterCountyTown(address, resultMap);
+        List<String> list2 = filterVillageNeighbor(address, resultMap);
+        if(!list1.isEmpty()){
+            set.addAll(list1);
+        }
+
+        if(!list2.isEmpty()){
+            set.addAll(list2);
+        }
+        return set;
+
+    }
+
+    List<String> fiterCountyTown(Address address,Map<String,Set<String>> resultMap){
+        Set<String> mappingIds = resultMap.keySet();
+        List<String> possibleList =new ArrayList<>();
+        mappingIds.forEach(mappingId->{
+            if(mappingId.startsWith(address.getVillageCd())){
+                possibleList.addAll(resultMap.get(mappingId));
+            }
+
+            String villageCd = mappingId.substring(3, 6);
+            if(villageCd.equals(address.getVillageCd())){
+                possibleList.addAll(resultMap.get(mappingId));
+            }
+        });
+        return possibleList;
+    }
+    List<String> filterVillageNeighbor(Address address,Map<String,Set<String>> resultMap ){
+        Set<String> mappingIds = resultMap.keySet();
+        List<String> possibleList =new ArrayList<>();
+        mappingIds.forEach(mappingId->{
+            Set<String> values = resultMap.get(mappingId);
+            for(String valStr:values){
+                if(valStr.startsWith(address.getCountyCd())){
+                    possibleList.addAll(resultMap.get(mappingId));
+                }
+                String townCd = valStr.substring(5, 8);
+                if(townCd.equals(address.getTownCd())){
+                    possibleList.addAll(resultMap.get(mappingId));
+                }
+            }
+        });
+        return possibleList;
     }
 
     public Set<String> filterCountyAndTown(Address address,List<String> mappingResults){
@@ -309,6 +372,11 @@ public class SingleQueryService {
         seqList.addAll(redisService.findSetsByKeys(address.getMappingId()));
         log.info("用排列組合的56碼mappingId找到value:{}", seqList);
         return seqList;
+    }
+
+
+    Map<String,Set<String>>findMapsByKeys(Address address){
+        return redisService.findMapsByKeys(address);
     }
 
 
@@ -1088,7 +1156,7 @@ public class SingleQueryService {
                 //(1) 如果村里地址片段欄位有值，但要件編號為空(redis找不到cd)
                 //(2) 路地名片段欄位有值，但路地名要件編號為空(redis找不到cd)
                 setResult(dto, result, "JE531", "查無地址");
-            } else if (checkSeg(segNum)) {
+            } else if (checkSegNum(segNum)) {
                 //JE511 (地址完整切割但比對不到母體檔)
                 //若有各地址片段不但有寫且有在要件清單(redis找得到地址片段cd)，組成mappingId卻比對不到母體
                 setResult(dto, result, "JE511", "查無地址");
@@ -1127,7 +1195,7 @@ public class SingleQueryService {
     * 確保第4(ROAD)、5(AREA)、6(LANE) 個字符中至少有一个是1，而其他的必須是1
     * ->可能組合 001,010,011,100,101,110,111
     * */
-    private Boolean checkSeg(String segNum) {
+    private Boolean checkSegNum(String segNum) {
         String pattern ="";
         String[] groups = new String[]{"001","010","011","100","101","110","111"};
         for(String group:groups){

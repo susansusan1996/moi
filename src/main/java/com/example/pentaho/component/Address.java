@@ -45,7 +45,7 @@ public class Address {
     private String addrRemains;
     private boolean isParseSuccessed;
     private String originalAddress;
-    private String cleanAddress; //去除奇怪字元、去除台灣省後的地址
+    private String cleanAddress; //去除奇怪字元、去除台灣省、福建省後的地址
     private List<String> mappingId; //64碼
     private String segmentExistNumber; //紀錄user是否有輸入每個地址片段，有:1，沒有:0
     private List<LinkedHashMap<String, String>> mappingIdMap;

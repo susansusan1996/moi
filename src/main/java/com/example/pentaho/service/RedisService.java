@@ -1,5 +1,6 @@
 package com.example.pentaho.service;
 
+import com.example.pentaho.component.Address;
 import com.example.pentaho.component.RefreshToken;
 import com.example.pentaho.component.SingleQueryDTO;
 import com.example.pentaho.utils.StringUtils;
@@ -68,7 +69,6 @@ public class RedisService {
             for (String key : keys) {
                 // lRange for List ,smember for Set
                 stringRedisConn.sMembers(key);
-
             }
             return null;
         });
@@ -80,45 +80,50 @@ public class RedisService {
                 @SuppressWarnings("unchecked")
                 Set<String> elements = (Set<String>) result;
                 //elements = [JB411:5141047,...]
+                log.info("elements:{}",elements);
                 resultList.addAll(elements);
             }
         }
         //resultList:[00000000:JE431:12345,63000123:JA111:12345,.....]
-//        log.info("resultList:{}",resultList);
+        log.info("resultList:{}",resultList);
         return resultList;
     }
 
+
+
+
     /**
      * 將所有 key帶入DB1查找對應的Set<String>
-     * @param keys ->排列組合的mappingId
-     * @return resultList -> 每個value
+     * @param address ->排列組合的mappingId
+     * @return resultList -> key = 56碼mappingId, value = county+town:join_step:seq
      */
-//    public Map<String,List<String>> findMapsByKeys(List<String> keys) {
-//        Map<String,List<String>> resultList = new HashMap<>();
-//        List<Object> results = stringRedisTemplate1.executePipelined((RedisCallback<List<String>>) connection -> {
-//            StringRedisConnection stringRedisConn = (StringRedisConnection) connection;
-//            for (String key : keys) {
-//                // lRange for List ,smember for Set
-//                stringRedisConn.sMembers(key);
-//
-//            }
-//            return null;
-//        });
-//
-//        //results=[[JB411:5141047,...](key1的value),[JB311:5141047,...](key2的value),[JB411:5141047,...](key1的value),...]
-//        for (Object result : results) {
-//            //result=[JB411:5141047,...]
-//            if (result instanceof Set) {
-//                @SuppressWarnings("unchecked")
-//                Set<String> elements = (Set<String>) result;
-//                //elements = [JB411:5141047,...]
-//                resultList.addAll(elements);
-//            }
-//        }
-//        //resultList:[00000000:JE431:12345,63000123:JA111:12345,.....]
-////        log.info("resultList:{}",resultList);
-//        return resultList;
-//    }
+    public Map<String,Set<String>> findMapsByKeys(Address address) {
+        List<String> keys = address.getMappingId();
+        Map<String,Set<String>> resultList = new HashMap<>();
+        List<Object> results = stringRedisTemplate1.executePipelined((RedisCallback<List<String>>) connection -> {
+            StringRedisConnection stringRedisConn = (StringRedisConnection) connection;
+            for (String key : keys) {
+                // lRange for List ,smember for Set
+                stringRedisConn.sMembers(key);
+
+            }
+            return null;
+        });
+
+        //results=[[JB411:5141047,...](key1的value),[JB311:5141047,...](key2的value),[JB411:5141047,...](key1的value),...]
+        int index = 0;
+        for (Object result : results) {
+            //result=[JB411:5141047,...]
+            if (result instanceof Set) {
+                @SuppressWarnings("unchecked")
+                Set<String> elements = (Set<String>) result;
+                //elements = [JB411:5141047,...]
+                resultList.put(keys.get(index),elements);
+            }
+            index++;
+        }
+        return resultList;
+    }
 
 
     /**
@@ -288,8 +293,8 @@ public class RedisService {
         Map<String, String> resultMap = new HashMap<>();
 
         //取得連線
-        RedisConnection connection = stringRedisTemplate4.getConnectionFactory().getConnection();
-        RedisSerializer<String> serializer = stringRedisTemplate4.getStringSerializer();
+        RedisConnection connection = stringRedisTemplate1.getConnectionFactory().getConnection();
+        RedisSerializer<String> serializer = stringRedisTemplate1.getStringSerializer();
         try {
             //todo:批量送出模式
             connection.openPipeline();
@@ -352,8 +357,8 @@ public class RedisService {
         Map<String, String> resultMap = new HashMap<>();
 
         //取得連線
-        RedisConnection connection = stringRedisTemplate4.getConnectionFactory().getConnection();
-        RedisSerializer<String> serializer = stringRedisTemplate4.getStringSerializer();
+        RedisConnection connection = stringRedisTemplate1.getConnectionFactory().getConnection();
+        RedisSerializer<String> serializer = stringRedisTemplate1.getStringSerializer();
         Set<byte[]> byteSet  = null;
         String targetCd = "";
         try {
