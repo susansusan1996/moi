@@ -2,6 +2,7 @@ package com.example.pentaho.service;
 
 import com.example.pentaho.component.*;
 import com.example.pentaho.exception.MoiException;
+import com.example.pentaho.utils.FileUtils;
 import com.example.pentaho.utils.ResourceUtils;
 import com.example.pentaho.utils.custom.Sftp;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,7 +11,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import org.springframework.boot.autoconfigure.task.TaskExecutionProperties;
 import org.springframework.http.*;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
@@ -25,6 +28,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
 import java.nio.file.Path;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Date;
+import java.util.Iterator;
 import java.util.UUID;
 
 
@@ -57,22 +67,6 @@ public class FileOutputService {
     private final String sperator = "&";
 
 
-
-
-
-    public void etlFinishedAndSendFile(JobParams jobParams) throws IOException {
-//        String sourceFilePath =directories.getTarget()+directories.getReceivePath()+
-
-        String sourceFilePath = directories.getTarget() + directories.getEtlOutputFileDirPrefix() + jobParams.getFORM_NAME() + ".zip";
-        //先落地
-        downloadFileFromPentahoServer(jobParams, sourceFilePath);
-//        postFileToServer(
-//                directories.getMockEtlSaveFileDirPrefix() +
-//                        jobParams.getFILE() + ".zip",
-//                apServerComponent.getTargetUrl(),
-//                null
-//        );
-    }
 
 
     public void downloadFileFromPentahoServer(JobParams jobParams, String sourceFilePath) {
@@ -426,5 +420,25 @@ public class FileOutputService {
         return content.toString();
     }
 
+
+
+    @Scheduled(cron = "0 30 15 * * *", zone = "Asia/Taipei")
+    public void cleanETLFinisedFiles(){
+        log.info("本地暫存位置:{}",directories.getLocalTempDir());
+        int lastMon = new Date().getMonth()-1;
+        log.info("上個月:{}",lastMon);
+        File folder = new File(directories.getLocalTempDir());
+        File[] files = folder.listFiles();
+        for(File file :files){
+            Date date = new Date(file.lastModified());
+            int lastModifiedMon = date.getMonth();
+            /**刪除上個月(含)以前的檔案*/
+            if(lastModifiedMon <= lastMon){
+                log.info("刪除檔名:{},上次編輯月份:{}",file.getName(),lastModifiedMon);
+                file.delete();
+            }
+        }
+
+    }
 
 }

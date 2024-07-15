@@ -88,14 +88,6 @@ public class BatchResource {
     }
 
 
-    /**
-     * etl結束，並傳送檔案給聖森
-     */
-    public void etlFinishedAndSendFile(@RequestBody JobParams jobParams) throws IOException {
-        log.info("ETL回CALL API，參數為{}: ", jobParams.toString());
-        fileOutputService.etlFinishedAndSendFile(jobParams);
-    }
-
 
     /**
      * 模擬聖森接收iisi送過去的檔案
