@@ -3,6 +3,7 @@ package com.example.pentaho.service;
 import com.example.pentaho.component.*;
 import com.example.pentaho.exception.MoiException;
 import com.example.pentaho.utils.ResourceUtils;
+import com.example.pentaho.utils.StringUtils;
 import com.example.pentaho.utils.custom.Sftp;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jcraft.jsch.SftpException;
@@ -225,7 +226,7 @@ public class FileOutputService {
 
 
     /**
-     *  post給聖森
+     *  post給聖森(未使用)
      * @param sourceFilePath
      * @param action
      * @param bigDataParams
@@ -236,7 +237,7 @@ public class FileOutputService {
         String targetUrl = apServerComponent.getTargetUrl()+ action;
         log.info("targetUrl: {}",targetUrl);
         HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization","Bearer eyJhbGciOiJSUzI1NiJ9.eyJ1c2VyIjoie30iLCJqdGkiOiJNVE0yTmpRMk9HWXRPRGcyWWkwME9UTXhMV0UyWlRRdE9URmlNelE1WlRjek5ETTAiLCJleHAiOjE3Mzc2MDE4MzJ9.3ghp8wCHziA6Az9UpS8ssL1d_JB5apN-3pbIV28BWx3bOK-FjRGA9676-EDpqhXrth_Sqln_TFd4wT0RGJ4V1M0RtKXj3EMpFBBV0otdAsgZLm0JcK7LjUrXmWvyfsBcasnHQ83rMo4hE4GeBgXlrhPUlRxnPcVbk4UrVkaMtxyngDfkGpInPJokUWzrScgo7TDA-aKmodw2eZbxYPjGTw1fzXTYHpJC4VNyAYbeGOTd9uMh-cCAyyYMsw__JmkQOAYPpKLnHdyHSb6C8ezxAZJNrI5Rpg4cG0ousXh694IXmixI_R7Q1nVBMFl7GG946fgTO9twiqhuaB64beUILg");
+        headers.set("Authorization","");
         MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
         if(!"".equals(sourceFilePath)){
             File file = new File(sourceFilePath);
@@ -266,7 +267,7 @@ public class FileOutputService {
     }
 
     /**
-     * 大量查詢
+     * 大量查詢(未使用)
      * sftp抓檔
      * 撈log
      * post給聖森
@@ -294,15 +295,15 @@ public class FileOutputService {
 
     public int postBatchFormRequest(String action, Object params, String filePath) throws IOException {
         String targerUrl = apServerComponent.getTargetUrl() + action;
-        log.info("targetUrl:{}",targerUrl);
+        log.info("聖森URL:{}",targerUrl);
 
         File file = null;
         String fileName ="";
-        if(!"".equals(filePath)){
+        if(StringUtils.isNotNullOrEmpty(filePath)){
            file = new File(filePath);
             if (file.exists()) {
                 fileName = String.valueOf(Path.of(filePath).getFileName());
-                log.info("fileName:{}",fileName);
+                log.info("完成檔名:{}",fileName);
 //            throw new IOException("File not found: " + filePath);
             }
         }
@@ -316,10 +317,12 @@ public class FileOutputService {
         /**necessay**/
         String boundary = UUID.randomUUID().toString();
         con.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+
+
         Path path = Path.of(apServerComponent.getToken());
         String token = Files.readString(path, StandardCharsets.UTF_8);
+
         con.setRequestProperty("Authorization",token);
-//      con.setRequestProperty("Authorization","Bearer eyJhbGciOiJSUzI1NiJ9.eyJ1c2VyIjoie30iLCJqdGkiOiJNVE0yTmpRMk9HWXRPRGcyWWkwME9UTXhMV0UyWlRRdE9URmlNelE1WlRjek5ETTAiLCJleHAiOjE3Mzc2MDE4MzJ9.3ghp8wCHziA6Az9UpS8ssL1d_JB5apN-3pbIV28BWx3bOK-FjRGA9676-EDpqhXrth_Sqln_TFd4wT0RGJ4V1M0RtKXj3EMpFBBV0otdAsgZLm0JcK7LjUrXmWvyfsBcasnHQ83rMo4hE4GeBgXlrhPUlRxnPcVbk4UrVkaMtxyngDfkGpInPJokUWzrScgo7TDA-aKmodw2eZbxYPjGTw1fzXTYHpJC4VNyAYbeGOTd9uMh-cCAyyYMsw__JmkQOAYPpKLnHdyHSb6C8ezxAZJNrI5Rpg4cG0ousXh694IXmixI_R7Q1nVBMFl7GG946fgTO9twiqhuaB64beUILg");
 
         try (OutputStream out = con.getOutputStream();
              PrintWriter writer = new PrintWriter(new OutputStreamWriter(out, "UTF-8"), true)) {
@@ -338,16 +341,17 @@ public class FileOutputService {
 //            writer.append("--").append(boundary).append("\r\n");
 //            writer.append("Content-Disposition: form-data; name=\"status\"\r\n\r\n");
 //            writer.append(params.getStatus()).append("\r\n");
+            /**取得請求體*/
             String content = getContent(boundary, params);
             writer.append(content);
 
-            if (!"".equals(fileName)) {
+            if (StringUtils.isNotNullOrEmpty(fileName)) {
                 // 如果檔案名稱非空，則將檔案內容寫入請求主體
                 writer.append("--").append(boundary).append("\r\n");
                 writer.append("Content-Disposition: form-data; name=\"file\"; filename=\"").append(fileName).append("\"\r\n");
                 writer.append("Content-Type: application/zip\r\n\r\n");
                 writer.flush();
-                log.info("filePath:{}",filePath);
+//                log.info("filePath:{}",filePath);
                 Files.copy(file.toPath(), out);
                 out.flush();
                 writer.append("\r\n");
@@ -359,8 +363,8 @@ public class FileOutputService {
 
         int responseCode = con.getResponseCode();
         String responseMessage = con.getResponseMessage();
-        log.info("Response Code: " + responseCode);
-        log.info("Response Message: " + responseMessage);
+//        log.info("Response Code: " + responseCode);
+//        log.info("Response Message: " + responseMessage);
 
         con.disconnect();
         return responseCode;

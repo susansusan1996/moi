@@ -14,6 +14,16 @@ public class PentahoComponent {
 
     private String password;
 
+    private String encodeAuth;
+
+    public String getEncodeAuth() {
+        return encodeAuth;
+    }
+
+    public void setEncodeAuth(String encodeAuth) {
+        this.encodeAuth = encodeAuth;
+    }
+
     public String getWebTarget() {
         return webTarget;
     }
@@ -30,9 +40,6 @@ public class PentahoComponent {
         this.userName = userName;
     }
 
-    public String getPassword() {
-        return password;
-    }
 
     public void setPassword(String password) {
         this.password = password;

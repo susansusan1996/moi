@@ -74,6 +74,7 @@ public class Token {
      */
     public static Token ofRSAJWT(User user,String keyName) {
         try {
+            /**remove RsaUtils*/
 //            InputStream inputStream = RsaUtils.class.getClassLoader().getResourceAsStream("rsa.pri");
 //            byte[] keyBytes = inputStream.readAllBytes();
             log.info("keyName:{}",keyName);

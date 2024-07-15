@@ -17,6 +17,8 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Base64;
 
 @Service
@@ -85,16 +87,15 @@ public class BatchService {
 
     /***
      *  添加 Basic Authentication header
+     *  改讀取路徑下的檔案
      * @param connection
      */
-    private void basicAuthentication(HttpURLConnection connection) {
-        String username = pentahoComponent.getUserName(); //admin
-        String password = pentahoComponent.getPassword(); //password
-        String auth = username + ":" + password;
-        byte[] authBytes = auth.getBytes(StandardCharsets.UTF_8);
-        String encodedAuth = Base64.getEncoder().encodeToString(authBytes);
-        connection.setRequestProperty("Authorization", "Basic " + encodedAuth);
+    private void basicAuthentication(HttpURLConnection connection) throws IOException {
+        Path path = Path.of(pentahoComponent.getEncodeAuth());
+        String encode = Files.readString(path, StandardCharsets.UTF_8);
+        connection.setRequestProperty("Authorization",encode);
     }
+
 
 //    public void webService(JobParams jobParams){
 //        webServiceUtils.getUrl(PentahoWebService.executeTrans, gson.toJson(jobParams));

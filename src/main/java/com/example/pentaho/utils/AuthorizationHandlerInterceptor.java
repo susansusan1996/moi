@@ -66,7 +66,6 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
 
         /**確認有沒有token**/
         String authHeader = request.getHeader("Authorization");
-        log.info("request header = { Authorization:Bearer accessToken }:{}", authHeader);
 
         /**確認有無Authorization:Bearer 的 header**/
         if (authHeader == null || !authHeader.startsWith("Bearer")) {
@@ -74,7 +73,7 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
         }
 
         /**
-         * 確認有無Authorization:Bearer RASJWTToken
+         * 確認有無token
          * 驗證使用者身分
          * 先直接給予JwtToken
          */

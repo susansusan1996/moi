@@ -201,8 +201,8 @@ public class JobService {
 
         in.close();
 
-        log.info("Response Code:{}", responseCode);
-        log.info("Response Content:{}", response.toString());
+//        log.info("Response Code:{}", responseCode);
+//        log.info("Response Content:{}", response.toString());
         return responseCode;
     }
 
@@ -244,8 +244,8 @@ public class JobService {
 
         in.close();
 
-        log.info("Response Code:{}", responseCode);
-        log.info("Response Content:{}", response.toString());
+//        log.info("Response Code:{}", responseCode);
+//        log.info("Response Content:{}", response.toString());
         return responseCode;
     }
 
@@ -269,13 +269,10 @@ public class JobService {
      *  添加 Basic Authentication header
      * @param connection
      */
-    private void basicAuthentication(HttpURLConnection connection) {
-        String username = pentahoComponent.getUserName(); //admin
-        String password = pentahoComponent.getPassword(); //password
-        String auth = username + ":" + password;
-        byte[] authBytes = auth.getBytes(StandardCharsets.UTF_8);
-        String encodedAuth = Base64.getEncoder().encodeToString(authBytes);
-        connection.setRequestProperty("Authorization", "Basic " + encodedAuth);
+    private void basicAuthentication(HttpURLConnection connection) throws IOException {
+        Path path = Path.of(pentahoComponent.getEncodeAuth());
+        String encode = Files.readString(path, StandardCharsets.UTF_8);
+        connection.setRequestProperty("Authorization", encode);
     }
 
     public void downloadFile() throws IOException {
@@ -298,7 +295,7 @@ public class JobService {
         con.setRequestMethod("GET");
 
         int responseCode = con.getResponseCode();
-        log.info("Response Code:{}", responseCode);
+//        log.info("Response Code:{}", responseCode);
 
         if (responseCode == 200) {
             File directory = new File(directories.getReceiveFileDir());
@@ -348,8 +345,8 @@ public class JobService {
             response.append(inputLine);
         }
         in.close();
-        log.info("Response Code:{}", responseCode);
-        log.info("Response Content:{}", response);
+//        log.info("Response Code:{}", responseCode);
+//        log.info("Response Content:{}", response);
         return responseCode;
     }
     /**

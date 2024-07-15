@@ -43,7 +43,6 @@ public class SftpUatImpl implements Sftp {
             Properties sshConfig = new Properties();
             sshConfig.put("StrictHostKeyChecking", "no");
             session.setConfig(sshConfig);
-            log.info("password:{}",password);
             session.setPassword(password);
             session.connect();
             if (log.isInfoEnabled()) {

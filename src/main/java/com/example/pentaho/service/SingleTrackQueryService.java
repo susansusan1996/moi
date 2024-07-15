@@ -328,8 +328,8 @@ public class SingleTrackQueryService {
 
         int responseCode = con.getResponseCode();
         String responseMessage = con.getResponseMessage();
-        log.info("Response Code: " + responseCode);
-        log.info("Response Message: " + responseMessage);
+//        log.info("Response Code: " + responseCode);
+//        log.info("Response Message: " + responseMessage);
 
         con.disconnect();
         return responseCode;

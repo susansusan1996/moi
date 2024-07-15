@@ -10,20 +10,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 import org.w3c.dom.Element;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -91,13 +91,10 @@ public class WebServiceUtils {
      *  添加 Basic Authentication header
      * @param connection
      */
-    private void basicAuthentication(HttpURLConnection connection) {
-        String username = pentahoComponent.getUserName(); //admin
-        String password = pentahoComponent.getPassword(); //password
-        String auth = username + ":" + password;
-        byte[] authBytes = auth.getBytes(StandardCharsets.UTF_8);
-        String encodedAuth = Base64.getEncoder().encodeToString(authBytes);
-        connection.setRequestProperty("Authorization", "Basic " + encodedAuth);
+    private void basicAuthentication(HttpURLConnection connection) throws IOException {
+        Path path = Path.of(pentahoComponent.getEncodeAuth());
+        String encoded = Files.readString(path, StandardCharsets.UTF_8);
+        connection.setRequestProperty("Authorization",encoded);
     }
 
 
