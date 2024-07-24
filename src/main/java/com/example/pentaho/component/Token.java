@@ -16,10 +16,7 @@ import org.springframework.util.ResourceUtils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -117,6 +114,31 @@ public class Token {
             log.info("e:{}", e.toString());
             return false;
         }
+    }
+
+
+    public static String isVaildRSAJWTToken(String RSAJWTToken,String keyName) {
+        String result ="";
+        try {
+            log.info("keyName:{}", keyName);
+            File file = ResourceUtils.getFile(keyName);
+            byte[] keyBytes = readFileAsBytes(file);
+            byte[] decodedKeyBytes = Base64.getDecoder().decode(keyBytes);
+            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(decodedKeyBytes);
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            PublicKey publicKey = keyFactory.generatePublic(keySpec);
+            Jws<Claims> claimsJws = Jwts.parser().setSigningKey(publicKey).parseClaimsJws(RSAJWTToken.trim());
+            Claims body = claimsJws.getBody();
+            log.info("body:{}", body.toString());
+            result ="isValid";
+        } catch (ExpiredJwtException e) {
+            log.info("Token過期:{}",e.toString());
+            result = "ExpiredJwtException";
+        } catch (Exception e) {
+            log.info("其他錯誤:{}",e.toString());
+            result = "Exception";
+        }
+        return result;
     }
 
 

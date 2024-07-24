@@ -37,7 +37,7 @@ public class ColumnSelectionRepositoryImpl implements ColumnSelectionRepository 
                             " VALUES (")
                     .append(":userId ,\n",bigDataParams.getUserId())
                     .append(":formId ,\n",bigDataParams.getFormId())
-                    .append(":formName,\n",bigDataParams.getFormId())
+                    .append(":formName,\n",bigDataParams.getFormName())
                     .append((StringUtils.isNotNullOrEmpty(bigDataParams.getAddrId()) ? Y : N) +", \n")
                     .append((StringUtils.isNotNullOrEmpty(bigDataParams.getAddress()) ? Y : N) +", \n")
                     .append((StringUtils.isNotNullOrEmpty(bigDataParams.getCounty()) ? Y : N) +", \n")

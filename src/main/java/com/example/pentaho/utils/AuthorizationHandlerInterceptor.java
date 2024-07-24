@@ -36,6 +36,7 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
           Class<?> clazz = handlerMethod.getBeanType();
           Method method = handlerMethod.getMethod();
 
+          log.info("uri:{}",request.getRequestURI());
 
           /**依註解取keyName**/
           /**聖森公鑰**/
@@ -84,7 +85,7 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
         String RSATokenJwt = authHeader.substring(7, authHeader.length());
         if(Token.fromRSAJWTToken(RSATokenJwt, keyName)){
 
-            if("/api/batchForm/finished".equals(request.getRequestURI())){
+            if("/iisi/api/batchForm/finished".equals(request.getRequestURI())){
                 return true;
             }
                 User user = Token.extractUserFromRSAJWTToken(RSATokenJwt,keyName);

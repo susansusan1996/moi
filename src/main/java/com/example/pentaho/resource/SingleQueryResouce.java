@@ -133,17 +133,14 @@ public class SingleQueryResouce {
                     description ="輸入地址" ,
                     required = true,
                     schema = @Schema(type = "string", example = "台南市東區衛國里007鄰衛國街１１４巷９弄１０號之五3樓"))
-            @NotNull
             @RequestParam("inputAddress") String inputAddress,
             @Parameter(
                     description ="選擇縣市" ,
-                    required = true,
                     schema = @Schema(type = "string", example = "台南市(可為空)"))
             @Nullable
             @RequestParam("county") String county,
             @Parameter(
                     description ="選擇鄉鎮市區" ,
-                    required = true,
                     schema = @Schema(type = "string", example = "東區(可為空)"))
             @Nullable
             @RequestParam("town") String town

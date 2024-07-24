@@ -14,6 +14,8 @@ import org.springframework.data.redis.connection.StringRedisConnection;
 import org.springframework.data.redis.core.*;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.stereotype.Service;
+import redis.clients.jedis.ScanParams;
+import redis.clients.jedis.ScanResult;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -474,6 +476,7 @@ public class RedisService {
 
 
     /**
+     *
      * 模糊比對，找出相符的 KEY (redis: scan)
      */
     public Set<String> findListByScan(List<String> keys) {
@@ -493,6 +496,11 @@ public class RedisService {
         return keySet;
     }
 
+    /**
+     *
+     * @param keys 加入 * mappingId
+     * @return
+     */
     private List<Callable<Set<String>>> createScanTasks(List<String> keys) {
         return keys.stream().map(this::createScanTask).toList();
     }
@@ -593,9 +601,6 @@ public class RedisService {
         log.info("elements: {}", elements);
         return elements;
     }
-
-
-
 
 
 }

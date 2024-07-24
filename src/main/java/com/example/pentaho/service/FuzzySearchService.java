@@ -20,22 +20,29 @@ public class FuzzySearchService {
     private RedisService redisService;
 
 
+    /**
+     * 模糊搜尋
+     * @param address
+     * @return
+     */
     public List<String> fuzzySearchSeq(Address address) {
         Set<String> newMappingIdSet = fuzzySearchMappingId(address);
         log.info("newMappingIdSet:{}", newMappingIdSet);
         return redisService.findSetsByKeys(newMappingIdSet.stream().toList());
     }
 
+    /**
+     *
+     * @param address
+     * @return
+     */
     public Set<String> fuzzySearchMappingId(Address address) {
         Map<String, List<String>> map = buildMappingIdRegexString(address);
         List<String> newMappingId = map.get("newMappingId");
         Set<String> set = new HashSet<>(newMappingId); //去除重複
         newMappingId = new ArrayList<>(set); //轉回LIST
         List<String> regex = map.get("regex");
-        log.info("因為地址不完整，組成新的 mappingId {}，以利模糊搜尋", newMappingId);
-        log.info("模糊搜尋正則表達式為:{}", regex);
         log.info("redis開始模糊搜尋:{}", Instant.now());
-        Set<String> mappingIdSet = redisService.findListByScan(newMappingId); //redis撈出來的所有可能mappinId
         log.info("redis結束模糊搜尋:{}", Instant.now());
         Set<String> resultSet = new HashSet<>();
         for (String newMapping : mappingIdSet) {
@@ -53,7 +60,10 @@ public class FuzzySearchService {
         return resultSet;
     }
 
-
+    /**
+     * @param address
+     * @return
+     */
     /**
      * 拔 village + nvillage ->只模糊查詢這個pattern
      * 撈出來的mappingId前六碼(negihbor->village->county+town)
@@ -352,7 +362,6 @@ public class FuzzySearchService {
                     fuzzyMap.put("TOWN", "");
                 //COUNTY有寫；TOWN沒寫
                 } else if ("1".equals(String.valueOf(segNum.charAt(0))) && "0".equals(String.valueOf(segNum.charAt(1)))) {
-                    // 有COUNTY，沒TOWN
                     regexMap.put("TOWN", "\\d{3}");
                     fuzzyMap.put("TOWN", "*");
                 //第1個字 -> COUNTY  第2個字 -> TOWN ; COUNTY沒寫；TOWN有寫
@@ -363,12 +372,16 @@ public class FuzzySearchService {
                 }
                 StringBuilder regex = new StringBuilder();
                 for (String value : regexMap.values()) {
+                    /*正則 64碼*/
                         regex.append(value);
                 }
                 for (String value : fuzzyMap.values()) {
+                    /*redis 64碼*/
                     newMappingId.append(value);
                 }
+            /*正則 64碼*/
             regexList.add(String.valueOf(regex));
+            /*redis 64碼*/
             newMappingIdList.add(String.valueOf(newMappingId));
         });
         Map<String, List<String>> map = new HashMap<>();

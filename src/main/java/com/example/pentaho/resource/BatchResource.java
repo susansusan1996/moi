@@ -88,14 +88,6 @@ public class BatchResource {
     }
 
 
-    /**
-     * etl結束，並傳送檔案給聖森
-     */
-    public void etlFinishedAndSendFile(@RequestBody JobParams jobParams) throws IOException {
-        log.info("ETL回CALL API，參數為{}: ", jobParams.toString());
-        fileOutputService.etlFinishedAndSendFile(jobParams);
-    }
-
 
     /**
      * 模擬聖森接收iisi送過去的檔案
@@ -296,13 +288,14 @@ public class BatchResource {
             @RequestBody ColumnSelection columnSelection
             ){
         log.info("大量查詢條件:{}",columnSelection);
-        if(StringUtils.isNullOrEmpty(columnSelection.getUserId()) || StringUtils.isNullOrEmpty(columnSelection.getFormId()) || StringUtils.isNullOrEmpty(columnSelection.getFormName())){
+        if(StringUtils.isNullOrEmpty(columnSelection.getUserId()) || StringUtils.isNullOrEmpty(columnSelection.getFormName()) || StringUtils.isNullOrEmpty(columnSelection.getFormId())){
             return new ResponseEntity("申請者Id、表單Id、表單編號皆不得為空",HttpStatus.FORBIDDEN);
         }
 
         BigDataParams bigDataParams = isValid(columnSelection.getShowFields());
         bigDataParams.setUserId(columnSelection.getUserId());
         bigDataParams.setFormId(columnSelection.getFormId());
+        bigDataParams.setFormName(columnSelection.getFormName());
         log.info("bigDataParams:{}",bigDataParams);
         boolean result = bigDataService.saveConditions(bigDataParams);
         return result ? new ResponseEntity("成功",HttpStatus.OK):new ResponseEntity("發生錯誤",HttpStatus.INTERNAL_SERVER_ERROR);

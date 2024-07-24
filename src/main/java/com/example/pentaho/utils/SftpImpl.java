@@ -102,10 +102,10 @@ public class SftpImpl implements Sftp {
      * @return
      */
     public boolean downloadFile(String localPath,String remotePath, String remoteFileName) {
-        log.info("remotePath:{}",remotePath);
-        log.info("remoteFileName:{}",remoteFileName);
+        log.info("位置:{},檔名:{}",remotePath,remoteFileName);
         FileOutputStream fieloutput = null;
         try {
+            /*儲存到本地位置+檔名*/
             File file = new File(localPath + remoteFileName);
             fieloutput = new FileOutputStream(file);
             sftp.get(remotePath + remoteFileName, fieloutput);
@@ -128,6 +128,7 @@ public class SftpImpl implements Sftp {
         }
         return false;
     }
+
 
     /**
      *
