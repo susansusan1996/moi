@@ -94,35 +94,86 @@ public class RedisService {
 
     /**
      * 將所有 key帶入DB1查找對應的Set<String>
+     * 判斷是 000 還是其他帶碼找到mappingId後，要件清單補尾數1或2
      * @param address ->排列組合的mappingId
      * @return resultList -> key = 56碼mappingId, value = county+town:join_step:seq
      */
     public Map<String,Set<String>> findMapsByKeys(Address address) {
         List<String> keys = address.getMappingId();
+
+        Map<String,Set<String>> hasNeighborList = new HashMap<>();
+        Map<String,Set<String>> noNeighborList = new HashMap<>();
+        Map<String,Set<String>> hasRoadAreaList = new HashMap<>();
+        Map<String,Set<String>> noRoadAreaList = new HashMap<>();
         Map<String,Set<String>> resultList = new HashMap<>();
-        List<Object> results = stringRedisTemplate1.executePipelined((RedisCallback<List<String>>) connection -> {
+
+        List<Object> results = stringRedisTemplate4.executePipelined((RedisCallback<List<String>>) connection -> {
             StringRedisConnection stringRedisConn = (StringRedisConnection) connection;
             for (String key : keys) {
                 // lRange for List ,smember for Set
                 stringRedisConn.sMembers(key);
-
             }
             return null;
         });
 
         //results=[[JB411:5141047,...](key1的value),[JB311:5141047,...](key2的value),[JB411:5141047,...](key1的value),...]
+
         int index = 0;
         for (Object result : results) {
             //result=[JB411:5141047,...]
             if (result instanceof Set) {
                 @SuppressWarnings("unchecked")
                 Set<String> elements = (Set<String>) result;
-                //elements = [JB411:5141047,...]
-                resultList.put(keys.get(index),elements);
+                //resultList = {mappingId,[JB411:5141047,...]}
+                if(!elements.isEmpty()){
+                    if(!"000".equals(keys.get(index).substring(3,6))){
+                        /**表示組合成 鄰 有成功比對到mappingId，留這組就好**/
+                        hasNeighborList.put(keys.get(index),elements);
+                        log.info("hasNeighborList:{}",hasNeighborList);
+                    }else{
+                        noNeighborList.put(keys.get(index),elements);
+                        log.info("noNeighborList:{}",noNeighborList);
+                    }
+
+                    if(!"0000000".equals(keys.get(index).substring(6,13))){
+                        /**表示組合成 鄰 有成功比對到mappingId，留這組就好**/
+                        hasRoadAreaList.put(keys.get(index),elements);
+                        log.info("hasRoadAreaList:{}",hasRoadAreaList);
+                    }else{
+                        noRoadAreaList.put(keys.get(index),elements);
+                        log.info("noRoadAreaList:{}",noRoadAreaList);
+                    }
+                }
             }
             index++;
         }
-        return resultList;
+
+
+        if(!hasNeighborList.isEmpty()){
+            /**有寫鄰+有對到 -> 要件清單1*/
+            address.setSegmentExistNumber(address.getSegmentExistNumber()+"1");
+            resultList = hasNeighborList;
+        }else{
+            address.setSegmentExistNumber(address.getSegmentExistNumber()+"0");
+            resultList = noNeighborList;
+        }
+
+        log.info("resultList:{}",resultList);
+        Map<String, Set<String>> finalResultList = resultList;
+        log.info(address.getSegmentExistNumber());
+        log.info(address.getSegmentExistNumber().substring(0,3)+"1"+address.getSegmentExistNumber().substring(4,address.getSegmentExistNumber().length()));
+        if(!hasRoadAreaList.isEmpty()){
+            log.info("有road");
+           address.setSegmentExistNumber(address.getSegmentExistNumber().substring(0,3)+"1"+address.getSegmentExistNumber().substring(4,address.getSegmentExistNumber().length()));
+           hasRoadAreaList.forEach((key, value) -> finalResultList.merge(key, value, (v1, v2) -> v1 ));
+            log.info("address.getSegmentExistNumber()",address.getSegmentExistNumber());
+        }else{
+            log.info("沒有road");
+           address.setSegmentExistNumber(address.getSegmentExistNumber().substring(0,3)+"0"+address.getSegmentExistNumber().substring(4,address.getSegmentExistNumber().length()));
+            noRoadAreaList.forEach((key, value) -> finalResultList.merge(key, value, (v1, v2) -> v1 ));
+            log.info("address.getSegmentExistNumber():{}",address.getSegmentExistNumber());
+        }
+        return finalResultList;
     }
 
 
@@ -209,7 +260,7 @@ public class RedisService {
 
     private static final List<String> KEYWORDS = Arrays.asList(
             "COUNTY", "TOWN", "VILLAGE", "ROAD", "AREA", "LANE", "ALLEY",
-            "NUM_FLR_1", "NUM_FLR_2", "NUM_FLR_3", "NUM_FLR_4", "NUM_FLR_5","ROOM"
+            "NUM_FLR_1", "NUM_FLR_2", "NUM_FLR_3", "NUM_FLR_4", "NUM_FLR_5"
     );
 
 

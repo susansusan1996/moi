@@ -277,7 +277,7 @@ public class APIKeyResource {
     )
     @GetMapping("/query-single")
     @Authorized(keyName = "AP")
-    public ResponseEntity<String> queryAddressJson(
+    public ResponseEntity<SingleQueryResultDTO> queryAddressJson(
             @Parameter(
                     description = "地址、縣市、鄉鎮市區以,區隔組合成字串(順序不可改)。",
                     required = true,
@@ -307,14 +307,17 @@ public class APIKeyResource {
                         singleQueryDTO.setTown(params[2]);
                         break;
                     default:
-                        return new ResponseEntity<>("格式輸入錯誤，請重新確認", HttpStatus.BAD_REQUEST);
+                        SingleQueryResultDTO singleQueryResultDTO = new SingleQueryResultDTO();
+                        singleQueryResultDTO.setText("格式輸入錯誤，請重新確認");
+                        return new ResponseEntity<>(singleQueryResultDTO, HttpStatus.BAD_REQUEST);
                 }
                 log.info("singleQueryDTO:{}", singleQueryDTO);
-                return ResponseEntity.ok(singleQueryService.findJsonTest(singleQueryDTO));
+                return ResponseEntity.ok(singleQueryService.findJson(singleQueryDTO));
             } else {
                 SingleQueryDTO singleQueryDTO = new SingleQueryDTO();
                 singleQueryDTO.setOriginalAddress(singleQueryStr);
-                return ResponseEntity.ok(singleQueryService.findJsonTest(singleQueryDTO));
+                singleQueryService.findJson(singleQueryDTO);
+                return ResponseEntity.ok(singleQueryService.findJson(singleQueryDTO));
             }
         }catch (Exception e){
             log.info("e:{}",e.toString());

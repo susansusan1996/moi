@@ -1,6 +1,7 @@
 package com.example.pentaho.utils;
 
 import com.example.pentaho.component.Address;
+import com.example.pentaho.component.IbdTbAddrCodeOfDataStandardDTO;
 import com.example.pentaho.repository.AliasRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,26 +38,23 @@ public class AddressParser {
     //todo:修正可能會有5、3碼以外的數
     // new:(?<zipcode>(\d{5}|\d{3}|\d)\b|\d+)
     // old:(?<zipcode>(^\d{5}|^\d{3}|^\d)?)
-    private final String COUNTY = "(?<zipcode>(\\d{5}|\\d{3}|\\d)\\b|\\d+)(?<county>(?:.*?[縣市](?!場)|%s))?"; //(?!場)==>為了避免"內埔市場"這種area被切到這裡
+
+    private final String COUNTY = "(?<zipcode>(^\\d{5}|^\\d{3}|^\\d)?)(?<county>(?:.*?[縣市](?!場)|%s))?"; //(?!場)==>為了避免"內埔市場"這種area被切到這裡
+
     private final String TOWN = "(?<town>\\D+?(市區|鎮區|鎮市|[鄉鎮市區]|%s)(?![村里鄰路巷段街道弄]))?";
-    //    private final String VILLAGE = "(?<village>(.*新里里|.*村里|.*?里|.*?村|%s))?";
+
     private final String VILLAGE = "(?<village>(?<!路)%s(新里里|村里|[^路]*?里|[^路]*?村|%s)(?![村里鄰路巷段街道弄]))?";
     private final String NEIGHBOR = "(?<neighbor>" + ALL_CHAR + "+鄰)?";
-    private final String SPECIALLANE = "(?<speciallane>鐵路.*巷|丹路.*巷)?"; //避免被切到路，直接先寫死在這裡
+
+    //避免被切到路，直接先寫死在這裡
     private final String ROAD = "(?<road>(.*?段|.*?街|.*?大道|.*?路(?!巷)|%s)?)";
+
+    private final String SPECIALLANE = "(?<speciallane>鐵路.*巷|丹路.*巷)?";
     private final String LANE = "(?<lane>.*?巷)?";
 
-    private final String SUBALLEY = "(?<subAlley>" + ALL_CHAR + "+[衖衕橫]{1})?";
     private final String ALLEY = "(?<alley>" + ALL_CHAR_FOR_ALLEY + "+弄" + DYNAMIC_ALLEY_PART + ")?";
+    private final String SUBALLEY = "(?<subAlley>" + ALL_CHAR + "+[衖衕橫]{1})?";
 
-
-    //private final String NUMFLR1 = "(?<numFlr1>" + ALL_CHAR + "+[\\-號Ff樓之區棟]{1} |" + BASEMENT_PATTERN + ")?";
-    //private final String NUMFLR2 = "(?<numFlr2>"+ALL_CHAR + "+[\\-－號樓FｆＦf之區棟]{1}|" +"[之\\-－]{1}" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + ALL_CHAR+"+[FｆＦf]{1}|"+  BASEMENT_PATTERN + "|" + ALL_CHAR + "+(?!室))?";
-    //private final String NUMFLR3 = "(?<numFlr3>"+ALL_CHAR + "+[\\-－號樓FｆＦf之區棟]{1}|" +"[之\\-－]{1}" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + ALL_CHAR+"+[FｆＦf]{1}|"+  BASEMENT_PATTERN + "|" + ALL_CHAR + "+(?!室))?";
-    //private final String NUMFLR4 = "(?<numFlr4>"+ALL_CHAR + "+[\\-－號樓FｆＦf之區棟]{1}|" +"[之\\-－]{1}" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + ALL_CHAR+"+[FｆＦf]{1}|"+  BASEMENT_PATTERN + "|" + ALL_CHAR + "+(?!室))?";
-    //private final String NUMFLR5 = "(?<numFlr5>"+ALL_CHAR + "+[\\-－號樓FｆＦf之區棟]{1}|" +"[之\\-－]{1}" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + ALL_CHAR+"+[FｆＦf]{1}|"+  BASEMENT_PATTERN + "|" + ALL_CHAR + "+(?!室))?";
-
-    //todo:NUMFLR1~5補一個ALL_CHAR比對的正則
     private final String NUMFLR1 =
             "(?<numFlr1>" + ALL_CHAR + "+[\\-－號樓FｆＦf之區棟]{1}|" +
                     "[之\\-－]{1}" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + //能:"之28", "-B2", "－123", "之一百", "-A", "之甲乙", "－拾", "之A3" / 不能:"之28樓", "-B2F", "－123f", "之100樓", "123", "A-"
@@ -123,6 +121,7 @@ public class AddressParser {
             address = new Address();
         }
 
+       /**去除特殊符號、字元*/
         address.setCleanAddress(cleanAddress(origninalAddress));
 
         //先把有 鄉、鎮、市、區、村、里、樓 等字眼的area拿出來 -> Redis.key = SPECIAL_AREA:
@@ -130,7 +129,6 @@ public class AddressParser {
         //redis查詢所有alias，要拼在正則後面
         //這裡find一次
         allKeys = findAllKeys();
-        log.info("第一次 allKeys :{}", allKeys);
         //先把帶有"村"、"鄉"、"鎮"、"市"、"區"的特殊字眼放入area(SPECIAL_AREA)，從原始地址中拔除
         origninalAddress = findSpecialArea(allKeys, address, origninalAddress);
         String pattern = getPattern(allKeys); //組正則表達式
@@ -145,7 +143,7 @@ public class AddressParser {
 
     /***
      * 只有初次切割會來這
-     * VILLIAGE 的特殊情況
+     * 帶有 "村"、"鄉"、"鎮"、"市"、"區"的特殊字 的 AREA 的地名
      * 如果有符合特殊條件，會放入setArea,然後從原始地址中拔出
      * @param allKeys
      * @param address
@@ -153,13 +151,14 @@ public class AddressParser {
      * @return
      */
     public String findSpecialArea(Map<String, Set<String>> allKeys, Address address, String origninalAddress) {
+        log.info("allKeys :{}", allKeys);
         String newArea = "(" + String.join("|", allKeys.get("SPECIAL_AREA:")) + ")";
-        log.info("newArea:{}", newArea);
+        log.info("特殊地名SPECIAL_AREA:組成正則 :{}", newArea);
         Pattern patternForSpecialArea = Pattern.compile(newArea);
         Matcher matcherForSpecialArea = patternForSpecialArea.matcher(origninalAddress);
         /**如果有符合特殊情況，會setArea,然後從原始地址中拔出*/
         if (matcherForSpecialArea.find()) {
-            log.info(" special_area 匹配到的部分：{}", matcherForSpecialArea.group());
+            log.info(" SPECIAL_AREA: 匹配到的部分:{},準備放入address.area", matcherForSpecialArea.group());
             address.setArea(matcherForSpecialArea.group());
             origninalAddress = origninalAddress.replace(matcherForSpecialArea.group(), "");
         }
@@ -185,12 +184,11 @@ public class AddressParser {
 
     /**
      * 有remain，但不是臨建特附
-     *
      * @param address
      * @return
      */
     public Address parseArea(Address address) {
-        log.info("從remains切地名:{}", address.getAddrRemains());
+        log.info("從remains切地名:{},準備取出中文部分當作Area", address.getAddrRemains());
         String[] regexArray = {
                 "^[^0-9０-９]+;", // 第一個規則
                 "^[^0-9０-９一二三四五六七八九十]+[一二三四五六七八九十]+[^0-9０-９一二三四五六七八九十]*;", // 第二個規則
@@ -203,7 +201,6 @@ public class AddressParser {
             Matcher matcher = pattern.matcher(address.getAddrRemains());
             if (matcher.find()) {
                 match = matcher.group();
-                log.info("匹配到的部分：{}", match);
                 break;
             }
         }
@@ -211,13 +208,13 @@ public class AddressParser {
         if (StringUtils.isNotNullOrEmpty(match)) {
             address.setArea(match);
             String cleanAddress = address.getCleanAddress();
-            log.info("match:{}", match);
+            log.info("匹配到的中文部分：{}", match);
             int lastIndex = cleanAddress.lastIndexOf(match);
-            //把找到的AREA從INPUT的ADDRESS刪掉，再切一次
+            log.info("把找到的AREA從INPUT的ADDRESS刪掉，再切一次");
             String newAddressString = cleanAddress.substring(0, lastIndex) + cleanAddress.substring(lastIndex + match.length());
             address = parseAddress(newAddressString, address);
         }
-        log.info("切不出地名，再切一次的新address:{}", address);
+        log.info("parseArea後，再切割一次的Address:{}", address);
         return address;
     }
 
@@ -234,20 +231,29 @@ public class AddressParser {
         try {
             //這裡又find一次
             //redis查詢所有alias，要拼在正則後面
-            allKeys = findAllKeys();
+//            allKeys = findAllKeys();
+            log.info("allKeys:{}",allKeys);
         } catch (Exception e) {
             log.error("findAllKeys error: {}", e.getMessage());
         }
-        log.info("第二次 allKeys:{}", allKeys);
         String newCounty = String.format(COUNTY, String.join("|", allKeys.get("COUNTY_ALIAS:")));
-        log.info("newCounty:{}", newCounty);
         String newTown = String.format(TOWN, String.join("|", allKeys.get("TOWN_ALIAS:")));
+        //SPECIAL_AREA 加進來是為了在鄰階段排除它們
         String newVillage = String.format(VILLAGE, "(?!" + String.join("|", allKeys.get("SPECIAL_AREA:")) + ")", String.join("|", allKeys.get("VILLAGE_ALIAS:")));
         String newRoad = String.format(ROAD, String.join("|", allKeys.get("ROAD_ALIAS:")));
         return newCounty + newTown + newVillage + NEIGHBOR + SPECIALLANE + newRoad + LANE + ALLEY + SUBALLEY + NUMFLR1 + NUMFLR2 + NUMFLR3 + NUMFLR4 + NUMFLR5 + CONTINUOUS_NUM + ROOM + BASEMENTSTR + REMARK + ADDRREMAINS;
     }
 
 
+    /**
+     * 用於拼接成正則，非比對cd
+     * 縣市  "COUNTY_ALIAS:" -> 地址片段+別名
+     * 市區正則  "TOWN_ALIAS:" -> 地址片段+別名
+     * 村里正則  "VILLAGE_ALIAS:" -> 地址片段+別名
+     * 路名正則 "ROAD_ALIAS:" -> 地址片段+別名
+     * 村里正則  "SPECIAL_AREA:" ->  地址片段+別名
+     * @return
+     */
     private Map<String, Set<String>> findAllKeys() {
         String[] keys = {"COUNTY_ALIAS:", "TOWN_ALIAS:", "VILLAGE_ALIAS:", "ROAD_ALIAS:", "SPECIAL_AREA:"};
         Map<String, Set<String>> resultMap = new HashMap<>();
@@ -287,10 +293,14 @@ public class AddressParser {
 
     public Address setAddress(Matcher matcher, Address address) {
         address.setParseSuccessed(true);
+
+        /**處理地下一層、地下、屋頂的情況**/
         String basementString = matcher.group("basementStr");
-        // 特殊處理地下一層和地下的情況
         if (StringUtils.isNotNullOrEmpty(basementString)) {
-            return parseAddress(parseBasement(basementString, address.getCleanAddress(), address), address);
+            String parseBasement = parseBasement(basementString, address.getCleanAddress(), address);
+            log.info("處理完basementStr的address:{},地址:{}",address,parseBasement);
+            log.info("準備再次切割!!!");
+            return parseAddress(parseBasement, address);
         }
         address.setZipcode(matcher.group("zipcode"));
         address.setCounty(matcher.group("county"));
@@ -298,14 +308,20 @@ public class AddressParser {
         address.setVillage(matcher.group("village"));
         address.setNeighbor(matcher.group("neighbor"));
         address.setRoad(matcher.group("road"));
+        /*巷*/
         address.setLane(matcher.group("speciallane") != null ? matcher.group("speciallane") : matcher.group("lane"));
+        /*弄*/
         address.setAlley(matcher.group("alley"));
+        /**/
         address.setSubAlley(matcher.group("subAlley"));
-        address.setNumFlr1(parseBasementForBF(matcher.group("numFlr1"), address)); //basementStr:1 ; NumFlr:一樓 (數字一律是中文) // basementStr:"";Numflr:XXXXXX
-        address.setNumFlr2(parseBasementForBF(matcher.group("numFlr2"), address)); //basementStr:1 ; NumFlr:十樓
+        /***當層有值，代表前面所有層都有值**/
+        /**特殊形態:basement:一樓*/
+        address.setNumFlr1(parseBasementForBF(matcher.group("numFlr1"), address));
+        address.setNumFlr2(parseBasementForBF(matcher.group("numFlr2"), address));
         address.setNumFlr3(parseBasementForBF(matcher.group("numFlr3"), address));
         address.setNumFlr4(parseBasementForBF(matcher.group("numFlr4"), address));
         address.setNumFlr5(parseBasementForBF(matcher.group("numFlr5"), address));
+        /**連號:45一號，表示NUN_FLR沒有切乾淨**/
         address.setContinuousNum(matcher.group("continuousNum"));
         address.setRoom(matcher.group("room"));
         address.setAddrRemains(matcher.group("addrRemains"));
@@ -313,6 +329,16 @@ public class AddressParser {
         return address;
     }
 
+    /***
+     * 52號地下室 ->address.basement = 1, origrinalAddress= 52號
+     * 52號頂加 ->address.basement = 2, origrinalAddress= 52號
+     * 52號地下1樓 -> address.basement = 1, origrinalAddress= 52號basement:一樓
+     * 52號頂加1樓 -> address.basement = 2, origrinalAddress= 52號basement:一樓
+     * @param basementString
+     * @param origninalAddress
+     * @param address
+     * @return
+     */
     private String parseBasement(String basementString, String origninalAddress, Address address) {
         String[] basemantPattern1 = {"地下層", "地下", "地下室", "底層"};
         String[] basemantPattern2 = {".*地下.*層.*", ".*地下室.*層.*", ".*地下.*樓.*", "屋頂突出.*層"};
@@ -423,61 +449,136 @@ public class AddressParser {
      * @param segExistNum
      * @return
      */
-    public String parseNeighborAndRoom(String fullAddress, String segExistNum, String joinStep) {
+    public String checkJoinStepBySegNum(String fullAddress, String segExistNum, String joinStep) {
         //todo:要先判斷原本的joinStep是什麼
+        log.info("目前判斷的joinStep:{},要件清單:{}",joinStep,segExistNum);
         log.info("撈出的正確地址:{}", fullAddress);
-        List<String> beforeNeighbor = Arrays.asList("JE4", "JA1");
-        List<String> beforeRoom = Arrays.asList("JE", "JA");
         char[] segArray = segExistNum.toCharArray();
-        boolean hasCounty = "1".equals(segArray[0]);
-        boolean hasTown = "1".equals(segArray[1]);
-        boolean hasVillage = "1".equals(segArray[2]);
-        boolean hasNeighbor = "1".equals(segArray[3]);
-        Pattern pattern = Pattern.compile(NEIGHBOR);
-        Matcher matcher = pattern.matcher(fullAddress);
-        if (matcher.find()) {
-            if (!beforeNeighbor.contains(joinStep.substring(0, 3))) {
-                return "0".equals(segArray[8]) ? "JA2" : "";
-            } else {
-                if (joinStep.startsWith("JA2")) {
-                    if (!hasCounty || !hasTown) {
-                        return "JA1";
-                    }
-//                    if(!hasCounty && !hasTown){
-//                        return "JE431";
-//                    }
+
+        /** 1 = 有寫 && 有找到 ; 0 = 沒寫 | 沒找到*/
+        boolean hasCounty = "1".equals(String.valueOf(segArray[0]));
+        boolean hasTown = "1".equals(String.valueOf(segArray[1]));
+        boolean hasVillage = "1".equals(String.valueOf(segArray[2]));
+        boolean hasNeighbor = "1".equals(String.valueOf(segArray[segArray.length-1]));
+
+        joinStep = checkJC3(joinStep, hasCounty, hasTown, hasVillage, hasNeighbor);
+        joinStep = checkJB1(joinStep,fullAddress,hasCounty,hasTown,hasVillage,hasNeighbor);
+        joinStep = checkJA2AndJA3(joinStep,fullAddress,hasCounty,hasTown,hasVillage,hasNeighbor);
+        return joinStep;
+      }
+
+
+    private String checkJC3(String joinStep, boolean hasCounty, boolean hasTown, boolean hasVillage, boolean hasNeighbor){
+        String result = joinStep;
+        if(joinStep.startsWith("JC3")){
+            if (!hasVillage) {
+                result =   "JA3";
+            }
+
+            if (!hasNeighbor) {
+                result =  "JA2";
+            }
+
+            if (!hasCounty || !hasTown) {
+                result =  "JA1";
+            }
+
+            if(!hasCounty && !hasTown){
+                result =  "JE431";
+            }
+        }
+        return result;
+    }
+
+    private String checkJB1(String joinStep, String fullAddress, boolean hasCounty, boolean hasTown, boolean hasVillage, boolean hasNeighbor){
+        Pattern pattern ;
+        Matcher matcher;
+        String result = joinStep;
+        //先檢查JB1(退室)有沒有誤判，完整地址是否含室
+        if(joinStep.startsWith("JB1")){
+            pattern = Pattern.compile(ROOM);
+            matcher = pattern.matcher(fullAddress);
+            if (!matcher.find()) {
+                //完整地址無室，joinStep要往前找JA1,JA2,JA3,JE431..)
+
+                if (!hasVillage) {
+                    result = "JA3";
+                }
+
+                if (!hasNeighbor) {
+                    result = "JA2";
+                }
+
+                if (!hasCounty || !hasTown) {
+                    result =  "JA1";
+                }
+
+                if(!hasCounty && !hasTown){
+                    result = "JE431";
                 }
             }
         }
+        return result;
+    }
 
-            pattern = Pattern.compile(ROOM);
-            matcher = pattern.matcher(fullAddress);
-            if (matcher.find()) {
-                //完整地址有室
-                if (!beforeRoom.contains(joinStep.substring(0, 2))) {
-                    return "0".equals(segArray[9]) ? "JB1" : "";
+    private String checkJA2AndJA3(String joinStep, String fullAddress, boolean hasCounty, boolean hasTown, boolean hasVillage, boolean hasNeighbor){
+        //用判斷過室的 joinStep 繼續檢查是退鄰 還是 退里
+        String result =joinStep;
+        if (joinStep.startsWith("JA2")||joinStep.startsWith("JA3")) {
+            Pattern pattern = Pattern.compile(NEIGHBOR);
+            Matcher matcher = pattern.matcher(fullAddress);
+            //完整地址無鄰，join_step不會是退鄰，所以要往前判斷為要件不齊、JA1
+            if (!matcher.find()) {
+                //地址無鄰,join_step 卻是退鄰，往前找
+                if (!hasCounty || !hasTown) {
+                    result = "JA1";
                 }
-            } else {
-                //完整地址無室(JA1,JA2,JA3,JE1)
-                if (joinStep.startsWith("JB1")) {
 
-                    if (!hasCounty || !hasTown) {
-                        return "JA1";
-                    }
-//                    if(!hasCounty && !hasTown){
-//                        return "JE431";
-//                    }
+                //join_step JE，要件不齊
+                if(!hasCounty && !hasTown){
+                    result = "JE431";
+                }
+            }else{
+                //todo:要判斷里、鄰都先錯是要以誰為優先
+                //地址有鄰，要件清單 鄰=0,要退回JA
+                if(!hasNeighbor){
+                    result = "JA2";
+                }
 
-                    if (!hasNeighbor) {
-                        return "JA2";
-                    }
+                if (!hasCounty || !hasTown) {
+                    result = "JA1";
+                }
 
-                    if (!hasVillage) {
-                        return "JA3";
-                    }
+                //join_step JE，要件不齊
+                if(!hasCounty && !hasTown){
+                    result = "JE431";
                 }
             }
-        return "";
-      }
+        }
+        return result;
+    }
+
+    public IbdTbAddrCodeOfDataStandardDTO filterNumFlrPos(IbdTbAddrCodeOfDataStandardDTO dto,String completeNumFlr){
+        String fullAddress = dto.getFullAddress();
+        log.info("fullAddress:{}",fullAddress);
+        log.info("completeNumFlr:{}",completeNumFlr);
+        //去除室
+        Pattern pattern = Pattern.compile(ROOM);
+        Matcher matcher = pattern.matcher(fullAddress);
+        String withoutRoom =  fullAddress;
+        if(matcher.find()){
+            //122號6室
+            withoutRoom = fullAddress.substring(0, fullAddress.lastIndexOf(matcher.group()));
+        }
+
+        completeNumFlr  = NumberParser.replaceWithFullWidthNumber(completeNumFlr);
+        log.info("withoutRoom:{}",withoutRoom);
+        log.info("completeNumFLr:{}",completeNumFlr);
+        if(withoutRoom.endsWith(completeNumFlr)){
+            log.info("withoutRoom :{} , is endwith:{}",withoutRoom,completeNumFlr);
+            return dto;
+        }
+        return null;
+    }
 }
 
