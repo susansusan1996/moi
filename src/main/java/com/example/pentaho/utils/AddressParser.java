@@ -111,12 +111,14 @@ public class AddressParser {
      */
     public Address parseAddress(String origninalAddress, Address address) {
 
-        /**表示初次切割**/
-        /** 第二次切割條件：地下室、臨建特附、地名
-         * (1) setAddress() 會將address.originalAddress中的 basementStr為 basement:一樓放入address物件後丟進來再切一次
-         * (2-1) handleAddressRemains() 會將 address.originalAddress中 臨建特附 拔除，給予address.numType值後，再丟進來切割
-         * (2-1) handleAddressRemains() 會取出 address.addressRemains的 中文 放入address.area後，並從address.originalAddress中移除後，，再丟進來切割
+
+        /** 第二次切割條件:
+         * (1) 含有地下室屋頂字眼 setAddress() 會將address.originalAddress中的 basementStr為 basement:一樓放入address物件後丟進來再切一次
+         * (2-1) 含有臨建特附 handleAddressRemains() 會將 address.originalAddress中 臨建特附 拔除，給予address.numType值後，再丟進來切割
+         * (2-1) 地名沒有被切出來 handleAddressRemains() 會取出 address.addressRemains的 中文 放入address.area後，並從address.originalAddress中移除後，，再丟進來切割
          */
+
+        /**表示初次切割**/
         if (address == null) {
             address = new Address();
         }
@@ -124,17 +126,18 @@ public class AddressParser {
        /**去除特殊符號、字元*/
         address.setCleanAddress(cleanAddress(origninalAddress));
 
-        //先把有 鄉、鎮、市、區、村、里、樓 等字眼的area拿出來 -> Redis.key = SPECIAL_AREA:
+
+        /**redis查詢所有alias，要拼在正則後面**/
         Map<String, Set<String>> allKeys = new LinkedHashMap<>();
-        //redis查詢所有alias，要拼在正則後面
-        //這裡find一次
         allKeys = findAllKeys();
-        //先把帶有"村"、"鄉"、"鎮"、"市"、"區"的特殊字眼放入area(SPECIAL_AREA)，從原始地址中拔除
+        /**先把有 鄉、鎮、市、區、村、里、樓 等字眼的area拿出來，從原始地址中拔除 -> Redis.key = SPECIAL_AREA:**/
         origninalAddress = findSpecialArea(allKeys, address, origninalAddress);
-        String pattern = getPattern(allKeys); //組正則表達式
+        /**組正則表達式**/
+        String pattern = getPattern(allKeys);
         Pattern regexPattern = Pattern.compile(pattern);
         Matcher matcher = regexPattern.matcher(origninalAddress);
         if (matcher.matches()) {
+            /**這裡會做檢查，看要不要再切割一次*/
             return setAddress(matcher, address);
         }
         return address;
@@ -151,7 +154,6 @@ public class AddressParser {
      * @return
      */
     public String findSpecialArea(Map<String, Set<String>> allKeys, Address address, String origninalAddress) {
-        log.info("allKeys :{}", allKeys);
         String newArea = "(" + String.join("|", allKeys.get("SPECIAL_AREA:")) + ")";
         log.info("特殊地名SPECIAL_AREA:組成正則 :{}", newArea);
         Pattern patternForSpecialArea = Pattern.compile(newArea);
@@ -229,19 +231,44 @@ public class AddressParser {
 
     private String getPattern(Map<String, Set<String>> allKeys) {
         try {
-            //這裡又find一次
-            //redis查詢所有alias，要拼在正則後面
-//            allKeys = findAllKeys();
-            log.info("allKeys:{}",allKeys);
+            /**看log**/
+            showLog(allKeys);
         } catch (Exception e) {
             log.error("findAllKeys error: {}", e.getMessage());
         }
         String newCounty = String.format(COUNTY, String.join("|", allKeys.get("COUNTY_ALIAS:")));
         String newTown = String.format(TOWN, String.join("|", allKeys.get("TOWN_ALIAS:")));
-        //SPECIAL_AREA 加進來是為了在鄰階段排除它們
-        String newVillage = String.format(VILLAGE, "(?!" + String.join("|", allKeys.get("SPECIAL_AREA:")) + ")", String.join("|", allKeys.get("VILLAGE_ALIAS:")));
+        /**SPECIAL_AREA(特殊地名)加進VILLAGE正則是為了在里階段排除它們**/
+        String newVillage = String.format(VILLAGE, "(?!" + String.join("|", allKeys.get("SPECIAL_AREA:")) + ")",  String.join("|",allKeys.get("VILLAGE_ALIAS:")));
         String newRoad = String.format(ROAD, String.join("|", allKeys.get("ROAD_ALIAS:")));
         return newCounty + newTown + newVillage + NEIGHBOR + SPECIALLANE + newRoad + LANE + ALLEY + SUBALLEY + NUMFLR1 + NUMFLR2 + NUMFLR3 + NUMFLR4 + NUMFLR5 + CONTINUOUS_NUM + ROOM + BASEMENTSTR + REMARK + ADDRREMAINS;
+    }
+
+    private void showLog(Object obj){
+        if(obj instanceof List){
+            List list = (List) obj;
+           list.forEach(ele->{
+               log.info("list:{}",ele);
+           });
+            return;
+        }
+
+        if(obj instanceof Set){
+            Set set = (Set) obj;
+            set.forEach(ele->{
+                log.info("obj:{}",ele);
+            });
+            return;
+        }
+
+        if(obj instanceof Map){
+            Map map = (Map) obj;
+            map.forEach((key,value)->{
+                log.info("key:{},value:{}",key,value);
+            });
+           return;
+        }
+        log.info("obj:{}",obj.toString());
     }
 
 
@@ -297,6 +324,12 @@ public class AddressParser {
         /**處理地下一層、地下、屋頂的情況**/
         String basementString = matcher.group("basementStr");
         if (StringUtils.isNotNullOrEmpty(basementString)) {
+            /***
+             * 地下室1f -> basemenstr:1,origirnalAddress:basement:1f
+             * 屋頂2F -> basemenstr:2,origirnalAddress:basement:2F
+             * 再切割一次
+             * origirnalAddress:basement:2F -> basemenstr:2,num_flr1_5: basement:2F,
+             */
             String parseBasement = parseBasement(basementString, address.getCleanAddress(), address);
             log.info("處理完basementStr的address:{},地址:{}",address,parseBasement);
             log.info("準備再次切割!!!");
@@ -308,14 +341,13 @@ public class AddressParser {
         address.setVillage(matcher.group("village"));
         address.setNeighbor(matcher.group("neighbor"));
         address.setRoad(matcher.group("road"));
-        /*巷*/
+        /**speciallane:鐵路*巷*/
         address.setLane(matcher.group("speciallane") != null ? matcher.group("speciallane") : matcher.group("lane"));
-        /*弄*/
+        /**最後 alley 會是 alley + subAlley */
         address.setAlley(matcher.group("alley"));
-        /**/
         address.setSubAlley(matcher.group("subAlley"));
         /***當層有值，代表前面所有層都有值**/
-        /**特殊形態:basement:一樓*/
+        /**parseBasementForBF 處理 basement:2F -> 2樓,basement:-2 -> 之2*/
         address.setNumFlr1(parseBasementForBF(matcher.group("numFlr1"), address));
         address.setNumFlr2(parseBasementForBF(matcher.group("numFlr2"), address));
         address.setNumFlr3(parseBasementForBF(matcher.group("numFlr3"), address));

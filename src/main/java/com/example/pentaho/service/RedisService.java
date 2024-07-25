@@ -107,6 +107,10 @@ public class RedisService {
         Map<String,Set<String>> noNeighborList = new HashMap<>();
         Map<String,Set<String>> hasRoadAreaList = new HashMap<>();
         Map<String,Set<String>> noRoadAreaList = new HashMap<>();
+        Map<String,Set<String>> hasRoomList = new HashMap<>();
+        Map<String,Set<String>> noRoomList = new HashMap<>();
+        Map<String,Set<String>> hasNumFlrPosList = new HashMap<>();
+        Map<String,Set<String>> noNumFlrPosList = new HashMap<>();
         Map<String,Set<String>> resultList = new HashMap<>();
 
         List<Object> results = stringRedisTemplate4.executePipelined((RedisCallback<List<String>>) connection -> {
@@ -138,43 +142,88 @@ public class RedisService {
                     }
 
                     if(!"0000000".equals(keys.get(index).substring(6,13))){
-                        /**表示組合成 鄰 有成功比對到mappingId，留這組就好**/
+                        /**表示redis search的 roadAreaSn 有成功比對到mappingId**/
                         hasRoadAreaList.put(keys.get(index),elements);
                         log.info("hasRoadAreaList:{}",hasRoadAreaList);
                     }else{
                         noRoadAreaList.put(keys.get(index),elements);
                         log.info("noRoadAreaList:{}",noRoadAreaList);
                     }
+
+                    if(!keys.get(index).endsWith("00000")){
+                        /**表示組合成 室 有成功比對到mappingId，留這組就好**/
+                        hasRoomList.put(keys.get(index),elements);
+                        log.info("hasRoomList:{}",hasRoomList);
+                    }else{
+                        noRoomList.put(keys.get(index),elements);
+                        log.info("noRoomList:{}",noRoomList);
+                    }
+
+                    //num
+                    if(!"00000".equals(keys.get(index).substring(46,51))){
+                        /**表示組合成 num_flr_pos 有成功比對到mappingId，留這組就好**/
+                        hasNumFlrPosList.put(keys.get(index),elements);
+                        log.info("hasNumFlrPosList:{}",hasNumFlrPosList);
+                    }else{
+                        noNumFlrPosList.put(keys.get(index),elements);
+                        log.info("noNumFlrPosList:{}",noNumFlrPosList);
+                    }
                 }
             }
             index++;
         }
 
-
-        if(!hasNeighborList.isEmpty()){
-            /**有寫鄰+有對到 -> 要件清單1*/
-            address.setSegmentExistNumber(address.getSegmentExistNumber()+"1");
-            resultList = hasNeighborList;
+        if(!hasNumFlrPosList.isEmpty()){
+            log.info("NUM_FLR_POS正確");
+            address.setSegmentExistNumber(address.getSegmentExistNumber().substring(0,7)+"1");
+            resultList = hasNumFlrPosList;
+            log.info("address.getSegmentExistNumber()",address.getSegmentExistNumber());
         }else{
-            address.setSegmentExistNumber(address.getSegmentExistNumber()+"0");
-            resultList = noNeighborList;
+            log.info("NUM_FLR_POS錯誤，是由00000代入才找到mappingId");
+            address.setSegmentExistNumber(address.getSegmentExistNumber().substring(0,7)+"0");
+            resultList = noNumFlrPosList;
+            log.info("address.getSegmentExistNumber()",address.getSegmentExistNumber());
         }
 
         log.info("resultList:{}",resultList);
         Map<String, Set<String>> finalResultList = resultList;
-        log.info(address.getSegmentExistNumber());
-        log.info(address.getSegmentExistNumber().substring(0,3)+"1"+address.getSegmentExistNumber().substring(4,address.getSegmentExistNumber().length()));
+        if(!hasNeighborList.isEmpty()){
+            /**有寫鄰+有對到 -> 要件清單1*/
+            log.info("有neighbor");
+            address.setSegmentExistNumber(address.getSegmentExistNumber()+"1");
+            hasNeighborList.forEach((key, value) -> finalResultList.merge(key, value, (v1, v2) -> v1 ));
+        }else{
+            log.info("沒有neighbor");
+            address.setSegmentExistNumber(address.getSegmentExistNumber()+"0");
+            noNeighborList.forEach((key, value) -> finalResultList.merge(key, value, (v1, v2) -> v1 ));
+        }
+
+
         if(!hasRoadAreaList.isEmpty()){
             log.info("有road");
-           address.setSegmentExistNumber(address.getSegmentExistNumber().substring(0,3)+"1"+address.getSegmentExistNumber().substring(4,address.getSegmentExistNumber().length()));
-           hasRoadAreaList.forEach((key, value) -> finalResultList.merge(key, value, (v1, v2) -> v1 ));
+            address.setSegmentExistNumber(address.getSegmentExistNumber().substring(0,3)+"1"+address.getSegmentExistNumber().substring(4,address.getSegmentExistNumber().length()));
+            hasRoadAreaList.forEach((key, value) -> finalResultList.merge(key, value, (v1, v2) -> v1 ));
             log.info("address.getSegmentExistNumber()",address.getSegmentExistNumber());
         }else{
             log.info("沒有road");
-           address.setSegmentExistNumber(address.getSegmentExistNumber().substring(0,3)+"0"+address.getSegmentExistNumber().substring(4,address.getSegmentExistNumber().length()));
+            address.setSegmentExistNumber(address.getSegmentExistNumber().substring(0,3)+"0"+address.getSegmentExistNumber().substring(4,address.getSegmentExistNumber().length()));
             noRoadAreaList.forEach((key, value) -> finalResultList.merge(key, value, (v1, v2) -> v1 ));
             log.info("address.getSegmentExistNumber():{}",address.getSegmentExistNumber());
         }
+
+
+        if(!hasRoomList.isEmpty()){
+            log.info("有room");
+            address.setSegmentExistNumber(address.getSegmentExistNumber()+"1");
+            hasRoomList.forEach((key, value) -> finalResultList.merge(key, value, (v1, v2) -> v1 ));
+            log.info("address.getSegmentExistNumber()",address.getSegmentExistNumber());
+        }else{
+            log.info("沒有room");
+            address.setSegmentExistNumber(address.getSegmentExistNumber()+"0");
+            noRoomList.forEach((key, value) -> finalResultList.merge(key, value, (v1, v2) -> v1 ));
+            log.info("address.getSegmentExistNumber()",address.getSegmentExistNumber());
+        }
+
         return finalResultList;
     }
 
@@ -273,7 +322,6 @@ public class RedisService {
         //要件清單
         StringBuilder segmentExistNumberBuilder = new StringBuilder(segmentExistNumber);
 
-
         RedisConnection connection = stringRedisTemplate2.getConnectionFactory().getConnection();
         RedisSerializer<String> serializer = stringRedisTemplate2.getStringSerializer();
         try {
@@ -306,6 +354,7 @@ public class RedisService {
                 } else {
                     log.info("redis <沒有> 找到 <"+key+"> 的cd代碼，要用模糊搜尋");
                     /* ex: key="COUNTY:新市" -> parts = ["COUNTY","新市"]**/
+                    /*提取key中的中文部分**/
                     String[] parts = key.split(":");
                     Set<String> scanSet = new HashSet<>();
                     if (parts.length == 2 && !"null".equals(parts[1])) {
@@ -314,15 +363,17 @@ public class RedisService {
                     }
                       /* scanSet
                       1) 模糊查詢有找到
-                      2) 模糊查詢沒有找到
-                      3) Exception
+                      2) 模糊查詢沒有找到 空集合
+                      3) Exception return null
                      */
                     if (!scanSet.isEmpty()) {
                         String value = String.join(",", scanSet);
                         resultMap.put(key, value); //模糊搜尋有找到
                     } else {
-                        resultMap.put(key, keyMap.get(key)); // 如果找不到對應的value，就要放default value(對應字數的0)
+                        // 如果找不到對應的value，就要放default value(對應字數的0)
+                        resultMap.put(key, keyMap.get(key));
                     }
+                    //todo:有找到也是0嗎?
                     if (containsKeyword(key)) {
                         segmentExistNumberBuilder.append("0");
                     }
@@ -538,10 +589,11 @@ public class RedisService {
             // TODO: 2024/5/29 除了 ? 方框待補上(難判斷應該在哪個關鍵字的哪個index開始切去做模糊查)
             // TODO: 2024/5/29 如果沒有 ?、方框(難字)，就不知道可以把甚麼字元挖掉用*取代。可能會造成 ex."民哈路"，無法找到 "民生路"
             // TODO: 2024/6/3 目前只有對?、方框(難字)做模糊查詢*字轉換，其餘錯別字、錯字、同音字等很難去判斷該將從字元中的哪個字做*字轉換
+            /**有?、方框，用*取代: key="COUNTY:新?市" -> "COUNTY:*新*市*" **/
+            /**無?、方框，在中文前後加上*: key="COUNTY:新市 ->  "COUNTY:*新市*"  **/
             String scanKey = key.split(":")[0]+ ":*" + key.split(":")[1].replace("?", "*") + "*";
             log.info("*字取代 <?、方框> 後，scanKey: {}", scanKey);
-            /*有?、方框: key="COUNTY:新?市" -> "COUNTY:*新*市*" **/
-            /*無?、方框: key="COUNTY:新市 ->  "COUNTY:*新市*"  */
+
             stringRedisTemplate2.execute((RedisCallback<Void>) connection -> {
                 try (Cursor<byte[]> cursor = connection.scan(ScanOptions.scanOptions().match(scanKey).count(SCAN_SIZE).build())) {
                     List<String> bestMatches = new ArrayList<>();

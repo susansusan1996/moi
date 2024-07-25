@@ -38,16 +38,17 @@ public class RefreshTokenService {
     @Qualifier("stringRedisTemplate0")
     private StringRedisTemplate stringRedisTemplate0;
 
-    /**
+    /***
      *
-     * @param applicantId
+     * @param userId
+     * @param username
      * @param tokenMap
      * @param refreshTokenMap
      * @param reviewResult
      * @return
      * @throws ParseException
      */
-    public RefreshToken saveRefreshToken(String applicantId,Map<String, Object> tokenMap, Map<String, Object> refreshTokenMap, String reviewResult) throws ParseException {
+    public RefreshToken saveRefreshToken(String userId,String username,Map<String, Object> tokenMap, Map<String, Object> refreshTokenMap, String reviewResult) throws ParseException {
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setId(userId);
         refreshToken.setUsername(username);
@@ -236,8 +237,6 @@ public class RefreshTokenService {
                 /*表示第一次申請**/
                 return null;
             }
-            //表示之前沒申請過
-            return null;
         }
         /*參數不符規定，開頭就會擋掉了**/
         return null;

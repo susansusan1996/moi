@@ -45,7 +45,7 @@ public class FuzzySearchService {
         log.info("redis開始模糊搜尋:{}", Instant.now());
         log.info("redis結束模糊搜尋:{}", Instant.now());
         Set<String> resultSet = new HashSet<>();
-        for (String newMapping : mappingIdSet) {
+        for (String newMapping : newMappingId) {
 //            log.info("mappingIdSet:{}", mappingIdSet);
             for (String reg : regex) {
                 Pattern regexPattern = Pattern.compile(reg);
