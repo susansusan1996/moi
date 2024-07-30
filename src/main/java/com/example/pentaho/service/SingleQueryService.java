@@ -112,31 +112,29 @@ public class SingleQueryService {
                 /**
                  *(1)確認 joinStep 然後與 segmentExistNumber比對
                  */
-                String joinStep = addressParser.checkJoinStepBySegNum(IbdTbAddrDataRepositoryNewdto.getFullAddress(),segmentExistNumber,address.getJoinStep());
+                String joinStep = addressParser.checkJoinStepBySegNum(IbdTbAddrDataRepositoryNewdto.getFullAddress(),address);
                 log.info("檢查完後joinStep:{}",joinStep);
                 /**跳過JE431..等**/
-                if(!EXCLUDED_JOIN_STEPS.contains(joinStep) && joinStep.length()>6){
-                    renewJoinStep(joinStep,IbdTbAddrDataRepositoryNewdto);
+                if(!EXCLUDED_JOIN_STEPS.contains(joinStep) && joinStep.length()<5){
+                    joinStep = renewJoinStep(joinStep, IbdTbAddrDataRepositoryNewdto);
                 }
+                address.setJoinStep(joinStep);
+                IbdTbAddrDataRepositoryNewdto.setJoinStep(joinStep);
+               resultList.add(IbdTbAddrDataRepositoryNewdto);
 
-                /**todo:最後還要filter NUM_FLR ，解決 完整地址122號 會撈出122號x號 多址*/
-                log.info("finalAddress.getNumFlrPos():{}",address.getNumFlrPos());
-                //任意數+四個0
-                if(address.getNumFlrPos().indexOf("0000")>0){
-                    //把NUM_FLR1~5組合起來，比list.fulladdress 比對，match到的回傳
-                    String numFlr1 =  StringUtils.isNullOrEmpty(address.getNumFlr1())? "" : address.getNumFlr1();
-                    String numFlr2 =  StringUtils.isNullOrEmpty(address.getNumFlr2())? "": address.getNumFlr2();
-                    String numFlr3 =  StringUtils.isNullOrEmpty(address.getNumFlr3())? "": address.getNumFlr2();
-                    String numFlr4 =  StringUtils.isNullOrEmpty(address.getNumFlr4())? "": address.getNumFlr2();
-                    String numFlr5 =  StringUtils.isNullOrEmpty(address.getNumFlr5())? "": address.getNumFlr2();
-                    String completeNumFlr = numFlr1+numFlr2+numFlr3+numFlr4+numFlr5;
-                    IbdTbAddrCodeOfDataStandardDTO dto = addressParser.filterNumFlrPos(IbdTbAddrDataRepositoryNewdto, completeNumFlr);
-                    if(dto != null){
-                        resultList.add(dto);
-                    }
-                }else{
-                    resultList.add(IbdTbAddrDataRepositoryNewdto);
-                }
+               //todo:這裡的邏輯要再確認
+//                /**最後還要filter NUM_FLR ，解決 完整地址只到122號，但會撈出122號~*之 多址*/
+//                log.info("finalAddress.getNumFlrPos():{}",address.getNumFlrPos());
+//                /**任意數 + "0000" 表示前端輸入像這樣的地址: OOO路1號、OOO路1號A室 這裡要判斷是斷在哪裡~*/
+//               if(address.getNumFlrPos().indexOf("0000")!=1){
+//                   //10000以外的12000
+//                   IbdTbAddrCodeOfDataStandardDTO dto  = addressParser.filterNumFlrPosAndRoom(IbdTbAddrDataRepositoryNewdto, address);
+//                    if(dto != null){
+//                        resultList.add(dto);
+//                    }
+//                }else{
+//                   resultList.add(IbdTbAddrDataRepositoryNewdto);
+//                }
             };
         }
 
@@ -162,9 +160,11 @@ public class SingleQueryService {
         address.setOriginalAddress(input);
         String numTypeCd = "95";
         address.setNumTypeCd(numTypeCd);
-        //處理remain
-        // 臨建特付 ->拔臨建特付的地址，再切割一次
-        // 非臨建特付 -> 拔remain中文當作area，從input中移再切一次
+        /**
+         * handleAddressRemains
+         * 臨建特付 ->拔臨建特付的地址，再切一次
+         * 非臨建特付，可以是地名沒辦切出來 -> 拔remain中文當作area，從input中移再切一次
+         **/
         handleAddressRemains(address);
         return findCdAndMappingId(address);
     }
@@ -172,16 +172,14 @@ public class SingleQueryService {
     /**
      * 臨建特附(setNumType) 或 地名 (setArea)
      * 拔除後再切割一次地址
-     *
      * @param address
      */
     private void handleAddressRemains(Address address) {
         if (StringUtils.isNotNullOrEmpty(address.getAddrRemains()) && StringUtils.isNullOrEmpty(address.getContinuousNum())) {
             log.info("地址有remain:{},且沒有連號:{}",address.getAddrRemains(),address.getContinuousNum());
-            log.info("檢查是否含臨(96)、建(97)、特(98)、付(99)、其他(95");
+            log.info("檢查是否含臨(96)、建(97)、特(98)、付(99)、其他(95)");
             String numTypeCd = getNumTypeCd(address);
             if (!"95".equals(numTypeCd)) {
-                // 如果是臨建特附，再解析一次地址
                 log.info("我是 <臨建特附>，要拔除臨建特附的地址，再切割一次地址:{}", address.getCleanAddress());
                 address = addressParser.parseAddress(address.getCleanAddress(), address);
             } else {
@@ -215,7 +213,7 @@ public class SingleQueryService {
             numTypeCd = "95";
             newAddrRemains = oldAddrRemains;
         }
-        //再把addrRemains拼回原本的address，再重新切一次地址
+        /**再移除關鍵字的addrRemains拼回原本的address，再重新切一次地址**/
         address.setCleanAddress(address.getCleanAddress().replace(oldAddrRemains, newAddrRemains));
         return numTypeCd;
     }
@@ -247,12 +245,13 @@ public class SingleQueryService {
             Map<String, Set<String>> resultsBy50  = findMapsByKeys(address);
             //拔鄰、裡查詢後還是都找不到東西
             if(resultsBy50.isEmpty() || resultsBy50 == null){
-                log.info("拔鄰、裡查詢後還是都找不到東西");
-                //放入空集合
-                address.setSeqSet(seqSet);
-                return address;
+                    log.info("拔鄰、裡查詢後還是都找不到東西");
+                    //放入空集合
+                    address.setSeqSet(seqSet);
+                    return address;
             }
-              seqSet = filterCountyAndTown(address, resultsBy50);
+
+            seqSet = filterCountyAndTown(address, resultsBy50);
         }
         address.setSeqSet(seqSet);
         return address;
@@ -269,22 +268,26 @@ public class SingleQueryService {
         //地址片段
         String countyAndTown = address.getCountyCd() + address.getTownCd();
         resultMap.keySet().forEach(key->{
-             resultMap.get(key).forEach(str->{
-                String[] split = str.split(":");
-                String addressCd = split[0];
-                String seq = split[2];
-                String joinStep = split[1];
-                if(countyAndTown.equals(addressCd)){
-                    log.info("符合的mapping:{}",key);
-                    seqSet.add(seq);
-                    joinStepSet.add(joinStep);
-                }
-            });
+            if(!resultMap.get(key).isEmpty() && resultMap.get(key) != null){
+                resultMap.get(key).forEach(str->{
+                    String[] split = str.split(":");
+                    String addressCd = split[0];
+                    String seq = split[2];
+                    String joinStep = split[1];
+                    if(countyAndTown.equals(addressCd)){
+                        log.info("符合的mapping:{}",key);
+                        seqSet.add(seq);
+                        joinStepSet.add(joinStep);
+                    }
+                });
+            }
         });
 
         //排序join_step 把第一個塞到address.join_step
         List<String> sortedJoinStepList = joinStepSet.stream().sorted().toList();
-        address.setJoinStep(sortedJoinStepList.get(0));
+        if(!joinStepSet.isEmpty()){
+            address.setJoinStep(sortedJoinStepList.get(0));
+        }
         if ("JC211".equals(address.getJoinStep()) && StringUtils.isNullOrEmpty(address.getArea())) {
             address.setJoinStep("JC311"); //路地名，連寫都沒寫
         }
@@ -323,7 +326,7 @@ public class SingleQueryService {
      */
     //多址join_step判斷
     private void replaceJoinStepWhenMultiAdress(Address address, List<IbdTbAddrCodeOfDataStandardDTO> resultList) {
-        if (address.getJoinStep() != null && !resultList.isEmpty()) {
+        if (address.getJoinStep() != null && resultList.size()>1) {
             switch (address.getJoinStep()) {
                 case "JA211", "JA311", "JA212", "JA312" -> address.setJoinStep("JD111");
                 case "JB111", "JB112" -> address.setJoinStep("JD311");
@@ -332,6 +335,9 @@ public class SingleQueryService {
                 case "JB411" -> address.setJoinStep("JD511");
                 case "JB412" -> address.setJoinStep("JD512");
             }
+            resultList.forEach(ele->{
+                ele.setJoinStep(address.getJoinStep());
+            });
         }
     }
 
@@ -403,8 +409,15 @@ public class SingleQueryService {
         }
     }
 
+    private List splitCdStr(String cdStr){
+     if(cdStr.indexOf(",")>=0){
+       return Arrays.stream(cdStr.split(",")).toList();
+     }
+        return Arrays.asList(cdStr);
+    }
+
     /**
-     *
+     * 模糊查詢不會進到這裡
      * @param address
      * @param resultsBeforeSplit = {56碼1:["00000000:JB411:5141047",..],56碼2:["00000000:JB411:5141047",..],...]
      */
@@ -414,52 +427,77 @@ public class SingleQueryService {
         /**有找到相對應的56碼*/
         if (!resultsBeforeSplit.isEmpty()) {
             /**input的county + town*/
-            String countyAndTown = address.getCountyCd() + address.getTownCd();
-            String village = address.getVillageCd() ;
-            log.info("前端輸入縣市、鄉鎮轉代碼:{}", countyAndTown);
-            log.info("前端輸入村里轉代碼:{}",village);
+            /*todo:同名不同cd*/
+            List countyCds = splitCdStr(address.getCountyCd());
+            List townCds = splitCdStr(address.getTownCd());
+            ArrayList<String> countyTownCds = new ArrayList<>();
+            countyCds.forEach(countyCd->{
+                townCds.forEach(townCd->{
+                    countyTownCds.add(String.valueOf(countyCd)+townCd);
+                });
+            });
+            log.info("前端輸入縣市、鄉鎮轉代碼:{}", countyTownCds);
+
+            List villageCds = splitCdStr(address.getVillageCd());
+            log.info("前端輸入村里轉代碼:{}",villageCds);
 
             /**input的 county + town、villiage+negihbor 與 redis value比對**/
             log.info("準備比對mappingIds:{}",resultsBeforeSplit);
             if(!resultsBeforeSplit.keySet().isEmpty()){
             for(String mappingId:resultsBeforeSplit.keySet()) {
-                if(!(resultsBeforeSplit.get(String.valueOf(mappingId)).isEmpty())){
+                if(resultsBeforeSplit.get(mappingId) != null && resultsBeforeSplit.get(mappingId).size()>0){
                 for (String seqsStr : resultsBeforeSplit.get(String.valueOf(mappingId))) {
+                    log.info("seqsStr:{}",seqsStr);
                         String[] seqArray = seqsStr.split(":");
+                        log.info("seqArray[0]:{}",seqArray[0]);
                         String addressCd = seqArray[0];
 
-                    /**mapping villiage (不是000 就是另外1個唯一代碼)**/
-                    if(mappingId.startsWith(village)){
-                        /**有相符再往下比對county+town，取其join_step & seq*/
-                        if (countyAndTown.equals(addressCd)) {
-                            String joinStep = seqArray[1];
-                            joinStepSet.add(joinStep);
-                            String seq = seqArray[2];
-                            seqSet.add(seq);
-                            log.info("縣市、鄉鎮市區相符的地址:{}", seq);
-                        }
+                    /**county+town優先比對，取其join_step & seq*/
+                    if (countyTownCds.contains(addressCd)) {
+                        String joinStep = seqArray[1];
+                        joinStepSet.add(joinStep);
+                        String seq = seqArray[2];
+                        seqSet.add(seq);
+                        log.info("縣市、鄉鎮市區相符的地址:{}", seq);
+                        /**mapping villiage (不是000 就是另外1個唯一代碼)**/
+//                        if(!villageCds.isEmpty()){
+//                            villageCds.forEach(villageCd->{
+//                                if(mappingId.startsWith(String.valueOf(villageCd))) {
+//                                    joinStepSet.add(joinStep);
+//                                    seqSet.add(seq);
+//                                    log.info("里相符的地址:{}", seq);
+//                                }
+//                            });
+//                        }
                     }
                     }
                 }
             }
         }
-
+            log.info("seqSet:{}",seqSet);
+            log.info("joinStepSet:{}",joinStepSet);
+        if(!seqSet.isEmpty()){
             //join_step排序
             List<String> sortedJoinStepList = joinStepSet.stream().sorted().toList();
             address.setJoinStep(sortedJoinStepList.get(0));
+            //todo:改取最後大的
+//            address.setJoinStep(sortedJoinStepList.get(sortedJoinStepList.size()-1));
 
             if ("JC211".equals(address.getJoinStep()) && StringUtils.isNullOrEmpty(address.getArea())) {
                 address.setJoinStep("JC311"); //路地名，連寫都沒寫
             }
         }
+        }
         return seqSet;
     }
 
 
-    void renewJoinStep(String newStartedcode,IbdTbAddrCodeOfDataStandardDTO ibdTbAddrCodeOfDataStandardDTO){
+    String renewJoinStep(String newStartedcode,IbdTbAddrCodeOfDataStandardDTO ibdTbAddrCodeOfDataStandardDTO){
+        String result  =newStartedcode+ibdTbAddrCodeOfDataStandardDTO.getJoinStep().substring(3, 5);
         //取前三碼 + 原本的
-        log.info("revise join_step:{}",newStartedcode+ibdTbAddrCodeOfDataStandardDTO.getJoinStep().substring(3, 5));
-        ibdTbAddrCodeOfDataStandardDTO.setJoinStep(newStartedcode+ibdTbAddrCodeOfDataStandardDTO.getJoinStep().substring(3, 5));
+        log.info("revised join_step:{}",result);
+        ibdTbAddrCodeOfDataStandardDTO.setJoinStep(result);
+        return result;
     }
 
 
@@ -607,19 +645,19 @@ public class SingleQueryService {
         keyMap.put("LANE:" + replaceWithHalfWidthNumber(lane), "0000");
         /* 弄、弄+subAlley；7碼；統一阿拉伯數 放入56碼*/
         keyMap.put("ALLEY:" + alleyIdSnKey, "0000000");
-        /* 正規化num_flr_1~5 的地址片段*/
+        /* 正規化num_flr_1~5 的地址片段，數字部分統一半形阿拉伯數字*/
         keyMap.put("NUM_FLR_1:" + normalizeFloor(numFlr1, address, "NUM_FLR_1").getNumFlr1(), "000000"); //6
         keyMap.put("NUM_FLR_2:" + normalizeFloor(numFlr2, address, "NUM_FLR_2").getNumFlr2(), "00000"); //5
         keyMap.put("NUM_FLR_3:" + normalizeFloor(numFlr3, address, "NUM_FLR_3").getNumFlr3(), "0000"); //4
         keyMap.put("NUM_FLR_4:" + normalizeFloor(numFlr4, address, "NUM_FLR_4").getNumFlr4(), "000"); //3
         keyMap.put("NUM_FLR_5:" + normalizeFloor(numFlr5, address, "NUM_FLR_5").getNumFlr5(), "0"); //1
         keyMap.put("ROOM:" + replaceWithHalfWidthNumber(address.getRoom()), "00000"); //5
-        //===========把存有各地址片段的map丟到redis找cd碼===========================
+        //===========把存有各地址片段的map丟到redis找cd碼，沒有找到還會再做模糊查詢===========================
         /* keyMap={"COUNTY:新北市":"00000","TOWN:新莊渠":"000",....}
           -----------------
            resultMap ={"COUNTY:新北市":"12345,54321"(同名不同cd的情況),"TOWN:新莊渠":"0000"(找不到cd塞default))}
-           1) 模糊查詢有找到 -> cd
-           2) 模糊查詢沒有找到 -> 0000
+           1) 有找到 -> cd
+           2) 沒有找到 -> default 000
          */
         /**/
         Map<String, String> resultMap = redisService.findSetByKeys(keyMap, segmentExistNumber);
@@ -1071,17 +1109,17 @@ public class SingleQueryService {
         String basementStr = address.getBasementStr() == null ? "0" : address.getBasementStr();
 
         List<String> villageCds = new ArrayList<>(splitAndAddToList(address.getVillageCd()));
-        //todo:鄰、室是用程式產生的不會因為找不到而補000，所以要補一組000
+        /**彌補鄰、室是用程式產生的不會因為找不到而補000，所以要補一組000**/
         List<String> neighborCds = Arrays.asList(address.getNeighborCd(), "000");
+        /**彌補redis找得到路地名，但路地名不在該地址的情況，所以要補一組000**/
         List<String> roadAreaCds = new ArrayList<>(splitAndAddToList(address.getRoadAreaSn()));
         roadAreaCds.add("0000000");
         List<String> lanes = new ArrayList<>(splitAndAddToList(address.getLaneCd()));
-        //todo:鄰、室是用程式產生的不會因為找不到而補000，所以要補一組000
+        /**彌補室是用程式產生的不會因為找不到而補000，所以要補一組000**/
         List<String> roomIdSns = Arrays.asList(address.getRoomIdSn(), "00000");
 
         List<LinkedHashMap<String, String>> mappingIdMapList = new ArrayList<>();
         List<String> mappingIdStringList = new ArrayList<>();
-
         //
         for (String villageCd : villageCds) {
             for(String neighbor:neighborCds){
@@ -1114,10 +1152,11 @@ public class SingleQueryService {
                         //一個 mappingIdMap 所有value組成一個 String 是一組mappingId
                         mappingIdMapList.add(mappingIdMap);
                         mappingIdStringList.add(String.join("", mappingIdList));
-                        // 多拚一組56碼用NUMFLRPOS 00000的組合
+                        /**彌補NUM_FRL1~5中文部分填錯，造成NUM_FLR_POS錯誤，多拚一組56碼用NUMFLRPOS 00000的組合**/
                         String oldPos = mappingIdMap.get("NUMFLRPOS");
                         mappingIdStringList.add(replaceNumFlrPosWithZero(mappingIdMap));
-                        mappingIdMap.put("NUMFLRPOS", oldPos); //還原
+                        /**還原**/
+                        mappingIdMap.put("NUMFLRPOS", oldPos);
                     }
                 }
             }

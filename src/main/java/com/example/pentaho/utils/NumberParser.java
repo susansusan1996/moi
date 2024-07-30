@@ -395,26 +395,27 @@ public class NumberParser {
         }
 
         public static String getFullWidthNumMap(String input) {
+            log.info("numFlr:{}",input);
             Map<String, String> useMap = new HashMap<String, String>();
-            if(input.indexOf("樓")>=0){
-                log.info("4樓 => 中文數字");
+            if(input.contains("樓")){
+                log.info("有樓 => 轉成中文數字");
                 useMap = chineseNumMap;
             }else{
-                log.info("之1,1之,1號 => 全形數字");
+                log.info("之1 , 1之 , 1號 => 轉成全形數字");
                 useMap = fullWidthNumMap;
             }
             /**正則*/
             char[] chars = input.toCharArray();
             StringBuilder result =new StringBuilder("");
                 for (char charr : chars) {
-                log.info("charr:{}",charr);
+//                log.info("charr:{}",charr);
                if(useMap.containsKey(String.valueOf(charr))){
                    result.append(useMap.get(String.valueOf(charr)));
                }else{
                    result.append(charr);
                }
             }
-            log.info("result:{}", result);
+            log.info("num轉成:{}", result);
             return result.toString();
         }
     }
