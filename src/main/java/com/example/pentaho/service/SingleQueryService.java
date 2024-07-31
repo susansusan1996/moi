@@ -1109,13 +1109,18 @@ public class SingleQueryService {
         String basementStr = address.getBasementStr() == null ? "0" : address.getBasementStr();
 
         List<String> villageCds = new ArrayList<>(splitAndAddToList(address.getVillageCd()));
-        /**彌補鄰、室是用程式產生的不會因為找不到而補000，所以要補一組000**/
+        /**彌補鄰是用程式產生的，不會因為找不到而補000，所以要補一組000**/
         List<String> neighborCds = Arrays.asList(address.getNeighborCd(), "000");
+
         /**彌補redis找得到路地名，但路地名不在該地址的情況，所以要補一組000**/
         List<String> roadAreaCds = new ArrayList<>(splitAndAddToList(address.getRoadAreaSn()));
         roadAreaCds.add("0000000");
+        /**彌補redis找得到巷名，但巷名不在該地址的情況，所以要補一組0000**/
         List<String> lanes = new ArrayList<>(splitAndAddToList(address.getLaneCd()));
-        /**彌補室是用程式產生的不會因為找不到而補000，所以要補一組000**/
+        lanes.add("0000");
+        /**彌補redis找得到弄名，但弄名不在該地址的情況，所以要補一組0000000**/
+        List<String> alleyIdSns = Arrays.asList(address.getAlleyIdSn(), "0000000");
+        /**彌補redis找得到室名，但室名不在該地址的情況，所以要補一組00000**/
         List<String> roomIdSns = Arrays.asList(address.getRoomIdSn(), "00000");
 
         List<LinkedHashMap<String, String>> mappingIdMapList = new ArrayList<>();
@@ -1125,38 +1130,40 @@ public class SingleQueryService {
             for(String neighbor:neighborCds){
                 for (String roadAreaCd : roadAreaCds) {
                     for (String laneCd : lanes) {
-                        for(String roomIdsn:roomIdSns){
-                        //一個 mappingIdMap 所有value組成一個 String 是一組mappingId
-                        LinkedHashMap<String, String> mappingIdMap = new LinkedHashMap<>();
-                        mappingIdMap.put("VILLAGE", villageCd);//里
-                        mappingIdMap.put("NEIGHBOR", neighbor);
-                        mappingIdMap.put("ROADAREA", roadAreaCd);
-                        mappingIdMap.put("LANE", laneCd);
-                        mappingIdMap.put("ALLEY", address.getAlleyIdSn());//弄
-                        mappingIdMap.put("NUMTYPE", numTypeCd);
-                        mappingIdMap.put("NUM_FLR_1", address.getNumFlr1Id());
-                        mappingIdMap.put("NUM_FLR_2", address.getNumFlr2Id());
-                        mappingIdMap.put("NUM_FLR_3", address.getNumFlr3Id());
-                        mappingIdMap.put("NUM_FLR_4", address.getNumFlr4Id());
-                        mappingIdMap.put("NUM_FLR_5", address.getNumFlr5Id());
-                        mappingIdMap.put("BASEMENT", basementStr);
-                        mappingIdMap.put("NUMFLRPOS", address.getNumFlrPos());
-                        mappingIdMap.put("ROOM", roomIdsn);
-                        List<String> mappingIdList = Stream.of(
-                                        villageCd, neighbor,
-                                        roadAreaCd, laneCd, address.getAlleyIdSn(), numTypeCd,
-                                        address.getNumFlr1Id(), address.getNumFlr2Id(), address.getNumFlr3Id(), address.getNumFlr4Id(),
-                                        address.getNumFlr5Id(), basementStr, address.getNumFlrPos(), roomIdsn)
-                                .map(Object::toString)
-                                .collect(Collectors.toList());
-                        //一個 mappingIdMap 所有value組成一個 String 是一組mappingId
-                        mappingIdMapList.add(mappingIdMap);
-                        mappingIdStringList.add(String.join("", mappingIdList));
-                        /**彌補NUM_FRL1~5中文部分填錯，造成NUM_FLR_POS錯誤，多拚一組56碼用NUMFLRPOS 00000的組合**/
-                        String oldPos = mappingIdMap.get("NUMFLRPOS");
-                        mappingIdStringList.add(replaceNumFlrPosWithZero(mappingIdMap));
-                        /**還原**/
-                        mappingIdMap.put("NUMFLRPOS", oldPos);
+                        for(String alleyIdSn : alleyIdSns){
+                        for (String roomIdsn : roomIdSns) {
+                            //一個 mappingIdMap 所有value組成一個 String 是一組mappingId
+                            LinkedHashMap<String, String> mappingIdMap = new LinkedHashMap<>();
+                            mappingIdMap.put("VILLAGE", villageCd);//里
+                            mappingIdMap.put("NEIGHBOR", neighbor);
+                            mappingIdMap.put("ROADAREA", roadAreaCd);
+                            mappingIdMap.put("LANE", laneCd);
+                            mappingIdMap.put("ALLEY", alleyIdSn);//弄
+                            mappingIdMap.put("NUMTYPE", numTypeCd);
+                            mappingIdMap.put("NUM_FLR_1", address.getNumFlr1Id());
+                            mappingIdMap.put("NUM_FLR_2", address.getNumFlr2Id());
+                            mappingIdMap.put("NUM_FLR_3", address.getNumFlr3Id());
+                            mappingIdMap.put("NUM_FLR_4", address.getNumFlr4Id());
+                            mappingIdMap.put("NUM_FLR_5", address.getNumFlr5Id());
+                            mappingIdMap.put("BASEMENT", basementStr);
+                            mappingIdMap.put("NUMFLRPOS", address.getNumFlrPos());
+                            mappingIdMap.put("ROOM", roomIdsn);
+                            List<String> mappingIdList = Stream.of(
+                                            villageCd, neighbor,
+                                            roadAreaCd, laneCd, alleyIdSn, numTypeCd,
+                                            address.getNumFlr1Id(), address.getNumFlr2Id(), address.getNumFlr3Id(), address.getNumFlr4Id(),
+                                            address.getNumFlr5Id(), basementStr, address.getNumFlrPos(), roomIdsn)
+                                    .map(Object::toString)
+                                    .collect(Collectors.toList());
+                            //一個 mappingIdMap 所有value組成一個 String 是一組mappingId
+                            mappingIdMapList.add(mappingIdMap);
+                            mappingIdStringList.add(String.join("", mappingIdList));
+                            /**彌補NUM_FRL1~5中文部分填錯，造成NUM_FLR_POS錯誤，多拚一組56碼用NUMFLRPOS 00000的組合**/
+                            String oldPos = mappingIdMap.get("NUMFLRPOS");
+                            mappingIdStringList.add(replaceNumFlrPosWithZero(mappingIdMap));
+                            /**還原**/
+                            mappingIdMap.put("NUMFLRPOS", oldPos);
+                        }
                     }
                 }
             }

@@ -110,11 +110,18 @@ public class RedisService {
         Map<String,Set<String>> hasRoadAreaList = new HashMap<>();
         Map<String,Set<String>> noRoadAreaList = new HashMap<>();
 
-        Map<String,Set<String>> hasRoomList = new HashMap<>();
-        Map<String,Set<String>> noRoomList = new HashMap<>();
+        Map<String,Set<String>> hasLaneList = new HashMap<>();
+        Map<String,Set<String>> noLaneList = new HashMap<>();
+
+        Map<String,Set<String>> hasAlleyList = new HashMap<>();
+        Map<String,Set<String>> noAlleyList = new HashMap<>();
 
         Map<String,Set<String>> hasNumFlrPosList = new HashMap<>();
         Map<String,Set<String>> noNumFlrPosList = new HashMap<>();
+
+        Map<String,Set<String>> hasRoomList = new HashMap<>();
+        Map<String,Set<String>> noRoomList = new HashMap<>();
+
 
         Map<String,Set<String>> resultList = new HashMap<>();
 
@@ -155,6 +162,20 @@ public class RedisService {
                     }else{
                         noRoadAreaList.put(keys.get(index),elements);
 //                        log.info("noRoadAreaList:{}",noRoadAreaList);
+                    }
+
+                    //0000000000000000000001234
+                    if(!"0000".equals(keys.get(index).substring(21,25))){
+                         hasLaneList.put(keys.get(index),elements);
+                    }else{
+                         noLaneList.put(keys.get(index),elements);
+                    }
+
+                    //00000000000000000000012341234567
+                    if(!"0000000".equals(keys.get(index).substring(25,32))){
+                        hasAlleyList.put(keys.get(index),elements);
+                    }else{
+                        noAlleyList.put(keys.get(index),elements);
                     }
 
                     if(!keys.get(index).endsWith("00000")){
@@ -219,6 +240,23 @@ public class RedisService {
             address.setSegmentExistNumber(address.getSegmentExistNumber().substring(0,3)+"0"+address.getSegmentExistNumber().substring(4,address.getSegmentExistNumber().length()));
 //            noRoadAreaList.forEach((key, value) -> finalResultList.merge(key, value, (v1, v2) -> v1 ));
             log.info("address.getSegmentExistNumber:{}",address.getSegmentExistNumber());
+        }
+
+        //"COUNTY","TOWN","VILLAGE","ROAD","AREA","LANE","ALLEY","NUM_FLR_1","NUM_FLR_2","NUM_FLR_3","NUM_FLR_4","NUM_FLR_5","NEIGHBOR","ROOM"
+        if(!hasLaneList.isEmpty()){
+            log.info("有lane");
+            address.setSegmentExistNumber(address.getSegmentExistNumber().substring(0,5)+"1"+address.getSegmentExistNumber().substring(6,address.getSegmentExistNumber().length()));
+        }else{
+            log.info("沒有lane");
+            address.setSegmentExistNumber(address.getSegmentExistNumber().substring(0,5)+"0"+address.getSegmentExistNumber().substring(6,address.getSegmentExistNumber().length()));
+        }
+
+        if(!hasAlleyList.isEmpty()){
+            log.info("有alley");
+            address.setSegmentExistNumber(address.getSegmentExistNumber().substring(0,5)+"1"+address.getSegmentExistNumber().substring(6,address.getSegmentExistNumber().length()));
+        }else{
+            log.info("沒有alley");
+            address.setSegmentExistNumber(address.getSegmentExistNumber().substring(0,6)+"1"+address.getSegmentExistNumber().substring(7,address.getSegmentExistNumber().length()));
         }
 
 
