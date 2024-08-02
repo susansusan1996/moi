@@ -155,6 +155,7 @@ public class RedisService {
 //                        log.info("noNeighborList:{}",noNeighborList);
                     }
 
+
                     if(!"0000000".equals(keys.get(index).substring(6,13))){
                         /**表示redis search的 roadAreaSn 有成功比對到mappingId**/
                         hasRoadAreaList.put(keys.get(index),elements);
@@ -407,7 +408,8 @@ public class RedisService {
                     String[] parts = key.split(":");
                     Set<String> scanSet = new HashSet<>();
                     if (parts.length == 2 && !"null".equals(parts[1])) {
-                        scanSet = scanKeysAndReturnSet(key);
+//                        scanSet = scanKeysAndReturnSet(key);
+                        scanSet = scanFuzzyKeysAndReturnSet(key);
                         log.info("模糊搜尋後的value: {}", scanSet);
                     }
                       /* scanSet
@@ -630,8 +632,12 @@ public class RedisService {
     /**
      *  key="COUNTY:新市"
      * 模糊比對，找出相符的 KEY (redis: scan)，
+     * 大慶路二段
+     * 大*段
+     *
      */
     // TODO: 2024/5/14 速度慢 ??，需要優化
+
     public Set<String> scanKeysAndReturnSet(String key) {
         Set<String> resultSet = new HashSet<>();
         if(key.split(":")[1]!=null){
@@ -673,6 +679,78 @@ public class RedisService {
         }
         //TODO:模糊查詢也找不到是空集合
         return resultSet;
+    }
+
+
+    public Set<String> scanFuzzyKeysAndReturnSet(String key) {
+        Set<String> resultSet = new HashSet<>();
+        if(key.split(":")[1]!=null){
+            // TODO: 2024/5/29 除了 ? 方框待補上(難判斷應該在哪個關鍵字的哪個index開始切去做模糊查)
+            // TODO: 2024/5/29 如果沒有 ?、方框(難字)，就不知道可以把甚麼字元挖掉用*取代。可能會造成 ex."民哈路"，無法找到 "民生路"
+            // TODO: 2024/6/3 目前只有對?、方框(難字)做模糊查詢*字轉換，其餘錯別字、錯字、同音字等很難去判斷該將從字元中的哪個字做*字轉換
+
+            List<String> scanKeys;
+            if(key.contains("?")){
+                scanKeys = new ArrayList<>();
+                /**有?、方框，用*取代: key="COUNTY:新?市" -> "COUNTY:*新*市*" **/
+                scanKeys.add(key.split(":")[0]+ ":*" + key.split(":")[1].replace("?", "*") + "*");
+            }else{
+                String title = key.split(":")[0] + ":";
+                /**無?、方框，來列組合模糊查詢key**/
+                scanKeys = fuzzyKeys(title,key.split(":")[1]);
+            }
+            log.info("模糊查詢的scanKeys:{}",scanKeys);
+
+            stringRedisTemplate2.execute((RedisCallback<Void>) connection -> {
+                        //JaroWinklerDistance比較scan的key，取最高分的key們的value
+                        JaroWinklerDistance distance = new JaroWinklerDistance();
+                        List<String> bestMatches = new ArrayList<>();
+                        double highestScore = 0.0;
+                        for (String scanKey : scanKeys){
+                            try (Cursor<byte[]> cursor = connection.scan(ScanOptions.scanOptions().match(scanKey).count(SCAN_SIZE).build())) {
+                                while (cursor.hasNext()) {
+                                    byte[] next = cursor.next();
+                                    String currentKey = new String(next);
+                                    double score = distance.apply(key, currentKey);
+                                    // TODO: LOG如果會影響速度，不需要可以拿掉 ><
+                                    log.info("前端輸入:{}，模糊查詢找到的:{}，分數:{}", key, currentKey, score);
+                                    if (score > highestScore) {
+                                        highestScore = score;
+                                        bestMatches.clear();
+                                        bestMatches.add(currentKey);
+                                    } else if (score == highestScore) {
+                                        bestMatches.add(currentKey); //同分數
+                                    }
+                                }
+                                for (String match : bestMatches) {
+                                    resultSet.addAll(getSet(match));
+                                }
+                            }
+                    }
+                //TODO:exception 返回null
+                return null;
+            });
+        }
+        //TODO:模糊查詢也找不到是空集合
+        return resultSet;
+    }
+
+    private List<String> fuzzyKeys(String title,String key){
+        log.info("key:{}",key);
+        ArrayList<String> keys = new ArrayList<>();
+        char[] chars = key.toCharArray();
+        for(int i =0;i<chars.length;i++){
+            String newKeys =title;
+            if(i ==0){
+                newKeys += chars[i] +"*";
+            } else if(i==(chars.length-1)){
+                newKeys += "*"+chars[i];
+            }else{
+                newKeys += "*"+chars[i] +"*";
+            }
+            keys.add(newKeys);
+        }
+        return keys;
     }
 
     public Set<String> getSet(String key) {

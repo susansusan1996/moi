@@ -30,6 +30,7 @@ public class SecurityConfig {
         return
                 http.authorizeRequests()
                         .requestMatchers("/api/**").permitAll()
+                        .requestMatchers("/static/**").permitAll()
                         .and().cors(Customizer.withDefaults())
                         .csrf().disable().build();
     }

@@ -120,7 +120,7 @@ public class SingleQueryService {
                 }
                 address.setJoinStep(joinStep);
                 IbdTbAddrDataRepositoryNewdto.setJoinStep(joinStep);
-               resultList.add(IbdTbAddrDataRepositoryNewdto);
+                resultList.add(IbdTbAddrDataRepositoryNewdto);
 
                //todo:這裡的邏輯要再確認
 //                /**最後還要filter NUM_FLR ，解決 完整地址只到122號，但會撈出122號~*之 多址*/
@@ -1114,12 +1114,16 @@ public class SingleQueryService {
 
         /**彌補redis找得到路地名，但路地名不在該地址的情況，所以要補一組000**/
         List<String> roadAreaCds = new ArrayList<>(splitAndAddToList(address.getRoadAreaSn()));
-        roadAreaCds.add("0000000");
+        //todo:7/31 宗哲討論這個為要件沒寫或寫錯就不硬比了
+//        roadAreaCds.add("0000000");
         /**彌補redis找得到巷名，但巷名不在該地址的情況，所以要補一組0000**/
         List<String> lanes = new ArrayList<>(splitAndAddToList(address.getLaneCd()));
-        lanes.add("0000");
+        //todo:7/31 宗哲討論這個為要件沒寫或寫錯就不硬比了
+//        lanes.add("0000");
         /**彌補redis找得到弄名，但弄名不在該地址的情況，所以要補一組0000000**/
-        List<String> alleyIdSns = Arrays.asList(address.getAlleyIdSn(), "0000000");
+        List<String> alleyIdSns = new ArrayList<>(Arrays.asList(address.getAlleyIdSn()));
+        //todo:7/31 宗哲討論這個為要件沒寫或寫錯就不硬比了
+//        alleyIdSns.add("0000000");
         /**彌補redis找得到室名，但室名不在該地址的情況，所以要補一組00000**/
         List<String> roomIdSns = Arrays.asList(address.getRoomIdSn(), "00000");
 

@@ -4,6 +4,7 @@ import com.example.pentaho.component.*;
 import com.example.pentaho.service.SingleQueryService;
 import com.example.pentaho.service.SingleTrackQueryService;
 import com.example.pentaho.utils.AddressParser;
+import com.example.pentaho.utils.QRCodeUtils;
 import com.example.pentaho.utils.UserContextUtils;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,7 +16,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.annotation.Nullable;
-import jakarta.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +48,9 @@ public class SingleQueryResouce {
     @Autowired
     private SystemUpdateService systemUpdateService;
 
+    @Autowired
+    private Directory directory;
+
 
 
     @Operation(description = "單筆查詢",
@@ -58,6 +61,7 @@ public class SingleQueryResouce {
                             required = true,
                             schema = @Schema(type = "string"))}
     )
+    @Authorized(keyName = "SHENG")
     @PostMapping("/query-single")
     public ResponseEntity<SingleQueryResultDTO> queryAddress(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -71,7 +75,16 @@ public class SingleQueryResouce {
             @RequestBody SingleQueryDTO singleQueryDTO
     ) {
         try {
-            return ResponseEntity.ok(singleQueryService.findJson(singleQueryDTO));
+            SingleQueryResultDTO result = singleQueryService.findJson(singleQueryDTO);
+            String url = generateURL(result.getData(),singleQueryDTO.getOriginalAddress());
+            log.info("url:{}",url);
+
+            double random = Math.ceil(Math.random());
+            String filename = UserContextUtils.getUserHolder().getUsername()+"_"+random;
+            log.info("filename:{}",filename);
+            String absolute = directory.getQrcodePath() +filename+".jpg";
+            QRCodeUtils.generateQrcode(url,directory.getLogoPath(),absolute);
+            return ResponseEntity.ok(result);
         } catch (Exception e) {
             log.info("e:{}",e.toString());
             log.info("無法解析地址:{}", e.getMessage());
@@ -148,6 +161,7 @@ public class SingleQueryResouce {
 
         SingleQueryDTO singleQueryDTO = new SingleQueryDTO(inputAddress, county, town);
         log.info("SingleQueryDTO:{}",singleQueryDTO);
+
         try{
             SingleQueryResultDTO result = singleQueryService.findJson(singleQueryDTO);
             List<IbdTbAddrCodeOfDataStandardDTO> datas = result.getData();
@@ -164,6 +178,70 @@ public class SingleQueryResouce {
         }
     }
 
+
+    private String generateURL(List<IbdTbAddrCodeOfDataStandardDTO> datas,String inputAddress){
+        StringBuilder full =  new StringBuilder();
+        StringBuilder id =  new StringBuilder();
+        StringBuilder xy =  new StringBuilder();
+        StringBuilder js =  new StringBuilder();
+        StringBuilder url = new StringBuilder(directory.getQrcodeUrl());
+
+        if(datas.isEmpty()){
+            //查無資料
+            url.append("os=").append(inputAddress);
+            return url.toString();
+        }
+
+
+
+        if(datas.size()==1){
+
+            full.append(datas.get(0).getFullAddress());
+            id.append(datas.get(0).getAddressId());
+            String formattedWgsX = String.format("%.5f", datas.get(0).getWgsX());
+            String formattedWgsY = String.format("%.5f", datas.get(0).getWgsY());
+            xy.append(formattedWgsX+":"+formattedWgsY);
+            js.append(datas.get(0).getJoinStep());
+
+            url.append("os=").append(inputAddress).append("&");
+            url.append("full=").append(full).append("&");
+            url.append("id=").append(id).append("&");
+            url.append("xy=").append(xy).append("&");
+            url.append("js=").append(js);
+            return url.toString();
+        }
+
+        //todo:先限制5筆
+          int max = 5;
+          if(datas.size()<5){ //2,3,4
+                max = datas.size();
+           }
+
+            for(int i=0;i<max;i++){
+                String formattedWgsX = String.format("%.5f", datas.get(i).getWgsX());
+                String formattedWgsY = String.format("%.5f", datas.get(i).getWgsY());
+                String xyStr = formattedWgsX +":"+ formattedWgsY;
+               if(i==(max-1)){
+                    full.append(datas.get(i).getFullAddress());
+                    id.append(datas.get(i).getAddressId());
+                    xy.append(xyStr);
+                    js.append(datas.get(i).getJoinStep());
+                }else{
+                    full.append(datas.get(i).getFullAddress()).append(",");
+                    id.append(datas.get(i).getAddressId()).append(",");
+                    xy.append(xyStr).append(",");
+                    js.append(datas.get(i).getJoinStep()).append(",");
+                }
+            }
+
+            url.append("os=").append(inputAddress).append("&");
+            url.append("full=").append(full).append("&");
+            url.append("id=").append(id).append("&");
+            url.append("xy=").append(xy).append("&");
+            url.append("js=").append(js);
+            log.info("url:{}",url);
+            return url.toString();
+        }
 
 
     @GetMapping("/test")

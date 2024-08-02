@@ -19,12 +19,16 @@ directory:
   big-data-receive-file-dir: /home/ubuntu/addr/big_data/receive/
   big-data-send-file-dir: /home/ubuntu/addr/big_data/send/
   local-temp-dir: D:\temp\
+  qrcode-url: http://localhost:8080/iisi/static/index.html?
+  qrcode-path : D:\qrcode\
+  logo-path: C:\Users\2212009\Desktop\logo.jpg
   #  etl作業產出的檔案位置前綴
   etl-output-file-dir-prefix: D:\home\ec2-user\test222\
   # 模擬聖森存檔案
   mock-etl-save-file-dir-prefix: D:\home\ec2-user\saveFile\
   # etl .ktr檔的存放位置
   ktr-file-path: D:\home\addr\prod\
+
 
 #如果是自己要在 aws api server上測試，要改成rsa.pub(用自己的公鑰)
 key:

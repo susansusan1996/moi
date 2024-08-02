@@ -93,6 +93,10 @@ directory:
   big-data-send-file-dir: /home/ubuntu/addr/big_data/send/
   #AP檔案落地暫存目錄
   local-temp-dir: /home/ubuntu/app/temp/
+  #功能測試中，只有先上8888
+  qrcode-url: http://34.211.215.66:8888/iisi/static/index.html?
+  qrcode-path: /home/ubuntu/app/qrcode/
+  logo-path: /home/ubuntu/app/logo/logo.jpg
   #  etl作業產出的檔案位置前綴
   etl-output-file-dir-prefix: /home/ec2-user/outputFile/
   # 模擬聖森存檔案
