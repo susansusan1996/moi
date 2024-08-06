@@ -27,6 +27,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.security.PrivateKey;
 import java.text.ParseException;
 import java.util.Date;
@@ -69,6 +70,9 @@ public class APIKeyResource {
 
     @Autowired
     private AddressParser  addressParser;
+
+    @Autowired
+    private ResourceUtils resourceUtils;
 
 
 
@@ -400,12 +404,29 @@ public class APIKeyResource {
                         return new ResponseEntity<>(singleQueryResultDTO, HttpStatus.BAD_REQUEST);
                 }
                 log.info("singleQueryDTO:{}", singleQueryDTO);
-                return ResponseEntity.ok(singleQueryService.findJson(singleQueryDTO));
+                SingleQueryResultDTO result = singleQueryService.findJson(singleQueryDTO);
+                result.getData().forEach(data->{
+                    try {
+                        data.setJoinStep(resourceUtils.getJoinStepDes(data.getJoinStep()));
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+                return ResponseEntity.ok(result);
             } else {
                 SingleQueryDTO singleQueryDTO = new SingleQueryDTO();
                 singleQueryDTO.setOriginalAddress(singleQueryStr);
-                singleQueryService.findJson(singleQueryDTO);
-                return ResponseEntity.ok(singleQueryService.findJson(singleQueryDTO));
+                SingleQueryResultDTO result = singleQueryService.findJson(singleQueryDTO);
+                if(!"查無地址".equals(result.getText())){
+                    result.getData().forEach(data->{
+                        try {
+                            data.setJoinStep(resourceUtils.getJoinStepDes(data.getJoinStep()));
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                }
+                return ResponseEntity.ok(result);
             }
         }catch (Exception e){
             log.info("e:{}",e.toString());

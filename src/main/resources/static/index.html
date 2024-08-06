@@ -1,140 +1,23 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="">
   <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" href="logo.jpg"></link>
-    <title>中華民國內政部-地址編碼
-    </title>
-    <style>
-      .container {
-        width: 100%;
-        display: table;
-        background-color: #007bff;
-        color: white;
-        text-align: center;
-      }
-      .row {
-        display: table-row;
-      }
-      .cell {
-        display: table-cell;
-        padding: 10px;
-      }
-      .table {
-        width: 100%;
-        /* display: table; */
-        color: white;
-        text-align: center;
-      }
-      .title {
-        background-color: #007bff;
-        text-align: center;
-      }
-      .data {
-        color:black;
-        text-align: center;
-      }
-    </style>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="icon" href="/iisi/logo.jpg" />
+    <title>中華民國內政部-地址編碼</title>
+    <script defer="defer" src="/iisi/js/chunk-vendors.c18f9fac.js"></script>
+    <script defer="defer" src="/iisi/js/app.8267884c.js"></script>
+    <link href="/iisi/css/chunk-vendors.8a42e1de.css" rel="stylesheet" />
+    <link href="/iisi/css/app.6f6cb8ff.css" rel="stylesheet" />
   </head>
   <body>
-    <!-- <div class="container">
-      <div class="row">
-        <div class="cell">戶號地址</div>
-        <div class="cell">標準地址</div>
-        <div class="cell">地址識別碼</div>
-        <div class="cell">座標</div>
-        <div class="cell">比對代碼</div>
-      </div>
-      <div class="row">
-        <div class="cell">彰化縣二林鎮興農路008彰化縣行 24 號</div>
-        <div class="cell">彰化縣二林鎮興農路008彰化縣行 24 號</div>
-        <div class="cell">BNT3626-3</div>
-        <div class="cell">120.38136, 23.89831</div>
-        <div class="cell">JA111</div>
-      </div>
-    </div> -->
-    <table id="myTable" class="table">
-      <thead>
-        <tr id="th">
-          <th class="title">原始地址</th>
-          <th class="title">標準地址</th>
-          <th class="title">地址識別碼</th>
-          <th class="title">座標</th>
-          <th class="title">比對代碼</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    </div>
+    <noscript
+      ><strong
+        >We're sorry but moi-frontend doesn't work properly without JavaScript
+        enabled. Please enable it to continue.</strong
+      ></noscript
+    >
+    <div id="app"></div>
   </body>
-  <script
-    src="https://code.jquery.com/jquery-3.7.1.js"
-    integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
-    crossorigin="anonymous"
-  ></script>
-  <script>
-    let url = new URL(window.location.href);
-
-    let full = url.searchParams.get("full");
-    let id = url.searchParams.get("id");
-    let xy = url.searchParams.get("xy");
-    let js = url.searchParams.get("js");
-    let os = url.searchParams.get("os");
-
-    let fullArray;
-    let idArray;
-    let xyArray;
-    let jsArray;
-    
-    
-    if (os) {
-      console.log("os:{}", os);
-    }
-
-    if (full) {
-      console.log("full:{}", full);
-        fullArray = full.split(",");
-    }
-
-    if (id) {
-      console.log("id:{}", id);
-        idArray = id.split(",");
-    }
-
-    if (xy) {
-        xyArray = xy.split(",");
-    }
-
-    if (js) {
-        jsArray = js.split(",");
-    }
-
-    console.log("fullArray:", fullArray);
-    console.log("idArray:", idArray);
-    console.log("xyArray:", xyArray);
-    console.log("jsArray:", jsArray);
-
-    let max = fullArray.length;
-    let table = document
-      .getElementById("myTable")
-      .getElementsByTagName("tbody")[0];
-
-    for (let index = 0; index < max; index++) {
-    
-      let newRow = table.insertRow();
-      newRow.setAttribute('class','data');
-
-      let cell1 = newRow.insertCell(0);
-      let cell2 = newRow.insertCell(1);
-      let cell3 = newRow.insertCell(2);
-      let cell4 = newRow.insertCell(3);
-      let cell5 = newRow.insertCell(4);
-
-      cell2.textContent = fullArray[index];
-      cell3.textContent = idArray[index];
-      cell4.textContent = xyArray[index].replace(':',',');
-      cell5.textContent = jsArray[index];
-      cell1.textContent = os;
-    }
-  </script>
 </html>

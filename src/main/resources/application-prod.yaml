@@ -94,7 +94,7 @@ directory:
   #AP檔案落地暫存目錄
   local-temp-dir: /home/ubuntu/app/temp/
   #功能測試中，只有先上8888
-  qrcode-url: http://34.211.215.66:8888/iisi/static/index.html?
+  qrcode-url: http://34.211.215.66:8888/iisi/single-query?
   qrcode-path: /home/ubuntu/app/qrcode/
   logo-path: /home/ubuntu/app/logo/logo.jpg
   #  etl作業產出的檔案位置前綴

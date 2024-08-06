@@ -5,6 +5,7 @@ import com.example.pentaho.service.SingleQueryService;
 import com.example.pentaho.service.SingleTrackQueryService;
 import com.example.pentaho.utils.AddressParser;
 import com.example.pentaho.utils.QRCodeUtils;
+import com.example.pentaho.utils.ResourceUtils;
 import com.example.pentaho.utils.UserContextUtils;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,6 +25,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import com.example.pentaho.service.SystemUpdateService;
+
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -51,6 +54,9 @@ public class SingleQueryResouce {
     @Autowired
     private Directory directory;
 
+    @Autowired
+    private ResourceUtils resourceUtils;
+
 
 
     @Operation(description = "單筆查詢",
@@ -76,14 +82,26 @@ public class SingleQueryResouce {
     ) {
         try {
             SingleQueryResultDTO result = singleQueryService.findJson(singleQueryDTO);
-            String url = generateURL(result.getData(),singleQueryDTO.getOriginalAddress());
-            log.info("url:{}",url);
 
-            double random = Math.ceil(Math.random());
-            String filename = UserContextUtils.getUserHolder().getUsername()+"_"+random;
-            log.info("filename:{}",filename);
-            String absolute = directory.getQrcodePath() +filename+".jpg";
-            QRCodeUtils.generateQrcode(url,directory.getLogoPath(),absolute);
+            //todo:有查到
+            if("查詢結果".equals(result.getText())){
+                String url = generateURL(result.getData(),singleQueryDTO.getOriginalAddress());
+                log.info("url:{}",url);
+                String filename = UserContextUtils.getUserHolder().getId();
+                String absolute = directory.getQrcodePath() +filename+".jpg";
+                QRCodeUtils.generateQrcode(url,directory.getLogoPath(),absolute);
+            }
+
+            log.info("result.getText():{}",result.getText());
+            if(!"查無地址".equals(result.getText())){
+                result.getData().forEach(data->{
+                    try {
+                        data.setJoinStep(resourceUtils.getJoinStepDes(data.getJoinStep()));
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             log.info("e:{}",e.toString());
@@ -164,10 +182,17 @@ public class SingleQueryResouce {
 
         try{
             SingleQueryResultDTO result = singleQueryService.findJson(singleQueryDTO);
-            List<IbdTbAddrCodeOfDataStandardDTO> datas = result.getData();
-            datas.forEach(data->{
-                data.setAddressId(null);
-            });
+            if(!"查無地址".equals(result.getText())){
+                List<IbdTbAddrCodeOfDataStandardDTO> datas = result.getData();
+                datas.forEach(data->{
+                    try {
+                        data.setJoinStep(resourceUtils.getJoinStepDes(data.getJoinStep()));
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    data.setAddressId(null);
+                });
+            }
             return new ResponseEntity<>(result, HttpStatus.OK);
         } catch (Exception e) {
             log.info("e:{}",e.toString());
@@ -246,8 +271,9 @@ public class SingleQueryResouce {
 
     @GetMapping("/test")
     @Hidden
-    public void checkSum(@RequestParam String addressId){
+    public void checkSum(@RequestParam String addressId) throws Exception{
         boolean isValidate = singleQueryTrackService.checkSum(addressId);
         log.info("isValidate:{}",isValidate);
     }
+
 }

@@ -19,7 +19,7 @@ directory:
   big-data-receive-file-dir: /home/ubuntu/addr/big_data/receive/
   big-data-send-file-dir: /home/ubuntu/addr/big_data/send/
   local-temp-dir: D:\temp\
-  qrcode-url: http://localhost:8080/iisi/static/index.html?
+  qrcode-url: http://localhost:8080/iisi/single-query?
   qrcode-path : D:\qrcode\
   logo-path: C:\Users\2212009\Desktop\logo.jpg
   #  etl作業產出的檔案位置前綴
