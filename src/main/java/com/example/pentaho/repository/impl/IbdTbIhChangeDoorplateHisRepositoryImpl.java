@@ -28,27 +28,34 @@ public class IbdTbIhChangeDoorplateHisRepositoryImpl implements IbdTbIhChangeDoo
      */
     //todo:還有兩張表躍join
     @Override
-    public List<IbdTbIhChangeDoorplateHis> findByAddressId(String addressId) {
-//        Query query = Query.builder()
-//                .append("SELECT * \n")
-//                .append("FROM addr_ods.IBD_TB_IH_CHANGE_DOORPLATE_HIS \n")
-//                .append("WHERE ADDRESS_ID =:addressId", addressId)
-//                .build();
+    public List<IbdTbIhChangeDoorplateHis> findByAddressId(String addressId)  {
 
-        Query query = Query.builder().append("select \n" +
-                        "HIS.ADDRESS_ID, \n" +
-                        "HIS.HIS_ADR, \n" +
-                        "STD.WGS_X, \n" +
-                        "STD.WGS_Y, \n" +
-                        "HIS.UPDATE_DT, \n" +
-                        "UPD.UPDATE_TYPE \n" +
-                        "from addr_ods.IBD_TB_IH_CHANGE_DOORPLATE_HIS HIS \n" +
-                        "left join addr_ods.IBD_TB_ADDR_CODE_OF_DATA_STANDARD STD \n" +
-                        "on HIS.ADDRESS_ID = STD.ADDRESS_ID \n" +
-                        "left join addr_stage.IBD_TB_HISTORY_CODE_UPDATE UPD \n" +
-                        "on HIS.UPDATE_CODE = UPD.UPDATE_CODE \n" +
-                        "where 1 = 1 \n")
-                .appendWhen(!"".equals(addressId), "and HIS.ADDRESS_ID = :addressId", addressId)
+        Query query = Query.builder()
+                .append("select \n")
+                .append("HIS.ADDRESS_ID, \n")
+                .append("SPLIT_PART (HIS.HIS_ADR, '臺灣省', 2), \n")
+                .append("STD.WGS_X, \n")
+                .append("STD.WGS_Y, \n")
+                .append("HIS.UPDATE_DT, \n")
+                .append("UPD.UPDATE_TYPE \n")
+                .append("from addr_ods.IBD_TB_IH_CHANGE_DOORPLATE_HIS HIS \n")
+                .append("left join addr_ods.IBD_TB_ADDR_CODE_OF_DATA_STANDARD STD \n")
+                .append("on HIS.ADDRESS_ID = STD.ADDRESS_ID \n")
+                .append("left join addr_stage.IBD_TB_HISTORY_CODE_UPDATE UPD \n")
+                .append(" on HIS.UPDATE_CODE = UPD.UPDATE_CODE \n")
+                .append(" where 1 = 1 \n")
+                .append(" and HIS.ADDRESS_ID = :addressId \n", addressId)
+                .append("union \n")
+                .append(" select \n")
+                .append(" ADDRESS_ID, \n")
+                .append(" FULL_ADDRESS , \n")
+                .append(" WGS_X, \n")
+                .append(" WGS_Y, \n")
+                .append(" '-' UPDATE_DT,  \n")
+                .append(" '現行門牌' UPDATE_TYPE \n")
+                .append(" from addr_ods.IBD_TB_ADDR_CODE_OF_DATA_STANDARD \n")
+                .append(" where 1 = 1 \n")
+                .append(" and ADDRESS_ID = :addressId ", addressId)
                 .build();
         log.info("query:{}",query);
         log.info("params:{}",query.getParameters());

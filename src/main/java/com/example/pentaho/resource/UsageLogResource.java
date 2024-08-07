@@ -39,6 +39,9 @@ public class UsageLogResource {
     private final static String ODS_FILE_PATH = "/moi_ods.jrxml";
 
 
+    private final static String EXCEL_FILE_PATH = "/moi_excel.jrxml";
+
+
     private final static SimpleDateFormat yyyyy = new SimpleDateFormat("yyyyy");
 
     private final static SimpleDateFormat MM = new SimpleDateFormat("MM");
@@ -123,6 +126,17 @@ public class UsageLogResource {
         JasperResportUtils.exporterOdsFile(fileName,jasperPrint,response);
     }
 
+
+    @PostMapping(value = "/get-usagelog-excel")
+    @Authorized(keyName = "SHENG")
+    public void downloadExcelFile(@RequestBody UsageLogDTO usageLogDTO,HttpServletResponse response) throws JRException, IOException, NoSuchMethodException {
+        log.info("usageLogDTO:{}",usageLogDTO);
+        List<UsageLogReport> originalList = usageLogService.getUsageLogs(usageLogDTO);
+        List<UsageLogReport> usageLogs = usageLogService.changeDateTime(originalList);
+        JasperPrint jasperPrint = JasperResportUtils.compileReport(EXCEL_FILE_PATH,null, usageLogs);
+        String fileName = usageLogDTO.getDataDateStart()+"_"+usageLogDTO.getDataDateEnd()+"_APIUsage.xlsx";
+        JasperResportUtils.exportExcelFile(fileName,jasperPrint,response);
+    }
 
 
 

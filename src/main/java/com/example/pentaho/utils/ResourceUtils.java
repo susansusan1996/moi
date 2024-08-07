@@ -27,7 +27,7 @@ public class ResourceUtils {
     public ResourceUtils() {
     }
 
-    public  String readAsString(String filePath) throws IOException {
+    public  String readAsString(String filePath) {
         try {
             InputStream inputStream = resourceLoader.getResource(filePath).getInputStream();
             BufferedReader bf = new BufferedReader(new InputStreamReader(inputStream));
@@ -48,6 +48,9 @@ public class ResourceUtils {
 
     public String getJoinStepDes(String joinStep) throws IOException {
         log.info("joinStep:{}",joinStep);
+        if(StringUtils.isNullOrEmpty(joinStep)){
+            return joinStep;
+        }
         String content = readAsString("classpath:joinstep-mapping.json");
         JsonNode jsonNode = objectMapper.readTree(content);
         log.info("jsonNode.get(joinStep.substring(0,3)).asText():{}",jsonNode.get(joinStep.substring(0,3)).asText());

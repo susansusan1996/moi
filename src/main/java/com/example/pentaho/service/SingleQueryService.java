@@ -1235,27 +1235,34 @@ public class SingleQueryService {
             String segNum = address.getSegmentExistNumber();
             log.info("要件清單:{}", segNum);
             log.info("乾淨地址:{}", address.getCleanAddress());
-            if (!segNum.startsWith("11")) {
-                //JE431
-                //todo:可能會有join_step是JE431但有找得到地址的情況
+
+            if (!segNum.startsWith("11") && (StringUtils.isNullOrEmpty(address.getCounty()) ||StringUtils.isNullOrEmpty(address.getCounty()))) {
                 //缺少行政區(連寫都沒有寫) >>> 如果最後都沒有比到的話，同時沒有寫 縣市、鄉鎮市區
+                //todo:JE431 可能會有join_step是JE431但有找得到地址的情況
+                log.info("我是JE431，county 或 town沒寫或找不到cd");
                 setResult(dto, result, "JE431", "缺少行政區");
+
             } else if (segNum.startsWith("11") && '0' == segNum.charAt(3) && '0' == segNum.charAt(4) && '0' == segNum.charAt(5)) {
-                //缺少路地名(連寫都沒有寫) >>> 如果最後都沒有比到的話，地址中同時沒有寫路名(3)、地名(4)、巷名(5)
+                //缺少路地名(連寫都沒有寫) >>> 如果最後都沒有比到的話，地址中同時沒有寫路名(3)、地名(4)、巷名(5)、弄(6)
+                log.info("我是JE421，路名(3)、地名(4)、巷名(5)、弄(6)，同時沒寫 或 有寫但全都找不到cd");
                 setResult(dto, result, "JE421", "缺少路地名");
                 log.info("dto:{},result:{}",dto,result);
+
             } else if (address.getCounty() != null && address.getTown() != null && segNum.startsWith("00")) {
                 // JE521 (行政區無法對應)
                 //(1) 縣市+鄉鎮市區片段欄位有值，但要件編號00(redis找不到cd)
+                log.info("我是JE521，有縣市+鄉鎮市區片段，但redis找不到cd");
                 setResult(dto, result, "JE521", "查無地址");
             } else if ((address.getVillage() != null && '0' == segNum.charAt(2)) || (address.getRoad() != null && address.getArea() != null && '0' == segNum.charAt(3) && '0' == segNum.charAt(4))) {
                 // JE531 (路地名無法對應)
-                //(1) 如果村里地址片段欄位有值，但要件編號為空(redis找不到cd)
-                //(2) 路地名片段欄位有值，但路地名要件編號為空(redis找不到cd)
+                //(1) 如果村里有寫，但redis找不到cd
+                //(2) 路地名有寫，但路地名redis找不到cd
+                log.info("我是JE531:路地名無法對應 ; 村里有寫，但redis找不到cd 或  路地名有寫，但路地名redis找不到cd");
                 setResult(dto, result, "JE531", "查無地址");
             } else if (checkSegNum(segNum)) {
                 //JE511 (地址完整切割但比對不到母體檔)
                 //若有各地址片段不但有寫且有在要件清單(redis找得到地址片段cd)，組成mappingId卻比對不到母體
+                log.info("我是JE511:地址完整切割但比對不到母體檔");
                 setResult(dto, result, "JE511", "查無地址");
             } else if (address.getOriginalAddress().contains("地號") || address.getOriginalAddress().contains("段號")) {
                 //地段號 (地段號)
@@ -1284,22 +1291,43 @@ public class SingleQueryService {
     }
 
     /*
-    * 判斷segNum是否完整切割且切割內容都有找到cd碼
-    *
-    * 11110111 -> 沒寫AREA
-    * 11101111 -> 沒寫ROAD
-    * 11100111 ->沒寫ROAD,AREA
-    * 確保第4(ROAD)、5(AREA)、6(LANE) 個字符中至少有一个是1，而其他的必須是1
-    * ->可能組合 001,010,011,100,101,110,111
+    * 判斷segNum(10碼，新增neighbor,room) 是否完整切割且切割內容都有找到cd碼
+    * 前提:COUNTY(1) +TOWN(1) + VILLAGE(0,1都可) +NUM_FLR_ID(1)
+    * 邏輯:index: 3(ROAD)、4(AREA)、5(LANE) 、6(ALLEY) 中,ROAD或AREA至少有一個是1,LANE、ALLEY隨便
+    * ROAD、AREA -> 10 ,01 + LANE 、ALLEY -> 00,01,10 的排列組合
+    * todo:village -> 有寫有找(1) 沒寫(0)
     * */
     private Boolean checkSegNum(String segNum) {
-        String pattern ="";
-        String[] groups = new String[]{"001","010","011","100","101","110","111"};
-        for(String group:groups){
-            pattern = "111"+group+"11";
+        //road: 1 -> area 0,1 -> alley 0,1 -> lane 0,1
+        //road: 0,1 -> area 1 -> alley 0,1 -> lane 0,1
+        String hasRoad ="";
+        String noRoad ="";
+
+        String[] viilages = new String[]{"0","1"};
+        String[] areas = new String[]{"0","1"};
+        String[] alleys = new String[]{"0","1"};
+        String[] lanes = new String[]{"0","1"};
+        Set<String> patterns = new HashSet<>();
+
+        for(String village:viilages) {
+            for (String area : areas) {
+                for (String lane : lanes) {
+                    for (String alley : alleys) {
+                        hasRoad = "11"+village+"1" + area + lane + alley+"1";
+                        noRoad = "11"+village+"0" + area + lane + alley+"1";
+                        patterns.add(hasRoad);
+                        patterns.add(noRoad);
+                    }
+                }
+            }
         }
-//      String pattern = "^111(1[01]{2} | [01]1[01] | [01]{2}1 )11$";
-        return segNum.matches(pattern);
+        log.info("patterns:{}",patterns);
+        for(String pattern:patterns){
+            if(segNum.substring(0,segNum.length()-2).equals(pattern)){
+                return true;
+            }
+        }
+        return false;
     }
 
     private List<IbdTbAddrCodeOfDataStandardDTO> queryAddressData(Address address) {

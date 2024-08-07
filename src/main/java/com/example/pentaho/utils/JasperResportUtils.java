@@ -1,20 +1,18 @@
 package com.example.pentaho.utils;
 
-import jakarta.annotation.Nullable;
 import jakarta.servlet.http.HttpServletResponse;
 import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 import net.sf.jasperreports.engine.export.JRPdfExporter;
+import net.sf.jasperreports.engine.export.JRXlsExporter;
 import net.sf.jasperreports.engine.export.oasis.JROdsExporter;
-import net.sf.jasperreports.engine.util.LocalJasperReportsContext;
-import net.sf.jasperreports.export.SimpleExporterInput;
-import net.sf.jasperreports.export.SimpleOdsReportConfiguration;
-import net.sf.jasperreports.export.SimpleOutputStreamExporterOutput;
-import net.sf.jasperreports.export.SimplePdfExporterConfiguration;
+import net.sf.jasperreports.engine.export.ooxml.JRXlsxExporter;
+import net.sf.jasperreports.export.*;
+import net.sf.jasperreports.engine.JRException;
+import net.sf.jasperreports.engine.JasperPrint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
@@ -33,7 +31,7 @@ public class JasperResportUtils {
         JasperReport jasperReport = JasperCompileManager.compileReport(Thread.currentThread().getClass().getResource(filePath).openStream());
         return bindData(jasperReport, paramaters,fields);
     }
-
+//
     public final static JasperPrint bindData(JasperReport jasperReport, Map<String,Object> paramaters,Collection<?> beanCollection) throws JRException {
         if (!beanCollection.isEmpty()) {
             JRBeanCollectionDataSource source = new JRBeanCollectionDataSource(beanCollection);
@@ -43,7 +41,7 @@ public class JasperResportUtils {
             return JasperFillManager.fillReport(jasperReport, paramaters, source);
         }
     }
-
+//
     public final static void exporterOdsFile( String fileName,JasperPrint jasperPrint, HttpServletResponse response) throws JRException, IOException {
         SimpleOdsReportConfiguration odsReportConfiguration = new SimpleOdsReportConfiguration();
         JROdsExporter jrOdsExporter = new JROdsExporter();
@@ -54,8 +52,20 @@ public class JasperResportUtils {
         jrOdsExporter.setExporterOutput(new SimpleOutputStreamExporterOutput(response.getOutputStream()));
         jrOdsExporter.exportReport();
     }
-
-    public final static void exporterPDFFile( String fileName,JasperPrint jasperPrint, HttpServletResponse response) throws JRException, IOException {
+//
+    public final static void exportExcelFile(String fileName, JasperPrint jasperPrint, HttpServletResponse response) throws IOException, JRException {
+        SimpleXlsxExporterConfiguration simpleXlsxExporterConfiguration = new SimpleXlsxExporterConfiguration();
+        JRXlsxExporter jrXlsxExporter = new JRXlsxExporter();
+        jrXlsxExporter.setConfiguration(simpleXlsxExporterConfiguration);
+        jrXlsxExporter.setExporterInput(new SimpleExporterInput(jasperPrint));
+        response.setHeader("Content-Type","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition", "attachment;filename="+fileName);
+        jrXlsxExporter.setExporterOutput(new SimpleOutputStreamExporterOutput(response.getOutputStream()));
+        jrXlsxExporter.exportReport();
+    }
+//
+    public final static void exporterPDFFile(String fileName,JasperPrint jasperPrint, HttpServletResponse response) throws JRException, IOException {
         SimplePdfExporterConfiguration simplePdfExporterConfiguration = new SimplePdfExporterConfiguration();
         JRPdfExporter jrPdfExporter = new JRPdfExporter();
         jrPdfExporter.setConfiguration(simplePdfExporterConfiguration);

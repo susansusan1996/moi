@@ -93,7 +93,7 @@ public class SingleQueryResouce {
             }
 
             log.info("result.getText():{}",result.getText());
-            if(!"查無地址".equals(result.getText())){
+//            if(!"查無地址".equals(result.getText())){
                 result.getData().forEach(data->{
                     try {
                         data.setJoinStep(resourceUtils.getJoinStepDes(data.getJoinStep()));
@@ -101,7 +101,7 @@ public class SingleQueryResouce {
                         throw new RuntimeException(e);
                     }
                 });
-            }
+//            }
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             log.info("e:{}",e.toString());
@@ -182,7 +182,7 @@ public class SingleQueryResouce {
 
         try{
             SingleQueryResultDTO result = singleQueryService.findJson(singleQueryDTO);
-            if(!"查無地址".equals(result.getText())){
+//            if(!"查無地址".equals(result.getText())){
                 List<IbdTbAddrCodeOfDataStandardDTO> datas = result.getData();
                 datas.forEach(data->{
                     try {
@@ -192,7 +192,7 @@ public class SingleQueryResouce {
                     }
                     data.setAddressId(null);
                 });
-            }
+//            }
             return new ResponseEntity<>(result, HttpStatus.OK);
         } catch (Exception e) {
             log.info("e:{}",e.toString());

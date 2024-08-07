@@ -417,7 +417,7 @@ public class APIKeyResource {
                 SingleQueryDTO singleQueryDTO = new SingleQueryDTO();
                 singleQueryDTO.setOriginalAddress(singleQueryStr);
                 SingleQueryResultDTO result = singleQueryService.findJson(singleQueryDTO);
-                if(!"查無地址".equals(result.getText())){
+//                if(!"查無地址".equals(result.getText())){
                     result.getData().forEach(data->{
                         try {
                             data.setJoinStep(resourceUtils.getJoinStepDes(data.getJoinStep()));
@@ -425,7 +425,7 @@ public class APIKeyResource {
                             throw new RuntimeException(e);
                         }
                     });
-                }
+//                }
                 return ResponseEntity.ok(result);
             }
         }catch (Exception e){
