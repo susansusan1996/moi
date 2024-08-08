@@ -33,7 +33,7 @@ public class IbdTbIhChangeDoorplateHisRepositoryImpl implements IbdTbIhChangeDoo
         Query query = Query.builder()
                 .append("select \n")
                 .append("HIS.ADDRESS_ID, \n")
-                .append("SPLIT_PART (HIS.HIS_ADR, '臺灣省', 2), \n")
+                .append("SPLIT_PART (HIS.HIS_ADR, '臺灣省', 2) as HIS_ADR, \n")
                 .append("STD.WGS_X, \n")
                 .append("STD.WGS_Y, \n")
                 .append("HIS.UPDATE_DT, \n")
