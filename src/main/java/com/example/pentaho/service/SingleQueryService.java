@@ -243,7 +243,8 @@ public class SingleQueryService {
             log.info("所有56碼都沒找到 拔 neighbor & village 進行查詢");
             //(2) redis key查詢 -> 000000 + 50碼
             build50MappingIds(address);
-            Map<String, Set<String>> resultsBy50  = findMapsByKeys(address);
+//            Map<String, Set<String>> resultsBy50  = findMapsByKeys(address);
+            Map<String, Set<String>> resultsBy50 = fuzzyWithoutVillageAndNeighbor(address);
             //拔鄰、裡查詢後還是都找不到東西
             if(resultsBy50.isEmpty() || resultsBy50 == null){
                     log.info("拔鄰、裡查詢後還是都找不到東西");
@@ -266,8 +267,19 @@ public class SingleQueryService {
     public Set<String> filterCountyAndTown(Address address,Map<String,Set<String>> resultMap){
         Set<String> seqSet = new HashSet<>();
         Set<String> joinStepSet = new HashSet<>();
-        //地址片段
-        String countyAndTown = address.getCountyCd() + address.getTownCd();
+        /**注意同名不同cd的狀況*/
+        String[] countys = address.getCountyCd().split(",");
+        String[] towns = address.getTownCd().split(",");
+        Set<String> countyTowns = new HashSet<String>();
+        for (String county : countys) {
+            for(String town : towns){
+                log.info("county+town:{}",county+town);
+                countyTowns.add(county+town);
+            }
+        }
+
+
+//        String countyAndTown = address.getCountyCd() + address.getTownCd();
         resultMap.keySet().forEach(key->{
             if(!resultMap.get(key).isEmpty() && resultMap.get(key) != null){
                 resultMap.get(key).forEach(str->{
@@ -275,11 +287,13 @@ public class SingleQueryService {
                     String addressCd = split[0];
                     String seq = split[2];
                     String joinStep = split[1];
+                    countyTowns.forEach(countyAndTown->{
                     if(countyAndTown.equals(addressCd)){
                         log.info("符合的mapping:{}",key);
                         seqSet.add(seq);
                         joinStepSet.add(joinStep);
                     }
+                    });
                 });
             }
         });
@@ -364,6 +378,10 @@ public class SingleQueryService {
 
     Map<String,Set<String>>findMapsByKeys(Address address){
         return redisService.findMapsByKeys(address);
+    }
+
+    Map<String,Set<String>> fuzzyWithoutVillageAndNeighbor(Address address){
+        return redisService.fuzzyWithoutVillageAndNeighbor(address);
     }
 
 

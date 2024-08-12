@@ -553,12 +553,18 @@ public class AddressParser {
             Matcher matcher = pattern.matcher(fullAddress);
             log.info("matcher.find():{}",matcher.find());
             log.info("matcher.group(\"neighbor\"):{}",matcher.group("neighbor"));
+            /**完整地址無 '鄰' 直接算他有寫*/
             if(StringUtils.isNullOrEmpty(matcher.group("neighbor"))){
                  segNumMap.put("NEIGHBOR",true);
             }else{
-                //地址有鄰
+                /**完整地址有 '鄰' 直接算他有寫*/
                 if("0".equals(address.getSegmentExistNumber().substring(8,9))){
-                    segNumMap.put("NEIGHBOR",false);
+                    /**因為模糊查詢鄰、里一律拔除，所以要反過來檢查，看鄰就好，因為鄰比里優先，鄰沒寫就直接JA2*/
+                    if(matcher.group("neighbor").replace("鄰","").equals(address.getNeighborCd())){
+                        segNumMap.put("NEIGHBOR",true);
+                    }else{
+                        segNumMap.put("NEIGHBOR",false);
+                    }
                 }else{
                     segNumMap.put("NEIGHBOR",true);
                 }
