@@ -64,6 +64,8 @@ pentaho:
   web-target: http://10.32.32.74:8080/pentaho
   username: v_iisi_6008
   password: iisi!F327019
+  repository-name: PDI
+  job-path: /home/addr/ADDR_FULL_FLOW/MAIN.kjb
 
 
 directory:

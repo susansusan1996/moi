@@ -14,6 +14,11 @@ public class PentahoComponent {
 
     private String password;
 
+    private String repositoryName;
+
+    private String jobPath;
+
+
     public String getWebTarget() {
         return webTarget;
     }
@@ -36,5 +41,21 @@ public class PentahoComponent {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getRepositoryName() {
+        return repositoryName;
+    }
+
+    public void setRepositoryName(String repositoryName) {
+        this.repositoryName = repositoryName;
+    }
+
+    public String getJobPath() {
+        return jobPath;
+    }
+
+    public void setJobPath(String jobPath) {
+        this.jobPath = jobPath;
     }
 }

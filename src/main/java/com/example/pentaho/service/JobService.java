@@ -428,7 +428,8 @@ public class JobService {
         result.put("result","");
         result.put("id","");
         result.put("message","");
-        return webServiceUtils.getConnection(PentahoWebService.executeJobs,jobParams,result);
+        String uri = String.format(PentahoWebService.executeJobs, pentahoComponent.getRepositoryName(), pentahoComponent.getJobPath());
+        return webServiceUtils.getConnection(uri,jobParams,result);
     }
 
 

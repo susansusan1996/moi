@@ -45,8 +45,13 @@ public class AddressParser {
     private final String VILLAGE = "(?<village>(?<!路)%s(新里里|村里|[^路]*?里|[^路]*?村|%s)(?![村里鄰路巷段街道弄]))?";
     private final String NEIGHBOR = "(?<neighbor>" + ALL_CHAR + "+鄰)?";
 
-    //避免被切到路，直接先寫死在這裡
     private final String ROAD = "(?<road>(.*?段|.*?街|.*?大道|.*?路(?!巷)|%s)?)";
+
+
+    //todo:路前面的東西可能被切到路，以下是還在測試中的正則
+    //private final String NEIGHBOR = "(?<neighbor>" + ALL_CHAR + "{3}鄰)?";
+    //private final String ROAD = "(?<road>(%s|.*?段|.*?街|.*?大道|.*?路(?!巷))?)";
+
 
     private final String SPECIALLANE = "(?<speciallane>鐵路.*巷|丹路.*巷)?";
     private final String LANE = "(?<lane>.*?巷)?";
@@ -132,9 +137,11 @@ public class AddressParser {
         Map<String, Set<String>> allKeys = new LinkedHashMap<>();
         allKeys = findAllKeys();
         /**先把有 鄉、鎮、市、區、村、里、樓 等字眼的area拿出來，從原始地址中拔除 -> Redis.key = SPECIAL_AREA:**/
+        //todo:VILLIAGE:北門里 會在這個階段被 SPECIAL_AREA:北門 切出來，造成錯誤
         origninalAddress = findSpecialArea(allKeys, address, origninalAddress);
         /**組正則表達式**/
         String pattern = getPattern(allKeys);
+        log.info("pattern:{}",pattern);
         Pattern regexPattern = Pattern.compile(pattern);
         Matcher matcher = regexPattern.matcher(origninalAddress);
         if (matcher.matches()) {

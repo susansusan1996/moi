@@ -79,6 +79,8 @@ pentaho:
   web-target: http://52.33.116.195:8080/pentaho
   username: admin
   password: password
+  repository-name: PentahoRepository
+  job-path: /home/addr/ADDR_FULL_FLOW/MAIN.kjb
 
 directory:
   #pentaho server IP
