@@ -2,15 +2,24 @@ package com.example.pentaho.utils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.PatternMatchUtils;
 
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
+
+import static org.exolab.castor.xml.DescriptorType.element;
 
 public class NumberParser {
     private static final Logger log = LoggerFactory.getLogger(NumberParser.class);
 
+    /**
+     * 半形數字
+     * @param input
+     * @return
+     */
     public static String replaceWithHalfWidthNumber(String input) {
         if (input != null && !input.isEmpty()) {
             input = input.replaceAll("[-－]", "之");
@@ -217,7 +226,13 @@ public class NumberParser {
         return "";
     }
 
-    //補0
+    /***
+     * Num_FLR redis找不到，手動補0用
+     * @param comparisonValue
+     * @param numPart
+     * @return
+     */
+
     public static String padNumber(String comparisonValue, String numPart) {
         // 計算需要補充0的個數
         int zeroPaddingCount = Math.max(0, comparisonValue.length() - numPart.length());
@@ -345,4 +360,70 @@ public class NumberParser {
         }
     }
 
+
+    static class FullWidthNumRegex {
+        public static final Map<String, String> fullWidthNumMap = new HashMap<String, String>();
+
+
+        /**之１,１之,２之１號,１號*/
+        static {
+            fullWidthNumMap.put("1", "１");
+            fullWidthNumMap.put("2", "２");
+            fullWidthNumMap.put("3", "３");
+            fullWidthNumMap.put("4", "４");
+            fullWidthNumMap.put("5", "５");
+            fullWidthNumMap.put("6", "６");
+            fullWidthNumMap.put("7", "７");
+            fullWidthNumMap.put("8", "８");
+            fullWidthNumMap.put("9", "９");
+        }
+
+        public static final Map<String, String> chineseNumMap = new HashMap<String, String>();
+
+        /**五樓*/
+        static {
+            chineseNumMap.put("1", "一");
+            chineseNumMap.put("2", "二");
+            chineseNumMap.put("3", "三");
+            chineseNumMap.put("4", "四");
+            chineseNumMap.put("5", "五");
+            chineseNumMap.put("6", "六");
+            chineseNumMap.put("7", "七");
+            chineseNumMap.put("8", "八");
+            chineseNumMap.put("9", "九");
+            chineseNumMap.put("10", "十");
+        }
+
+        public static String getFullWidthNumMap(String input) {
+            log.info("numFlr:{}",input);
+            Map<String, String> useMap = new HashMap<String, String>();
+            if(input.contains("樓")){
+                log.info("有樓 => 轉成中文數字");
+                useMap = chineseNumMap;
+            }else{
+                log.info("之1 , 1之 , 1號 => 轉成全形數字");
+                useMap = fullWidthNumMap;
+            }
+            /**正則*/
+            char[] chars = input.toCharArray();
+            StringBuilder result =new StringBuilder("");
+                for (char charr : chars) {
+//                log.info("charr:{}",charr);
+               if(useMap.containsKey(String.valueOf(charr))){
+                   result.append(useMap.get(String.valueOf(charr)));
+               }else{
+                   result.append(charr);
+               }
+            }
+            log.info("num轉成:{}", result);
+            return result.toString();
+        }
+    }
+
+    public static String replaceWithFullWidthNumber(String input){
+        if(!StringUtils.isNullOrEmpty(input)){
+            return  FullWidthNumRegex.getFullWidthNumMap(input);
+        }
+        return input;
+    }
 }

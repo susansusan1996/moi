@@ -14,6 +14,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Optional;
+import java.util.TimeZone;
 
 @SpringBootApplication
 @ConfigurationPropertiesScan
@@ -37,6 +38,8 @@ public class PentahoApplication {
 	}
 
 	private static void log(){
+		TimeZone defaultTimeZone = TimeZone.getDefault();
+		log.info("時區:{}",defaultTimeZone.getID());
 		String protocol ="http";
 		String serverPort = env.getProperty("server.port");
 		String contextPath = Optional

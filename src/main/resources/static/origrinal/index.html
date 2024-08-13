@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="logo.jpg"></link>
+    <title>中華民國內政部-地址編碼
+    </title>
+    <style>
+      .container {
+        width: 100%;
+        display: table;
+        background-color: #007bff;
+        color: white;
+        text-align: center;
+      }
+      .row {
+        display: table-row;
+      }
+      .cell {
+        display: table-cell;
+        padding: 10px;
+      }
+      .table {
+        width: 100%;
+        /* display: table; */
+        color: white;
+        text-align: center;
+      }
+      .title {
+        background-color: #007bff;
+        text-align: center;
+      }
+      .data {
+        color:black;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- <div class="container">
+      <div class="row">
+        <div class="cell">戶號地址</div>
+        <div class="cell">標準地址</div>
+        <div class="cell">地址識別碼</div>
+        <div class="cell">座標</div>
+        <div class="cell">比對代碼</div>
+      </div>
+      <div class="row">
+        <div class="cell">彰化縣二林鎮興農路008彰化縣行 24 號</div>
+        <div class="cell">彰化縣二林鎮興農路008彰化縣行 24 號</div>
+        <div class="cell">BNT3626-3</div>
+        <div class="cell">120.38136, 23.89831</div>
+        <div class="cell">JA111</div>
+      </div>
+    </div> -->
+    <table id="myTable" class="table">
+      <thead>
+        <tr id="th">
+          <th class="title">原始地址</th>
+          <th class="title">標準地址</th>
+          <th class="title">地址識別碼</th>
+          <th class="title">座標</th>
+          <th class="title">比對代碼</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    </div>
+  </body>
+  <script>
+    let joinStepArray =
+      [
+      {key:'JA1',text:'最嚴謹比對'},
+      {key:'JA2',text:'排除鄰比對'},
+      {key:'JA3',text:'排除村、里比對'},
+      {key:'JB1',text:'退室比對'},
+      {key:'JB2',text:'樓之之樓比對'},
+      {key:'JB3',text:'退樓後之比對'},
+      {key:'JB4',text:'退樓比對'},
+      {key:'JB5',text:'號之之號比對'},
+      {key:'JC1',text:'臨建特附進階比對'},
+      {key:'JC2',text:'路地名進階比對'},
+      {key:'JC3',text:'缺路地名進階比對'},
+      {key:'JC4',text:'號樓之要件進階比對'},
+      {key:'JD1',text:'排除要件對應多址'},
+
+      {key:'JD2',text:'地址明確拆分多址'},
+      {key:'JD3',text:'退室多址比對'},
+      {key:'JD4',text:'退樓後之多址比對'},
+
+      {key:'JD5',text:'退樓多址比對'},
+      {key:'JD6',text:'附近地址比對'},
+      {key:'JD7',text:'增編多址比對'},
+
+      {key:'JE1',text:'公設'},
+      {key:'JE2',text:'具方向性地址'},
+      {key:'JE3',text:'特殊地址'},
+      {key:'JE4',text:'地址要件不齊'},
+      {key:'JE5',text:'地址不存在母體'},
+      {key:'JE61',text:'門牌廢止'},
+      {key:'JE62',text:'異動軌跡有異'},
+      {key:'JE9',text:'其他'},
+    ]
+    
+    let url = new URL(window.location.href);
+
+    let full = url.searchParams.get("full");
+    let id = url.searchParams.get("id");
+    let xy = url.searchParams.get("xy");
+    let js = url.searchParams.get("js");
+    let os = url.searchParams.get("os");
+
+    let fullArray;
+    let idArray;
+    let xyArray;
+    let jsArray;
+   
+    
+    
+    if (os) {
+      console.log("os:{}", os);
+    }
+
+    if (full) {
+      console.log("full:{}", full);
+        fullArray = full.split(",");
+    }
+
+    if (id) {
+      console.log("id:{}", id);
+        idArray = id.split(",");
+    }
+
+    if (xy) {
+        xyArray = xy.split(",");
+    }
+
+    if (js) {
+        jsArray = js.split(",")
+      
+    }
+
+    console.log("fullArray:", fullArray);
+    console.log("idArray:", idArray);
+    console.log("xyArray:", xyArray);
+    console.log("jsArray:", jsArray);
+   
+
+    let max = fullArray.length;
+    let table = document
+      .getElementById("myTable")
+      .getElementsByTagName("tbody")[0];
+
+    for (let index = 0; index < max; index++) {
+    
+      let newRow = table.insertRow();
+      newRow.setAttribute('class','data');
+
+      let cell1 = newRow.insertCell(0);
+      let cell2 = newRow.insertCell(1);
+      let cell3 = newRow.insertCell(2);
+      let cell4 = newRow.insertCell(3);
+      let cell5 = newRow.insertCell(4);
+
+      cell2.textContent = fullArray[index];
+      cell3.textContent = idArray[index];
+      cell4.textContent = xyArray[index].replace(':',',');
+      let temp;
+    joinStepArray.forEach(x=>{
+      if(x.key ==jsArray[index].substring(0,3) ){
+temp =`${jsArray[index]}:${x.text}`;
+      }
+    })
+     console.log('temp:',temp)
+      cell5.textContent = temp
+      cell1.textContent = os;
+    }
+  </script>
+</html>

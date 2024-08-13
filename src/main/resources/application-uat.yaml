@@ -65,6 +65,8 @@ pentaho:
   username: v_iisi_6008
   password: iisi!F327019
   encodeAuth: /home/moi/app/pentaho/basic-auth.txt
+  repository-name: PDI
+  job-path: /home/addr/ADDR_FULL_FLOW/MAIN.kjb
 
 
 directory:

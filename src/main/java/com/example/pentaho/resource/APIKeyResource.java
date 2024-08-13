@@ -27,6 +27,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.security.PrivateKey;
 import java.text.ParseException;
 import java.util.Date;
@@ -69,6 +70,9 @@ public class APIKeyResource {
 
     @Autowired
     private AddressParser  addressParser;
+
+    @Autowired
+    private ResourceUtils resourceUtils;
 
 
 
@@ -362,7 +366,7 @@ public class APIKeyResource {
     )
     @GetMapping("/query-single")
     @Authorized(keyName = "AP")
-    public ResponseEntity<String> queryAddressJson(
+    public ResponseEntity<SingleQueryResultDTO> queryAddressJson(
             @Parameter(
                     description = "地址、縣市、鄉鎮市區以,區隔組合成字串(順序不可改)。",
                     required = true,
@@ -392,14 +396,34 @@ public class APIKeyResource {
                         singleQueryDTO.setTown(params[2]);
                         break;
                     default:
-                        return new ResponseEntity<>("格式輸入錯誤，請重新確認", HttpStatus.BAD_REQUEST);
+                        SingleQueryResultDTO singleQueryResultDTO = new SingleQueryResultDTO();
+                        singleQueryResultDTO.setText("格式輸入錯誤，請重新確認");
+                        return new ResponseEntity<>(singleQueryResultDTO, HttpStatus.BAD_REQUEST);
                 }
                 log.info("singleQueryDTO:{}", singleQueryDTO);
-                return ResponseEntity.ok(singleQueryService.findJsonTest(singleQueryDTO));
+                SingleQueryResultDTO result = singleQueryService.findJson(singleQueryDTO);
+                result.getData().forEach(data->{
+                    try {
+                        data.setJoinStep(resourceUtils.getJoinStepDes(data.getJoinStep()));
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+                return ResponseEntity.ok(result);
             } else {
                 SingleQueryDTO singleQueryDTO = new SingleQueryDTO();
                 singleQueryDTO.setOriginalAddress(singleQueryStr);
-                return ResponseEntity.ok(singleQueryService.findJsonTest(singleQueryDTO));
+                SingleQueryResultDTO result = singleQueryService.findJson(singleQueryDTO);
+//                if(!"查無地址".equals(result.getText())){
+                    result.getData().forEach(data->{
+                        try {
+                            data.setJoinStep(resourceUtils.getJoinStepDes(data.getJoinStep()));
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+//                }
+                return ResponseEntity.ok(result);
             }
         }catch (Exception e){
             log.info("e:{}",e.toString());

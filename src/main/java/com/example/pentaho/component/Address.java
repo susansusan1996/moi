@@ -5,6 +5,7 @@ import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.*;
 
 public class Address {
 
@@ -45,9 +46,10 @@ public class Address {
     private String addrRemains;
     private boolean isParseSuccessed;
     private String originalAddress;
-    private String cleanAddress; //去除奇怪字元、去除台灣省後的地址
+    private String cleanAddress; //去除奇怪字元、去除台灣省、福建省後的地址
     private List<String> mappingId; //64碼
     private String segmentExistNumber; //紀錄user是否有輸入每個地址片段，有:1，沒有:0
+    private Map<String,Boolean> segNumMap; ///key:要件；value :是否填寫+有mapping到
     private List<LinkedHashMap<String, String>> mappingIdMap;
     private String joinStep; //地址比對代碼
     private Set<String> seqSet;
@@ -258,6 +260,13 @@ public class Address {
         this.segmentExistNumber = segmentExistNumber;
     }
 
+    public Map<String, Boolean> getSegNumMap() {
+        return segNumMap;
+    }
+
+    public void setSegNumMap(Map<String, Boolean> segNumMap) {
+        this.segNumMap = segNumMap;
+    }
 
     public String getJoinStep() {
         return joinStep;

@@ -26,6 +26,36 @@ public class Directory {
 
     private String ktrFilePath; // etl .ktr檔的存放位置
 
+    private String qrcodeUrl;
+
+    private String qrcodePath;  //
+
+    private String logoPath;
+
+    public String getQrcodeUrl() {
+        return qrcodeUrl;
+    }
+
+    public void setQrcodeUrl(String qrcodeUrl) {
+        this.qrcodeUrl = qrcodeUrl;
+    }
+
+    public String getQrcodePath() {
+        return qrcodePath;
+    }
+
+    public void setQrcodePath(String qrcodePath) {
+        this.qrcodePath = qrcodePath;
+    }
+
+    public String getLogoPath() {
+        return logoPath;
+    }
+
+    public void setLogoPath(String logoPath) {
+        this.logoPath = logoPath;
+    }
+
     public String getTarget() {
         return target;
     }

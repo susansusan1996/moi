@@ -1,20 +1,19 @@
 package com.example.pentaho.component;
 
 
+import org.springframework.context.annotation.Profile;
+
 public class PentahoWebService  {
 
-    /** å‘¼å«PentahoRepositoryä¸Šçš„.ktr */
+    /** ©I¥sPentahoRepository¤Wªº.ktr */
     public final static String executeTrans= "/kettle/executeTrans/?rep=&trans=/home/ubuntu/samples/enableWebService.ktr&";
 
-    /** å‘¼å«PentahoRepositoryä¸Šçš„.kbj */
-    public final static String executeJobs= "/kettle/executeJob/?rep=PentahoRepository&job=/home/addr/ADDR_FULL_FLOW/MAIN.kjb&level=Debug&";
+    public final static String executeJobs= "/kettle/executeJob/?rep=%s&job=%s&level=Debug&";
 
-    /**kettleä¸Šæ‰€æœ‰åŸ·è¡Œä¸­çš„ä½œæ¥­ç‹€æ…‹ */
-    public final static String jobStatusById ="/kettle/jobStatus/?name=&xml=Y&id=%s";
-
-
-    /** æœ¬åœ°æ¸¬è©¦åŸ·è¡Œkjb */
+    public final static String jobStatusById ="/kettle/jobStatus/?name=&xml=Y&";
+    /** ¥»¦a´ú¸Õ°õ¦ækjb */
     public final static String simpleExecuteJob ="/kettle/executeJob/?job=C:\\Users\\2212009\\Desktop\\moi\\ppppp\\pdi-ce-9.4.0.0-343\\data-integration\\jobIdTest.kjb&level=Debug";
+
 
 
 }

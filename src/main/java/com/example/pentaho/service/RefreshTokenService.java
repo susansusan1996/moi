@@ -38,8 +38,17 @@ public class RefreshTokenService {
     @Qualifier("stringRedisTemplate0")
     private StringRedisTemplate stringRedisTemplate0;
 
+    /***
+     *
+     * @param userId
+     * @param username
+     * @param tokenMap
+     * @param refreshTokenMap
+     * @param reviewResult
+     * @return
+     * @throws ParseException
+     */
     public RefreshToken saveRefreshToken(String userId,String username,Map<String, Object> tokenMap, Map<String, Object> refreshTokenMap, String reviewResult) throws ParseException {
-
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setId(userId);
         refreshToken.setUsername(username);
@@ -130,6 +139,8 @@ public class RefreshTokenService {
 
     /**
      * redis存refresh_token
+     * REJECT的會只有reviewResult,userId有值，其餘""
+     *
      */
     public void saveRefreshToken(RefreshToken refreshToken) {
         String id = refreshToken.getId();
@@ -144,12 +155,14 @@ public class RefreshTokenService {
             String key = entry.getKey();
             String value = entry.getValue();
             if (value != null) {
+                //建立一個set,key為applicantId:token",並放入對應的value
                 stringRedisTemplate0.opsForValue().set(id + ":" + key, value);
             } else {
                 /*REJECT時會空**/
                 stringRedisTemplate0.delete(id + ":" + key);
             }
         }
+        //REJECT || AGREE　都要存建立時間
         stringRedisTemplate0.opsForValue().set(id + ":create_timestamp", Instant.now().toString());
     }
 
@@ -205,6 +218,7 @@ public class RefreshTokenService {
         RefreshToken refreshToken = new RefreshToken();
         if (StringUtils.isNotNullOrEmpty(id)) {
             String reviewResult = stringRedisTemplate0.opsForValue().get(id + ":review_result");
+            //表示過去申請成功
             if ("AGREE".equals(reviewResult)) {
                 /**表示已申請成功*/
                 refreshToken.setId(id);

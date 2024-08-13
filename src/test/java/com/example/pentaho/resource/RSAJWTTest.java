@@ -8,8 +8,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.ResourceUtils;
 
+import java.net.HttpURLConnection;
+import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,6 +43,14 @@ public class RSAJWTTest {
         log.info("RSAToken: "+RSAToken);
     }
 
+
+    @Test //用公鑰解密jwt token
+    public void basicAuthentication() {
+        String auth = "v_iisi_addr_2009" + ":" + "D01220188@iisi";
+        byte[] authBytes = auth.getBytes(StandardCharsets.UTF_8);
+        String encodedAuth = Base64.getEncoder().encodeToString(authBytes);
+        System.out.println("encodedAuth:"+encodedAuth);
+    }
 
     @Test //用公鑰解密jwt token
     public void rsaRead() throws Exception {

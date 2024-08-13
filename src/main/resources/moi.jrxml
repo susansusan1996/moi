@@ -83,7 +83,7 @@
 		<band height="30" splitType="Stretch">
 			<property name="com.jaspersoft.studio.unit.height" value="px"/>
 			<textField textAdjust="ScaleFont" isBlankWhenNull="true">
-				<reportElement x="0" y="0" width="102" height="30" isRemoveLineWhenBlank="true" uuid="5e4f658c-9dcb-431b-8a77-25b4b27e0135"/>
+				<reportElement x="0" y="0" width="102" height="30" uuid="5e4f658c-9dcb-431b-8a77-25b4b27e0135"/>
 				<box>
 					<pen lineWidth="1.0" lineStyle="Solid"/>
 				</box>
@@ -93,7 +93,7 @@
 				<textFieldExpression><![CDATA[$F{dateTime}]]></textFieldExpression>
 			</textField>
 			<textField textAdjust="ScaleFont" isBlankWhenNull="true">
-				<reportElement x="400" y="0" width="154" height="30" isRemoveLineWhenBlank="true" uuid="3639a84e-1586-4076-b161-43c5ebe3b93d"/>
+				<reportElement x="400" y="0" width="154" height="30" uuid="3639a84e-1586-4076-b161-43c5ebe3b93d"/>
 				<box>
 					<pen lineWidth="1.0" lineStyle="Solid"/>
 				</box>
@@ -103,7 +103,7 @@
 				<textFieldExpression><![CDATA[$F{queryTrack}]]></textFieldExpression>
 			</textField>
 			<textField textAdjust="ScaleFont" isBlankWhenNull="true">
-				<reportElement x="251" y="0" width="149" height="30" isRemoveLineWhenBlank="true" uuid="3c8d5b89-348c-4b81-8a32-2c15ca662bc0"/>
+				<reportElement x="251" y="0" width="149" height="30" uuid="3c8d5b89-348c-4b81-8a32-2c15ca662bc0"/>
 				<box>
 					<pen lineWidth="1.0" lineStyle="Solid"/>
 				</box>
@@ -113,7 +113,7 @@
 				<textFieldExpression><![CDATA[$F{queryStandardAddress}]]></textFieldExpression>
 			</textField>
 			<textField textAdjust="ScaleFont" isBlankWhenNull="true">
-				<reportElement x="102" y="0" width="149" height="30" isRemoveLineWhenBlank="true" uuid="47f6b3bc-586d-4c14-9398-10ddb54eff30"/>
+				<reportElement x="102" y="0" width="149" height="30" uuid="47f6b3bc-586d-4c14-9398-10ddb54eff30"/>
 				<box>
 					<pen lineWidth="1.0" lineStyle="Solid"/>
 				</box>

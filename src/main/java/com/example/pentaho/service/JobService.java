@@ -431,17 +431,12 @@ public class JobService {
             result.put("status",status);
             return result;
         }
-        //todo:SFTP成功，準備呼叫job， result 中放 PentahoWebService 回傳內容的key(可參考官方文件)*/
-        webServiceUtils.getConnection(PentahoWebService.executeJobs, jobParams, result);
-        //todo: 要存到DB嗎
-//        String jsonStr = gson.toJson(jobParams);
-//        Date date = DateUtils.parseDate(new Date().toString(), "yyyy-mm-dd");
-//        result.put("jobParamsJsonStr",jsonStr);
-//        result.put("formName",jobParams.getFORM_NAME());
-//        result.put("executeDate",date.toString());
-//        result.put("updateDate",date.toString());
-//        jobStatusRepository.insertJobStatus(result);
-        return result;
+        /*SFTP成功，準備呼叫job， result 中放 PentahoWebService 回傳內容的key*/
+        result.put("result","");
+        result.put("id","");
+        result.put("message","");
+        String uri = String.format(PentahoWebService.executeJobs, pentahoComponent.getRepositoryName(), pentahoComponent.getJobPath());
+        return webServiceUtils.getConnection(uri,jobParams,result);
     }
 
 

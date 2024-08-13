@@ -53,7 +53,7 @@ public class SingleTrackQueryService {
 
 
 
-    public List<SingleQueryTrackDTO> querySingleTrack(String addressId) {
+    public List<SingleQueryTrackDTO> querySingleTrack(String addressId)  {
         log.info("addressId:{}",addressId);
         /*回傳內容*/
         SingleQueryTrackDTO dto = new SingleQueryTrackDTO();
