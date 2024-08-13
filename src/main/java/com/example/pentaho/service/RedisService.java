@@ -28,6 +28,8 @@ public class RedisService {
 
     private static Logger log = LoggerFactory.getLogger(SingleQueryService.class);
 
+    private final static List<String> NUM_FLR_ARRAY = Arrays.asList("NUM_FLR_1","NUM_FLR_2","NUM_FLR_3","NUM_FLR_4","NUM_FLR_5");
+
     Integer SCAN_SIZE = 10000;
 
 
@@ -539,10 +541,17 @@ public class RedisService {
     );
 
 
+    /***
+     *  e:org.springframework.data.redis.connection.RedisPipelineException: Pipeline contained one or more invalid commands
+     * @param keyMap
+     * @param segmentExistNumber
+     * @return
+     */
     public Map<String, String> findSetByKeys(Map<String, String> keyMap, String segmentExistNumber) {
         Map<String, String> resultMap = new HashMap<>();
         //redisKeys =["COUNTY:新北市","TOWN:新莊渠",...]
         List<String> redisKeys = new ArrayList<>(keyMap.keySet());
+        log.info("redisKeys:{}",redisKeys);
         //要件清單
         StringBuilder segmentExistNumberBuilder = new StringBuilder(segmentExistNumber);
 
@@ -551,6 +560,8 @@ public class RedisService {
         try {
             connection.openPipeline();
             for (String key : redisKeys) {
+                log.info("key:{}",key);
+
                 /*getSet<String>byKey*/
                 connection.sMembers(serializer.serialize(key));
             }
@@ -563,13 +574,15 @@ public class RedisService {
                 for (byte[] bytes : redisSetBytes) {
                     redisSet.add(serializer.deserialize(bytes));
                 }
+
+
                 /*有序*/
                 String key = redisKeys.get(i);
                 if (!redisSet.isEmpty()) {
                     log.info("redis<有>找到cd代碼，key: {}, value: {}", key, redisSet);
                     String redisValue = String.join(",", redisSet);
                     resultMap.put(key, redisValue);
-                    //如果是 "COUNTY", "TOWN", "VILLAGE","ROAD", "AREA", "LANE", "ALLEY",
+                    //"COUNTY", "TOWN", "VILLAGE","ROAD", "AREA", "LANE", "ALLEY",
                     // "NUM_FLR_1", "NUM_FLR_2", "NUM_FLR_3", "NUM_FLR_4", "NUM_FLR_5"
                     //才需要判斷0或1
                     if(containsKeyword(key)){
@@ -577,6 +590,12 @@ public class RedisService {
                     }
                 } else {
                     log.info("redis <沒有> 找到 <"+key+"> 的cd代碼，要用模糊搜尋");
+
+                    if(NUM_FLR_ARRAY.contains(key.split(":")[0])){
+                        resultMap.put(key, keyMap.get(key));
+                        segmentExistNumberBuilder.append("0");
+                        continue;
+                    }
                     /* ex: key="COUNTY:新市" -> parts = ["COUNTY","新市"]**/
                     /*提取key中的中文部分**/
                     String[] parts = key.split(":");

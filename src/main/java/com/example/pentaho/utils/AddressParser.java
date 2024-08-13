@@ -151,6 +151,20 @@ public class AddressParser {
         return address;
     }
 
+    public Address extractNeighbor(Address address){
+        log.info("含 鄰 的road:{}",address.getRoad());
+        Pattern pattern = Pattern.compile("(?<neighbor>[0-9０-９A-Za-zａ-ｚ\\uFF10-\\uFF19零一二三四五六七八九十百千甲乙丙丁戊己庚壹貳參肆伍陸柒捌玖拾佰卅廿整棟]+鄰)");
+        Matcher matcher = pattern.matcher(address.getRoad());
+        log.info("matcher.find():{}",matcher.find());
+        log.info("matcher.group(\"neighbor\"):{}",matcher.group("neighbor"));
+        if(StringUtils.isNotNullOrEmpty(matcher.group("neighbor"))){
+            log.info(":{} 被切道路了",matcher.group("neighbor"));
+            address.setNeighbor(matcher.group("neighbor"));
+            address.setRoad(address.getRoad().replace(matcher.group("neighbor"),""));
+        }
+        return address;
+    }
+
 
     /***
      * 只有初次切割會來這
@@ -359,12 +373,18 @@ public class AddressParser {
             log.info("準備再次切割!!!");
             return parseAddress(parseBasement, address);
         }
+
+
         address.setZipcode(matcher.group("zipcode"));
         address.setCounty(matcher.group("county"));
         address.setTown(matcher.group("town"));
         address.setVillage(matcher.group("village"));
         address.setNeighbor(matcher.group("neighbor"));
         address.setRoad(matcher.group("road"));
+
+        if(address.getRoad().indexOf("鄰")>0){
+            extractNeighbor(address);
+        }
         /**speciallane:鐵路*巷*/
         address.setLane(matcher.group("speciallane") != null ? matcher.group("speciallane") : matcher.group("lane"));
         /**最後 alley 會是 alley + subAlley */

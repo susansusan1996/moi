@@ -646,7 +646,7 @@ public class SingleQueryService {
         /**========室========**/
         String room = address.getRoom();
 
-        /**===========將各地址片段放進map，default value都是對應字數0===========================*/
+        /**=========== key:地址片段(不能有null)；default value都是對應字數0===========================*/
         Map<String, String> keyMap = new LinkedHashMap<>();
         /*5碼;縣市*/
         keyMap.put("COUNTY:" + county, "00000");
@@ -691,7 +691,7 @@ public class SingleQueryService {
         address.setRoadAreaSn(StringUtils.isNullOrEmpty(roadAreaKey) ? "0000000" : resultMap.get("ROADAREA:" + roadAreaKey));
         address.setLaneCd(StringUtils.isNullOrEmpty(lane) ? "0000" : resultMap.get("LANE:" + replaceWithHalfWidthNumber(lane)));
         address.setAlleyIdSn(StringUtils.isNullOrEmpty(alleyIdSnKey) ? "0000000" : resultMap.get("ALLEY:" + alleyIdSnKey));
-        /**判斷redis有沒有找到Num_FLR_,沒有的話就手動組 ex:NUM_FLR_1:10樓找不到，就自己組000010**/
+        /**判斷redis有沒有找到Num_FLR_,沒有的話就手動組 ex:NUM_FLR_1:10樓找不到，就自己組000010，所以不需要模糊查詢**/
         address.setNumFlr1Id(setNumFlrId(resultMap, address, "NUM_FLR_1"));
         address.setNumFlr2Id(setNumFlrId(resultMap, address, "NUM_FLR_2"));
         address.setNumFlr3Id(setNumFlrId(resultMap, address, "NUM_FLR_3"));
@@ -842,6 +842,7 @@ public class SingleQueryService {
      * @return
      */
     public static String combineSegment(String segmentExistNumber) {
+        log.info("segmentExistNumber:{}",segmentExistNumber);
        //
         if (segmentExistNumber.length() !=12) {
             throw new IllegalArgumentException("segmentExistNumber initial value 應為 14 碼");
@@ -992,8 +993,12 @@ public class SingleQueryService {
     public String getNumFlrPos(Address address) {
 //      String[] patternFlr1 = {".+號$", ".+樓$", ".+之$"};//1,2,3
 
-        String[] patternFlr1 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^之.+號", "^[A-ZＡ-Ｚ]+$"}; //~號、樓、之、棟、區、之~、之~號、字串內只有能半形、全形大寫英
-        String[] patternFlr2 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^之.+號", "^[A-ZＡ-Ｚ]+$"}; //~號、樓、之、棟、區、之~、之~號、字串內只有能半形、全形大寫英
+        /**每一層去filter 1~7號*/
+        /***/
+//        String[] patternFlr1 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^之.+號", "^[A-ZＡ-Ｚ]+$"}; //~號、樓、之、棟、區、之~、之~號、字串內只有能半形、全形大寫英
+//        String[] patternFlr2 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^之.+號", "^[A-ZＡ-Ｚ]+$"}; //~號、樓、之、棟、區、之~、之~號、字串內只有能半形、全形大寫英
+        String[] patternFlr1 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
+        String[] patternFlr2 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
         String[] patternFlr3 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
         String[] patternFlr4 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
         String[] patternFlr5 = {".+號$", ".+樓$", ".+之$", "^之.+", ".+棟$", ".+區$", "^[0-9０-９a-zA-Zａ-ｚＡ-Ｚ一二三四五六七八九東南西北甲乙丙]+$"};
