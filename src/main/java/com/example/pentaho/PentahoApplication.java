@@ -6,7 +6,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
+import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -22,14 +24,13 @@ import java.util.Optional;
 public class PentahoApplication {
 
 	private final static Logger log = LoggerFactory.getLogger(PentahoApplication.class);
-
+//
 	private static Environment env;
-
+//
+//
 	public PentahoApplication(Environment env) {
 		this.env = env;
 	}
-
-
 
 	public static void main(String[] args)  {
 		SpringApplication.run(PentahoApplication.class, args);
@@ -54,7 +55,7 @@ public class PentahoApplication {
 						"Application '{}' is running! Access URLs:\n\t" +
 						"Local: \t\t{}://localhost:{}{}\n\t" +
 						"External: \t{}://{}:{}{}\n\t" +
-						"Profile(s): \t{}\n----------------------------------------------------------",
+						R"Profile(s): \t{}\n----------------------------------------------------------",
 				env.getProperty("spring.application.name"),
 				protocol,
 				serverPort,
