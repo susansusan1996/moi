@@ -1,12 +1,10 @@
 package com.example.pentaho.resource;
 
 import com.example.pentaho.component.*;
+import com.example.pentaho.service.QrcodeService;
 import com.example.pentaho.service.SingleQueryService;
 import com.example.pentaho.service.SingleTrackQueryService;
-import com.example.pentaho.utils.AddressParser;
-import com.example.pentaho.utils.QRCodeUtils;
-import com.example.pentaho.utils.ResourceUtils;
-import com.example.pentaho.utils.UserContextUtils;
+import com.example.pentaho.utils.*;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -27,7 +25,8 @@ import org.springframework.web.server.ResponseStatusException;
 import com.example.pentaho.service.SystemUpdateService;
 
 import java.io.IOException;
-import java.util.List;
+import java.security.PrivateKey;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/singlequery")
@@ -38,6 +37,10 @@ public class SingleQueryResouce {
 
     @Autowired
     private SingleQueryService singleQueryService;
+
+
+    @Autowired
+    private QrcodeService qrcodeService;
 
 
     @Autowired
@@ -56,6 +59,15 @@ public class SingleQueryResouce {
 
     @Autowired
     private ResourceUtils resourceUtils;
+
+
+    @Autowired
+    private RSAJWTUtils rsajwtUtils;
+
+
+    @Autowired
+    private KeyComponent keyComponent;
+
 
 
 
@@ -82,26 +94,46 @@ public class SingleQueryResouce {
     ) {
         try {
             SingleQueryResultDTO result = singleQueryService.findJson(singleQueryDTO);
+            log.info("result.getText():{}",result.getText());
+            result.getData().forEach(data->{
+                try {
+                    data.setJoinStep(resourceUtils.getJoinStepDes(data.getJoinStep()));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
 
             //todo:有查到
             if("查詢結果".equals(result.getText())){
-                String url = generateURL(result.getData(),singleQueryDTO.getOriginalAddress());
-                log.info("url:{}",url);
-                String filename = UserContextUtils.getUserHolder().getId();
-                String absolute = directory.getQrcodePath() +filename+".jpg";
-                QRCodeUtils.generateQrcode(url,directory.getLogoPath(),absolute);
+                //todo:產生Qrcode都要成async方法，先讓單筆查詢結果回去
+                //todo:改成1筆資料1張圖 url上 hardcore 資料
+//                Map<String, String> urls = qrcodeService.generateURLBySeqs(result.getData(), singleQueryDTO.getOriginalAddress());
+//                qrcodeService.generateQrcodeByUrls(urls);
+
+                //todo:改成1筆資料1張圖 url上 加密seqs
+//                Map<String, String> tokenUrls = qrcodeService.generateUrlsByToken(result.getData(), singleQueryDTO.getOriginalAddress());
+//                qrcodeService.generateQrcodeByUrls(tokenUrls);
+
+                HashMap<String, String> param = new HashMap<>(){{
+                    put("origrinalAddress",singleQueryDTO.getOriginalAddress());
+                }};
+
+                //todo:改成1筆資料1張圖 url上 不加密seq,originalAddress,joinStep
+                result.getData().forEach(data->{
+                    param.put("taskId",String.valueOf(data.getSeq()));
+                    param.put("joinStep",String.valueOf(data.getSeq()));
+                    qrcodeService.generateURLs(param);
+                });
+
+                //todo:舊的 一次查詢只做一張(限制五筆)
+//                String url = generateURL(result.getData(),singleQueryDTO.getOriginalAddress());
+//                log.info("url:{}",url);
+//                String filename = UserContextUtils.getUserHolder().getId();
+//                String absolute = directory.getQrcodePath() +filename+".jpg";
+//                QRCodeUtils.generateQrcode(url,directory.getLogoPath(),absolute);
             }
 
-            log.info("result.getText():{}",result.getText());
-//            if(!"查無地址".equals(result.getText())){
-                result.getData().forEach(data->{
-                    try {
-                        data.setJoinStep(resourceUtils.getJoinStepDes(data.getJoinStep()));
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-//            }
+
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             log.info("e:{}",e.toString());
@@ -182,7 +214,6 @@ public class SingleQueryResouce {
 
         try{
             SingleQueryResultDTO result = singleQueryService.findJson(singleQueryDTO);
-//            if(!"查無地址".equals(result.getText())){
                 List<IbdTbAddrCodeOfDataStandardDTO> datas = result.getData();
                 datas.forEach(data->{
                     try {
@@ -192,7 +223,6 @@ public class SingleQueryResouce {
                     }
                     data.setAddressId(null);
                 });
-//            }
             return new ResponseEntity<>(result, HttpStatus.OK);
         } catch (Exception e) {
             log.info("e:{}",e.toString());
@@ -203,70 +233,35 @@ public class SingleQueryResouce {
         }
     }
 
-
-    private String generateURL(List<IbdTbAddrCodeOfDataStandardDTO> datas,String inputAddress){
-        StringBuilder full =  new StringBuilder();
-        StringBuilder id =  new StringBuilder();
-        StringBuilder xy =  new StringBuilder();
-        StringBuilder js =  new StringBuilder();
-        StringBuilder url = new StringBuilder(directory.getQrcodeUrl());
-
-        if(datas.isEmpty()){
-            //查無資料
-            url.append("os=").append(inputAddress);
-            return url.toString();
-        }
+    /***
+     * QRcode 掃描獲取data接口
+     * @return
+     */
+    @GetMapping("/qrcode-data-token")
+    @Authorized(keyName = "AP")
+    public ResponseEntity<List<OpenPageDTO>> findbBySeq(){
+      return new ResponseEntity<>(singleQueryService.findbBySeq(),HttpStatus.OK);
+    }
 
 
-
-        if(datas.size()==1){
-
-            full.append(datas.get(0).getFullAddress());
-            id.append(datas.get(0).getAddressId());
-            String formattedWgsX = String.format("%.5f", datas.get(0).getWgsX());
-            String formattedWgsY = String.format("%.5f", datas.get(0).getWgsY());
-            xy.append(formattedWgsX+":"+formattedWgsY);
-            js.append(datas.get(0).getJoinStep());
-
-            url.append("os=").append(inputAddress).append("&");
-            url.append("full=").append(full).append("&");
-            url.append("id=").append(id).append("&");
-            url.append("xy=").append(xy).append("&");
-            url.append("js=").append(js);
-            return url.toString();
-        }
-
-        //todo:先限制5筆
-          int max = 5;
-          if(datas.size()<5){ //2,3,4
-                max = datas.size();
-           }
-
-            for(int i=0;i<max;i++){
-                String formattedWgsX = String.format("%.5f", datas.get(i).getWgsX());
-                String formattedWgsY = String.format("%.5f", datas.get(i).getWgsY());
-                String xyStr = formattedWgsX +":"+ formattedWgsY;
-               if(i==(max-1)){
-                    full.append(datas.get(i).getFullAddress());
-                    id.append(datas.get(i).getAddressId());
-                    xy.append(xyStr);
-                    js.append(datas.get(i).getJoinStep());
-                }else{
-                    full.append(datas.get(i).getFullAddress()).append(",");
-                    id.append(datas.get(i).getAddressId()).append(",");
-                    xy.append(xyStr).append(",");
-                    js.append(datas.get(i).getJoinStep()).append(",");
-                }
+    /***
+     * QRcode 掃描獲取data接口
+     * @return
+     */
+    @PostMapping("/qrcode-data")
+    @RateLimiting(name="qrcode-data",tokens = 0.3333)
+    @UnAuthorized
+    public ResponseEntity<List<OpenPageDTO>> findbBySeq(@RequestBody Map<String,String> param){
+        log.info("parans:{}",param);
+        String[] keys  = new String[]{"taskId","origrinalAddress","joinStep"};
+        for(String key : keys){
+            if(StringUtils.isNullOrEmpty(param.get(key))){
+                throw  new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
             }
-
-            url.append("os=").append(inputAddress).append("&");
-            url.append("full=").append(full).append("&");
-            url.append("id=").append(id).append("&");
-            url.append("xy=").append(xy).append("&");
-            url.append("js=").append(js);
-            log.info("url:{}",url);
-            return url.toString();
         }
+        return new ResponseEntity<>(singleQueryService.findbBySeq(param),HttpStatus.OK);
+    }
+
 
 
     @GetMapping("/test")

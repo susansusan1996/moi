@@ -1,6 +1,7 @@
 package com.example.pentaho.utils;
 
 import com.example.pentaho.component.KeyComponent;
+import com.example.pentaho.component.OpenPageDTO;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
@@ -22,6 +23,9 @@ public class RSAJWTUtils {
 
 
     private static final String JWT_PAYLOAD_USER_KEY = "userInfo";
+
+    private static final String JWT_PAYLOAD_SEQ_KEY ="addressInfo";
+
 
 
 
@@ -64,6 +68,32 @@ public class RSAJWTUtils {
         Claims body = claimsJws.getBody();
         String userInfoJson = body.get(JWT_PAYLOAD_USER_KEY).toString();
         return objectMapper.readValue(userInfoJson, userType);
+    }
+
+
+    /**
+     * 私钥加密token
+     *
+     * @param data   payload中的數據
+     * @param privateKey 私鑰
+     * @param expire     過期時間，單位分鐘
+     * @return JWT
+     */
+    public static Map<String,Object> generateTokenBySeqExpireInMinutes(OpenPageDTO.QrcodeDTO  data, PrivateKey privateKey, int expire) throws JsonProcessingException {
+        //计算过期时间
+        Calendar c = Calendar.getInstance();
+        c.add(Calendar.MINUTE, expire);
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<String,Object> map = new LinkedHashMap<>();
+        map.put("token",Jwts.builder()
+                .claim(JWT_PAYLOAD_SEQ_KEY, objectMapper.writeValueAsString(data))
+                .setId(new String(Base64.getEncoder().encode(UUID.randomUUID().toString().getBytes())))
+                .setExpiration(c.getTime())
+                .signWith(privateKey, SignatureAlgorithm.RS256)
+                .compact());
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        map.put("expiryDate",dateFormat.format(c.getTime()));
+        return map;
     }
 
 }

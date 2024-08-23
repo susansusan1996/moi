@@ -28,6 +28,26 @@ public class IbdTbAddrCodeOfDataStandardDTO {
     private Date etldt;
     private String joinStep; //地址比對代碼
 
+    private String numFlrPos; //
+
+    private String roomIdSn;
+
+    public String getNumFlrPos() {
+        return numFlrPos;
+    }
+
+    public void setNumFlrPos(String numFlrPos) {
+        this.numFlrPos = numFlrPos;
+    }
+
+    public String getRoomIdSn() {
+        return roomIdSn;
+    }
+
+    public void setRoomIdSn(String roomIdSn) {
+        this.roomIdSn = roomIdSn;
+    }
+
     public Integer getSeq() {
         return seq;
     }

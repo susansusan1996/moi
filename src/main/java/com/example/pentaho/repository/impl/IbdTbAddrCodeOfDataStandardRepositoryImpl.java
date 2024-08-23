@@ -5,6 +5,7 @@ import com.cht.commons.persistence.query.SqlExecutor;
 import com.example.pentaho.component.Address;
 import com.example.pentaho.component.IbdTbAddrCodeOfDataStandardDTO;
 import com.example.pentaho.component.IbdTbIhChangeDoorplateHis;
+import com.example.pentaho.component.OpenPageDTO;
 import com.example.pentaho.repository.IbdTbAddrCodeOfDataStandardRepository;
 import com.example.pentaho.utils.StringUtils;
 import org.slf4j.Logger;
@@ -67,5 +68,70 @@ public class IbdTbAddrCodeOfDataStandardRepositoryImpl implements IbdTbAddrCodeO
             }
         });
         return resultList;
+    }
+
+    @Override
+    public List<IbdTbAddrCodeOfDataStandardDTO> findBySeqsAndNumFlrPOS(List<Integer> seq, String numFlrPos) {
+        Query query = Query.builder()
+                .append("WITH SUBQUERY AS ( \n")
+                .append("SELECT A.* \n")
+                .append("FROM ADDR_ODS.IBD_TB_ADDR_CODE_OF_DATA_STANDARD A \n")
+                .append("INNER JOIN ( \n")
+                .append("SELECT * \n")
+                .append("FROM addr_ods.IBD_TB_ADDR_DATA_REPOSITORY_NEW \n")
+                .append("WHERE ADR_VERSION in (select max(ADR_VERSION) from addr_ods.IBD_TB_ADDR_DATA_REPOSITORY_NEW ) \n")
+                .append("AND SEQ in (:SEQ) \n",seq)
+                .append("AND NUM_FLR_POS = :NUM_FLR_POS \n",numFlrPos)
+                .append(" ) B \n")
+                .append("ON A.SEQ = B.SEQ")
+//                .append("WHERE ADR_VERSION in (select max(ADR_VERSION) from addr_ods.IBD_TB_ADDR_DATA_REPOSITORY_NEW ) \n")
+                .append(") \n")
+                .append("SELECT * \n")
+                .append("FROM SUBQUERY \n")
+//                .append("WHERE ADR_VERSION in (select max(ADR_VERSION) from addr_ods.IBD_TB_ADDR_DATA_REPOSITORY_NEW ) \n")
+                .build();
+        log.info("query:{}", query);
+        log.info("params:{}", query.getParameters());
+        return sqlExecutor.queryForList(query,IbdTbAddrCodeOfDataStandardDTO.class);
+    }
+
+
+    @Override
+    public List<IbdTbAddrCodeOfDataStandardDTO> findBySeqsGetNumFlrPOS(List<Integer> seq) {
+        Query query = Query.builder()
+                .append("WITH SUBQUERY AS ( \n")
+                .append("SELECT A.*,B.NUM_FLR_POS,B.ROOM_ID_SN \n")
+                .append("FROM ADDR_ODS.IBD_TB_ADDR_CODE_OF_DATA_STANDARD A \n")
+                .append("INNER JOIN ( \n")
+                .append("SELECT * \n")
+                .append("FROM addr_ods.IBD_TB_ADDR_DATA_REPOSITORY_NEW \n")
+                .append("WHERE ADR_VERSION in (select max(ADR_VERSION) from addr_ods.IBD_TB_ADDR_DATA_REPOSITORY_NEW ) \n")
+                .append("AND SEQ in (:SEQ) \n",seq)
+                .append(" ) B \n")
+                .append("ON A.SEQ = B.SEQ")
+//                .append("WHERE ADR_VERSION in (select max(ADR_VERSION) from addr_ods.IBD_TB_ADDR_DATA_REPOSITORY_NEW ) \n")
+                .append(") \n")
+                .append("SELECT * \n")
+                .append("FROM SUBQUERY \n")
+//                .append("WHERE ADR_VERSION in (select max(ADR_VERSION) from addr_ods.IBD_TB_ADDR_DATA_REPOSITORY_NEW ) \n")
+                .build();
+        log.info("query:{}", query);
+        log.info("params:{}", query.getParameters());
+        return sqlExecutor.queryForList(query,IbdTbAddrCodeOfDataStandardDTO.class);
+    }
+
+    @Override
+    public List<OpenPageDTO> findBySeq(Integer seq) {
+        Query query = Query.builder()
+                .append("SELECT FULL_ADDRESS, \n")
+                .append("ADDRESS_ID, \n")
+                .append("TO_CHAR(ROUND(WGS_X, 5), 'FM999999999.00000')   || ':'  || TO_CHAR(ROUND(WGS_Y, 5), 'FM999999999.00000') AS LOCATION \n")
+                .append("FROM ADDR_ODS.IBD_TB_ADDR_CODE_OF_DATA_STANDARD \n")
+                .append("WHERE ADR_VERSION in (select max(ADR_VERSION) FROM ADDR_ODS.IBD_TB_ADDR_CODE_OF_DATA_STANDARD ) \n")
+                .append("AND SEQ = :seq \n", seq)
+                .build();
+        log.info("query:{}",query);
+        log.info("params:{}",query.getParameters());
+        return sqlExecutor.queryForList(query,OpenPageDTO.class);
     }
 }

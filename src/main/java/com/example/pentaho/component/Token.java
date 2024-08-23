@@ -2,6 +2,7 @@ package com.example.pentaho.component;
 
 
 import com.example.pentaho.utils.RSAJWTUtils;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import io.jsonwebtoken.Claims;
@@ -22,6 +23,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 @Component
@@ -183,6 +185,33 @@ public class Token {
             log.info("userInfo:{}",body.get("userInfo"));
             String userInfo = gson.toJson(body.get("userInfo"));
             return objectMapper.readValue(userInfo,User.class);
+        } catch (Exception e) {
+            log.info("e:{}", e.toString());
+            return null;
+        }
+    }
+
+
+    /**
+     * 解密,取出userInfo
+     * @param RSAJWTToken
+     * @return
+     */
+    public static OpenPageDTO.QrcodeDTO extractQrcodeDTOFromRSAJWTToken(String RSAJWTToken,String keyName) {
+        try {
+            log.info("keyName:{}", keyName);
+            //公鑰驗證jwt token
+            File file = ResourceUtils.getFile(keyName);
+            byte[] keyBytes = readFileAsBytes(file);
+            byte[] decodedKeyBytes = Base64.getDecoder().decode(keyBytes);
+            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(decodedKeyBytes);
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            PublicKey publicKey = keyFactory.generatePublic(keySpec);
+            Jws<Claims> claimsJws = Jwts.parser().setSigningKey(publicKey).parseClaimsJws(RSAJWTToken);
+            Claims body = claimsJws.getBody();
+            log.info("body:{}", body.toString());
+            log.info("addressInfo:{}",body.get("addressInfo"));
+            return objectMapper.readValue(body.get("addressInfo").toString(),OpenPageDTO.QrcodeDTO.class);
         } catch (Exception e) {
             log.info("e:{}", e.toString());
             return null;

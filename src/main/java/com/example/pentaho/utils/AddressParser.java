@@ -60,46 +60,70 @@ public class AddressParser {
     private final String SUBALLEY = "(?<subAlley>" + ALL_CHAR + "+[衖衕橫]{1})?";
 
     private final String NUMFLR1 =
-            "(?<numFlr1>" + ALL_CHAR + "+[\\-－號樓FｆＦf之區棟]{1}|" +
-                    "[之\\-－]{1}" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + //能:"之28", "-B2", "－123", "之一百", "-A", "之甲乙", "－拾", "之A3" / 不能:"之28樓", "-B2F", "－123f", "之100樓", "123", "A-"
-                    "[之\\-－]{1}" + ALL_CHAR + "+[號]|" +
-                    ALL_CHAR + "+[FｆＦf]{1} |" +
-                    BASEMENT_PATTERN + "|" +
-                    ALL_CHAR + "+(?!室))?";
+            "(?<numFlr1>" + ALL_CHAR + "+[\\-¯－－ ─ ?─―之號樓FｆＦf之區棟]{1}|" + //2¯ 2?50號 =>號之之號
+                    "[之\\-¯－－ ─ ?─―]{1}" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + //之2~樓
+                    "[之\\-¯－－ ─ ?─―]{1}" + ALL_CHAR + "+[號]|" +//之2~號
+                    ALL_CHAR + "+[FｆＦf]{1} |" + //2F
+                    BASEMENT_PATTERN
+                    //todo:這裡會誤把室的地址切進來
+//                    +  "|" + ALL_CHAR + "+(?!室))?"; // only 數字 ALL_CHAR+"+[室]
+                    +  "|" +ALL_CHAR+"+[室]"
+                    +  "|" + ALL_CHAR + "+(?!室))?";// only 數字
+
+
     private final String NUMFLR2 =
-            "(?<numFlr2>" + ALL_CHAR + "+[\\-－號樓FｆＦf之區棟]{1}|" +
-                    "[之\\-－]{1}" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + //能:"之28", "-B2", "－123", "之一百", "-A", "之甲乙", "－拾", "之A3" / 不能:"之28樓", "-B2F", "－123f", "之100樓", "123", "A-"
-                    "[之\\-－]{1}" + ALL_CHAR + "+[號]|" +
-                    ALL_CHAR + "+[FｆＦf]{1} |" +
-                    BASEMENT_PATTERN + "|" +
-                    ALL_CHAR + "+(?!室))?";
+            "(?<numFlr2>" + ALL_CHAR + "+[\\-¯－－ ─ ?─―之號樓FｆＦf之區棟]{1}|" + //2¯
+                    "[之\\-¯－－ ─ ?─―]{1}" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + //之2~樓
+                    "[之\\-¯－－ ─ ?─―]{1}" + ALL_CHAR + "+[號]|" +//之2~號
+                    ALL_CHAR+"[\\-¯－－ ─ ?─―]"+ALL_CHAR+"[號]|"+
+                    ALL_CHAR + "+[FｆＦf]{1} |" + //2F
+                    BASEMENT_PATTERN
+                    //todo:這裡會誤把室的地址切進來
+//                   +  "|" + ALL_CHAR + "+(?!室))?"; // only 數字
+                    +  "|" +ALL_CHAR+"+[室]"
+                    +  "|" + ALL_CHAR + "+(?!室))?";// only 數字
 
     private final String NUMFLR3 =
-            "(?<numFlr3>" + ALL_CHAR + "+[\\-－號樓FｆＦf之區棟]{1}|" +
-                    "[之\\-－]{1}" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + //能:"之28", "-B2", "－123", "之一百", "-A", "之甲乙", "－拾", "之A3" / 不能:"之28樓", "-B2F", "－123f", "之100樓", "123", "A-"
-                    "[之\\-－]{1}" + ALL_CHAR + "+[號]|" +
-                    ALL_CHAR + "+[FｆＦf]{1} |" +
-                    BASEMENT_PATTERN + "|" +
-                    ALL_CHAR + "+(?!室))?";
+            "(?<numFlr3>" + ALL_CHAR + "+[\\-¯－－ ─ ?─―之號樓FｆＦf之區棟]{1}|" + //2¯
+                    "[之\\-¯－－ ─ ?─―]{1}" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + //之2~樓
+                    "[之\\-¯－－ ─ ?─―]{1}" + ALL_CHAR + "+[號]|" +//之2~號
+                    ALL_CHAR+"[\\-¯－－ ─ ?─―]"+ALL_CHAR+"[號]|"+
+                    ALL_CHAR + "+[FｆＦf]{1} |" + //2F
+                    BASEMENT_PATTERN
+                    //todo:這裡會誤把室的地址切進來
+//                   +  "|" + ALL_CHAR + "+(?!室))?"; // only 數字
+                    +  "|" +ALL_CHAR+"+[室]"
+                    +  "|" + ALL_CHAR + "+(?!室))?";// only 數字
+
 
     private final String NUMFLR4 =
-            "(?<numFlr4>" + ALL_CHAR + "+[\\-－號樓FｆＦf之區棟]{1}|" +
-                    "[之\\-－]{1}" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + //能:"之28", "-B2", "－123", "之一百", "-A", "之甲乙", "－拾", "之A3" / 不能:"之28樓", "-B2F", "－123f", "之100樓", "123", "A-"
-                    "[之\\-－]{1}" + ALL_CHAR + "+[號]|" +
-                    ALL_CHAR + "+[FｆＦf]{1} |" +
-                    BASEMENT_PATTERN + "|" +
-                    ALL_CHAR + "+(?!室))?";
+            "(?<numFlr4>" + ALL_CHAR + "+[\\-¯－－ ─ ?─―之號樓FｆＦf之區棟]{1}|" + //2¯
+                    "[之\\-¯－－ ─ ?─―]{1}" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + //之2~樓
+                    "[之\\-¯－－ ─ ?─―]{1}" + ALL_CHAR + "+[號]|" +//之2~號
+                    ALL_CHAR+"[\\-¯－－ ─ ?─―]"+ALL_CHAR+"[號]|"+
+                    ALL_CHAR + "+[FｆＦf]{1} |" + //2F
+                    BASEMENT_PATTERN
+                    //todo:這裡會誤把室的地址切進來
+//                   +  "|" + ALL_CHAR + "+(?!室))?"; // only 數字
+                    +  "|" +ALL_CHAR+"+[室]"
+                    +  "|" + ALL_CHAR + "+(?!室))?";// only 數字
+
 
     private final String NUMFLR5 =
-            "(?<numFlr5>" + ALL_CHAR + "+[\\-－號樓FｆＦf之區棟]{1}|" +
-                    "[之\\-－]{1}" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + //能:"之28", "-B2", "－123", "之一百", "-A", "之甲乙", "－拾", "之A3" / 不能:"之28樓", "-B2F", "－123f", "之100樓", "123", "A-"
-                    "[之\\-－]{1}" + ALL_CHAR + "+[號]|" +
-                    ALL_CHAR + "+[FｆＦf]{1} |" +
-                    BASEMENT_PATTERN + "|" +
-                    ALL_CHAR + "+(?!室))?";
+            "(?<numFlr5>" + ALL_CHAR + "+[\\-¯－－ ─ ?─―之號樓FｆＦf之區棟]{1}|" + //2¯
+                    "[之\\-¯－－ ─ ?─―]{1}" + ALL_CHAR + "+(?!.*[樓FｆＦf])|" + //之2~樓
+                    "[之\\-¯－－ ─ ?─―]{1}" + ALL_CHAR + "+[號]|" +//之2~號
+                    ALL_CHAR+"[\\-¯－－ ─ ?─―]"+ALL_CHAR+"[號]|"+
+                    ALL_CHAR + "+[FｆＦf]{1} |" + //2F
+                    BASEMENT_PATTERN
+                    //todo:這裡會誤把室的地址切進來
+//                   +  "|" + ALL_CHAR + "+(?!室))?"; // only 數字
+                    +  "|" +ALL_CHAR+"+[室]"
+                    +  "|" + ALL_CHAR + "+(?!室))?";// only 數字
+    private final String CONTINUOUS_NUM = "(?<continuousNum>[之\\-¯－]{1}" + ALL_CHAR + "+[樓FｆＦf]{1})?";
 
-    private final String CONTINUOUS_NUM = "(?<continuousNum>[之\\-－]{1}" + ALL_CHAR + "+[樓FｆＦf]{1})?";
-    private final String ROOM = "(?<room>.*?室)?";
+    //todo:室基本上在num_Frl 階段就會被切走
+    private final String ROOM = "(?<room>"+ALL_CHAR+"+[室])?";
 
 
     private final String BASEMENTSTR = "(?<basementStr>屋頂突出.*層|地下.*層|地下.*樓|地下|地下室|底層|屋頂|頂樓|屋頂突出物|屋頂樓|頂層|頂加|頂)?";
@@ -139,6 +163,7 @@ public class AddressParser {
         /**先把有 鄉、鎮、市、區、村、里、樓 等字眼的area拿出來，從原始地址中拔除 -> Redis.key = SPECIAL_AREA:**/
         //todo:VILLIAGE:北門里 會在這個階段被 SPECIAL_AREA:北門 切出來，造成錯誤
         origninalAddress = findSpecialArea(allKeys, address, origninalAddress);
+        log.info("after findSpecialArea:{}",origninalAddress);
         /**組正則表達式**/
         String pattern = getPattern(allKeys);
         log.info("pattern:{}",pattern);
@@ -166,6 +191,62 @@ public class AddressParser {
     }
 
 
+    public Address extractRoom(Address address){
+       String[] numFlrs = new String[]{
+               address.getNumFlr1(),address.getNumFlr2(),address.getNumFlr3(),
+               address.getNumFlr4(),address.getNumFlr5()};
+       int whichFlr = 1;
+        for (String numFlr : numFlrs) {
+            log.info("numFlr:{}",numFlr);
+            if(StringUtils.isNotNullOrEmpty(numFlr)){
+           if(numFlr.indexOf("室") >= 0){
+               log.info("numFlr:{}",numFlr);
+               log.info("NUM_FLR 切到 室");
+               break;
+           }
+            }
+            whichFlr+=1;
+        }
+        log.info("檢查whichFlr:{}",whichFlr);
+
+        switch (whichFlr){
+            case 1 :
+                address.setRoom(address.getNumFlr1());
+                address.setNumFlr1(address.getNumFlr2());
+                address.setNumFlr2(address.getNumFlr3());
+                address.setNumFlr3(address.getNumFlr4());
+                address.setNumFlr4(address.getNumFlr5());
+                address.setNumFlr5(null);
+                break;
+            case 2 :
+                address.setRoom(address.getNumFlr2());
+                address.setNumFlr2(address.getNumFlr3());
+                address.setNumFlr3(address.getNumFlr4());
+                address.setNumFlr4(address.getNumFlr5());
+                address.setNumFlr5(null);
+                break;
+            case 3 :
+                address.setRoom(address.getNumFlr3());
+                address.setNumFlr3(address.getNumFlr4());
+                address.setNumFlr4(address.getNumFlr5());
+                address.setNumFlr5(null);
+                break;
+            case 4 :
+                address.setRoom(address.getNumFlr4());
+                address.setNumFlr4(address.getNumFlr5());
+                address.setNumFlr5(null);
+                break;
+            case 5 :
+                address.setRoom(address.getNumFlr5());
+                address.setNumFlr5(null);
+                break;
+            default:
+                break;
+        }
+return address;
+    }
+
+
     /***
      * 只有初次切割會來這
      * 帶有 "村"、"鄉"、"鎮"、"市"、"區"的特殊字 的 AREA 的地名
@@ -177,7 +258,16 @@ public class AddressParser {
      */
     public String findSpecialArea(Map<String, Set<String>> allKeys, Address address, String origninalAddress) {
         String newArea = "(" + String.join("|", allKeys.get("SPECIAL_AREA:")) + ")";
+        String newVillages = "(" + String.join("|", allKeys.get("VILLAGE_ALIAS:")) + ")";
         log.info("特殊地名SPECIAL_AREA:組成正則 :{}", newArea);
+        //todo:不能等於VILLAIGES裡的東西 村里=> 中興里 會被再這裡被特殊地名:中興 切出來
+        Pattern patternForVillage = Pattern.compile(newVillages);
+        Matcher matcherForVillage  = patternForVillage.matcher(origninalAddress);
+        if (matcherForVillage.find()) {
+            log.info(" Village : 匹配到的部分:{},準備放入address.Village", matcherForVillage.group());
+            address.setVillage(matcherForVillage.group());
+            origninalAddress = origninalAddress.replace(matcherForVillage.group(), "");
+        }
         Pattern patternForSpecialArea = Pattern.compile(newArea);
         Matcher matcherForSpecialArea = patternForSpecialArea.matcher(origninalAddress);
         /**如果有符合特殊情況，會setArea,然後從原始地址中拔出*/
@@ -278,6 +368,8 @@ public class AddressParser {
         /**SPECIAL_AREA(特殊地名)加進VILLAGE正則是為了在里階段排除它們**/
         String newRoad = String.format(ROAD, String.join("|", allKeys.get("ROAD_ALIAS:")));
         String newVillage = String.format(VILLAGE, "(?!" + String.join("|", allKeys.get("SPECIAL_AREA:")) + ")", String.join("|", allKeys.get("VILLAGE_ALIAS:")));
+//todo:測試中正則
+//        return newCounty + newTown + newVillage + NEIGHBOR + SPECIALLANE + newRoad + LANE + ALLEY + SUBALLEY + NUMFLR1 + NUMFLR2 + NUMFLR3 + NUMFLR4 + NUMFLR5 + CONTINUOUS_NUM  + BASEMENTSTR + REMARK + ADDRREMAINS;
         return newCounty + newTown + newVillage + NEIGHBOR + SPECIALLANE + newRoad + LANE + ALLEY + SUBALLEY + NUMFLR1 + NUMFLR2 + NUMFLR3 + NUMFLR4 + NUMFLR5 + CONTINUOUS_NUM + ROOM + BASEMENTSTR + REMARK + ADDRREMAINS;
     }
 
@@ -374,14 +466,17 @@ public class AddressParser {
             return parseAddress(parseBasement, address);
         }
 
-
         address.setZipcode(matcher.group("zipcode"));
         address.setCounty(matcher.group("county"));
         address.setTown(matcher.group("town"));
-        address.setVillage(matcher.group("village"));
+        //todo:如果findSpecialArea中VILLAGE 沒先輩切出來才需要
+        if(StringUtils.isNullOrEmpty(address.getVillage())){
+            address.setVillage(matcher.group("village"));
+        }
         address.setNeighbor(matcher.group("neighbor"));
         address.setRoad(matcher.group("road"));
 
+        //todo:county town village negihbor 沒有成功切出，都被匹配到路
         if(address.getRoad().indexOf("鄰")>0){
             extractNeighbor(address);
         }
@@ -533,6 +628,20 @@ public class AddressParser {
     }
 
 
+    /***
+     *
+     * @param numFlrPos ==> 撈出地址的numFlrPos
+     * @param address ==>地址切割
+     * @return
+     */
+    public String checkJoinStepByNumFlrPos(String numFlrPos, Address address) {
+        //todo:要先判斷redis mapping 的joinStep是什麼
+        log.info("redis mapping判斷的joinStep:{},要件清單:{}",address.getJoinStep(),address.getSegmentExistNumber());
+        log.info("db撈出的numFlrPos:{}", numFlrPos);
+        return reviseJoinStepByNumFlrPos(numFlrPos,address);
+    }
+
+
         private Map<String, Boolean> segNumMap = new HashMap<>();
 
         /**
@@ -545,15 +654,60 @@ public class AddressParser {
          * 會出現再redis 的 join_steps
          * JE || JA1 直接返回
          **/
-        private final static List JOIN_STEPS = Arrays.asList("JA2", "JA3", "JB1", "JB2", "JB3", "JB4","JB5","JC1","JC2","JC3","JC4");
+        private final static List JOIN_STEPS = Arrays.asList("JA1","JA2", "JA3", "JB1", "JB2", "JB3", "JB4","JB5","JC1","JC2","JC3","JC4");
 
         private final static Map<String,String> JOIN_STEPS_MAP = new HashMap<String,String>();
         static {
-            JOIN_STEPS_MAP.put("JC2","ROAD");
-            JOIN_STEPS_MAP.put("JB1","ROOM");
-            JOIN_STEPS_MAP.put("JA3","VILLAGE");
             JOIN_STEPS_MAP.put("JA2","NEIGHBOR");
+            JOIN_STEPS_MAP.put("JA3","VILLAGE");
+            JOIN_STEPS_MAP.put("JB1","ROOM");
+            JOIN_STEPS_MAP.put("JC2","ROAD");
         }
+
+
+    /***
+     *
+     * @param numFlr
+     * @param address
+     * @return
+     */
+    private String reviseJoinStepByNumFlrPos(String numFlr,Address address){
+        String original = address.getNumFlrPos();
+
+        log.info("前端地址切割的numflrpos:{}",original);
+        log.info("db撈出的numflrpos:{}",numFlr);
+
+       if(numFlr.equals(address.getNumFlrPos())){
+           /**兩者相等，返回 redis mapping的 joinStep 就好*/
+           return address.getJoinStep();
+       }
+
+        if(numFlr.equals(address.getJC4NumFlrPos())){
+            /**db撈出的與 地址切割"JC4"的轉換相等，則 joinStep = JC4*/
+            return "JC4";
+        }
+
+        if(numFlr.equals(address.getJB5NumFlrPos())){
+            return "JB5";
+        }
+
+        if(numFlr.equals(address.getJB4NumFlrPos())){
+            return "JB4";
+        }
+
+        if(numFlr.equals(address.getJB3NumFlrPos())){
+            return "JB3";
+        }
+
+        if(numFlr.equals(address.getJB2NumFlrPos())){
+            return "JB2";
+        }
+
+
+        //todo:注意都沒對到的情況是怎麼發生的
+        return address.getJoinStep();
+
+    }
 
     /**
      * 矯正 joinStep
@@ -595,11 +749,16 @@ public class AddressParser {
             matcher = pattern.matcher(fullAddress);
             log.info("roomMatcher.find():{}",matcher.find());
             if(!matcher.find()){
-                //地址無室
-                segNumMap.put("ROOM",true);
+                //地址無室，但來源地址寫室
+                if(!StringUtils.isNullOrEmpty(address.getRoom())){
+                    segNumMap.put("ROOM",false);
+                }else{
+                    segNumMap.put("ROOM",true);
+                }
             }else{
                 //地址有室
                 if(address.getSegmentExistNumber().endsWith("0")){
+                    //表示組成的cd沒有對到mappingId
                     segNumMap.put("ROOM",false);
                 }else{
                     segNumMap.put("ROOM",true);
@@ -609,18 +768,17 @@ public class AddressParser {
             log.info("整理完的要件清單:{}", segNumMap);
 
             if (JOIN_STEPS.contains(address.getJoinStep().substring(0, 3))) {
-
+                //todo:改成往後確認
                 int beginIndex  =  JOIN_STEPS.indexOf(address.getJoinStep().substring(0, 3));
-                log.info("beginIndex:{}",beginIndex);
-                for(int i = (JOIN_STEPS.size()-1);i>=0;i--){
-                    log.info((String) JOIN_STEPS.get(i));
+                log.info("從:{} 往後開始檢查",beginIndex);
+                for(int i = beginIndex;i<JOIN_STEPS.size();i++){
+                    log.info("開始檢查:{} ,", JOIN_STEPS.get(i));
                     if(JOIN_STEPS_MAP.containsKey(JOIN_STEPS.get(i))){
-                        //
-                        log.info("確認:{},result:{}",JOIN_STEPS.get(i),segNumMap.get(JOIN_STEPS_MAP.get(JOIN_STEPS.get(i))));
+                        log.info("開始檢查:{} ,result:{}",JOIN_STEPS.get(i),segNumMap.get(JOIN_STEPS_MAP.get(JOIN_STEPS.get(i))));
                         if(!segNumMap.get(JOIN_STEPS_MAP.get(JOIN_STEPS.get(i)))){
                             //false 表示沒寫
                             result = String.valueOf(JOIN_STEPS.get(i));
-                            log.info("沒寫:{},result:{}",JOIN_STEPS.get(i),result);
+                            log.info("沒寫:{}, result:{}",JOIN_STEPS.get(i),result);
                         }
                     }
                 }

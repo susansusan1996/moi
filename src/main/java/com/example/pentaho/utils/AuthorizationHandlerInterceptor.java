@@ -13,6 +13,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.lang.reflect.Method;
+import java.util.Map;
 
 
 @Component
@@ -88,6 +89,15 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
             if("/iisi/api/batchForm/finished".equals(request.getRequestURI())){
                 return true;
             }
+
+            if("/iisi/api/singlequery/qrcode-data-token".equals(request.getRequestURI())){
+                OpenPageDTO.QrcodeDTO qrcodeDTO = Token.extractQrcodeDTOFromRSAJWTToken(RSATokenJwt, keyName);
+//
+                QrcodeContextUtils.setQrcodeData(qrcodeDTO);
+                log.info("Token Check OK");
+                return true;
+            }
+
                 User user = Token.extractUserFromRSAJWTToken(RSATokenJwt,keyName);
                 log.info("user:{}",user);
                 //判斷使用者是不是拿refresh_token
@@ -98,10 +108,26 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
                 UserContextUtils.setUserHolder(user);
                 log.info("Token Check OK");
                 return true;
-            }
+            } //token 可以解密
+
+
         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not allowed");
     }
 
+
+    /**
+     * 響應前
+     * @param request
+     * @param response
+     * @param handler
+     * @param ex
+     * @throws Exception
+     */
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+        // 清理 ThreadLocal 避免内存洩漏
+        QrcodeContextUtils.clear();
+    }
 }
 
 

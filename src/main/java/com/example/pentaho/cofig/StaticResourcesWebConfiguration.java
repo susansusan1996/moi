@@ -24,6 +24,7 @@ public class StaticResourcesWebConfiguration  implements WebMvcConfigurer {
             "/*.svg",
             "/*.png",
             "/*.jpg",
+            "*.jpg",
             "*.ico",
             "/css/**",
             "/js/*",

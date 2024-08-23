@@ -205,14 +205,21 @@ public class NumberParser {
         return "";
     }
 
-    //將F轉換成樓，-轉成之
+    /**
+     * Ff 轉換成樓
+     * -¯－－ ─ ?─ 轉成之
+     */
     public static String convertFToFloorAndHyphenToZhi(String input) {
         if (input.endsWith("F") || input.endsWith("ｆ") || input.endsWith("Ｆ") || input.endsWith("f")) {
-            String result = input.substring(0, input.length() - 1) + "樓";
-            return result.replace("-", "之");
-        } else {
-            return input.replace("-", "之");
+            input = input.substring(0, input.length() - 1) + "樓";
         }
+        Pattern pattern = Pattern.compile("[\\-¯－－ ─ ?─―]");
+        Matcher matcher = pattern.matcher(input);
+        if(matcher.find()){
+            log.info("轉換成之:{}",matcher.group());
+            input = input.replace(matcher.group(),"之");
+        }
+        return input;
     }
 
     public static String extractNumericPart(String input) {

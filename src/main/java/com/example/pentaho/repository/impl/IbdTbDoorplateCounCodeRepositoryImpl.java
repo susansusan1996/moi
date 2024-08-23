@@ -25,6 +25,7 @@ public class IbdTbDoorplateCounCodeRepositoryImpl implements IbdTbDoorplateCounC
         Query query = Query.builder()
                 .append("SELECT COUN FROM addr_stage.IBD_TB_DOORPLATE_COUN_CODE ")
                 .append("WHERE COUN is not null and IS_LEGACY IS NULL")
+                .append("order by official_seq")
                 .build();
         log.info("query:{}", query);
         log.info("params:{}", query.getParameters());

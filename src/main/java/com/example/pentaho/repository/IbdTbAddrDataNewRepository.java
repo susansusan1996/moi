@@ -12,4 +12,5 @@ public interface IbdTbAddrDataNewRepository {
     String queryDataSourceAndValidityBySeq(String seq);
 
     List<String> queryAllArea();
+
 }

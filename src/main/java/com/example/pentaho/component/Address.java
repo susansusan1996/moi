@@ -37,9 +37,39 @@ public class Address {
     private String numFlr4Id;
     private String numFlr5;
     private String numFlr5Id;
+
+    private String numFlrId;
+
+    private String numFlrPos;
+
+
+    /**配合joinStep**/
+    private String JB2NumFlrId;
+
+    private String JB2NumFlrPos;
+
+    private String JB3NumFlrId;
+
+    private String JB3NumFlrPos;
+
+    private String JB4NumFlrId;
+
+    private String JB4NumFlrPos;
+
+
+    private String JB5NumFlrId;
+
+
+    private String JB5NumFlrPos;
+
+    private String JC4NumFlrId;
+
+    private String JC4NumFlrPos;
+
+
     private String continuousNum;//之45一樓 (像這種連續的號碼，就會被歸在這裡)
     private String basementStr;
-    private String numFlrPos;
+
     private String room; //室
     private String roomIdSn;
     private String seq;
@@ -56,6 +86,7 @@ public class Address {
     private String numTypeCd; //臨建特附
     private Boolean hasRoadArea; //有寫路地名為true，沒寫為false
     private String remark;
+
 
 
     public Address() {
@@ -375,6 +406,15 @@ public class Address {
         this.numFlr5Id = numFlr5Id;
     }
 
+
+    public String getNumFlrId() {
+        return numFlrId;
+    }
+
+    public void setNumFlrId(String numFlrId) {
+        this.numFlrId = numFlrId;
+    }
+
     public String getRoomIdSn() {
         return roomIdSn;
     }
@@ -455,6 +495,87 @@ public class Address {
 
     public void setSpecialArea(String specialArea) {
         this.specialArea = specialArea;
+    }
+
+
+    public String getJB2NumFlrId() {
+        return JB2NumFlrId;
+    }
+
+    public void setJB2NumFlrId(String JB2NumFlrId) {
+        this.JB2NumFlrId = JB2NumFlrId;
+    }
+
+    public String getJB2NumFlrPos() {
+        return JB2NumFlrPos;
+    }
+
+    public void setJB2NumFlrPos(String JB2NumFlrPos) {
+        this.JB2NumFlrPos = JB2NumFlrPos;
+    }
+
+    public String getJB3NumFlrId() {
+        return JB3NumFlrId;
+    }
+
+    public void setJB3NumFlrId(String JB3NumFlrId) {
+        this.JB3NumFlrId = JB3NumFlrId;
+    }
+
+    public String getJB3NumFlrPos() {
+        return JB3NumFlrPos;
+    }
+
+    public void setJB3NumFlrPos(String JB3NumFlrPos) {
+        this.JB3NumFlrPos = JB3NumFlrPos;
+    }
+
+    public String getJB4NumFlrId() {
+        return JB4NumFlrId;
+    }
+
+    public void setJB4NumFlrId(String JB4NumFlrId) {
+        this.JB4NumFlrId = JB4NumFlrId;
+    }
+
+    public String getJB4NumFlrPos() {
+        return JB4NumFlrPos;
+    }
+
+    public void setJB4NumFlrPos(String JB4NumFlrPos) {
+        this.JB4NumFlrPos = JB4NumFlrPos;
+    }
+
+    public String getJB5NumFlrId() {
+        return JB5NumFlrId;
+    }
+
+    public void setJB5NumFlrId(String JB5NumFlrId) {
+        this.JB5NumFlrId = JB5NumFlrId;
+    }
+
+    public String getJB5NumFlrPos() {
+        return JB5NumFlrPos;
+    }
+
+    public void setJB5NumFlrPos(String JB5NumFlrPos) {
+        this.JB5NumFlrPos = JB5NumFlrPos;
+    }
+
+    public String getJC4NumFlrId() {
+        return JC4NumFlrId;
+    }
+
+    public void setJC4NumFlrId(String JC4NumFlrId) {
+        this.JC4NumFlrId = JC4NumFlrId;
+    }
+
+    public String getJC4NumFlrPos() {
+        return JC4NumFlrPos;
+    }
+
+    public void setJC4NumFlrPos(String JC4NumFlrPos) {
+        this.JC4NumFlrPos = JC4NumFlrPos;
     }
 
     @Override
