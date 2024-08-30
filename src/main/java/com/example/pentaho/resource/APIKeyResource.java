@@ -8,6 +8,7 @@ import com.example.pentaho.service.RefreshTokenService;
 import com.example.pentaho.service.SingleQueryService;
 import com.example.pentaho.service.SingleTrackQueryService;
 import com.example.pentaho.utils.*;
+import com.google.common.base.Strings;
 import com.google.common.util.concurrent.RateLimiter;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -30,7 +31,6 @@ import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
 import java.security.PrivateKey;
 import java.text.ParseException;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -143,14 +143,15 @@ public class APIKeyResource {
         /*回應內容*/
         JwtReponse response = new JwtReponse();
         if (reviewResult.equals("REJECT") || reviewResult.equals("AGREE")){
-            /**拒絕->redis找有沒有存在，把token,refreshToken清掉，重新存入result*/
             if ("REJECT".equals(reviewResult)) {
                 refreshTokenService.saveRefreshToken(userId,username,null, null, reviewResult);
                 response.setErrorResponse("已儲存被拒絕申請的使用者資訊");
                 return new ResponseEntity<>(response, HttpStatus.OK);
             }
+
             try {
-                /**同意 用userid找redis有沒有存在
+                /**
+                 * 同意 用userid找redis有沒有存在
                  * 存在:直接返回查找內容
                  * 不存在:產生token,refreshtokeen 存入redis
                  * */
@@ -433,6 +434,41 @@ public class APIKeyResource {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+
+
+
+    /**
+     * 取得指定【地址】之正確地址 及 錯誤訊息
+     */
+    @Operation(description = "取得指定【地址】之地址識別碼相關資訊",
+            parameters = {@Parameter(in = ParameterIn.HEADER,
+                    name = "Authorization",
+                    description = "資拓私鑰加密的jwt token",
+                    schema = @Schema(type = "string"))
+            }
+    )
+    @GetMapping("/revise-address")
+    @Authorized(keyName = "AP")
+    public ResponseEntity<List<Map<String,String>>> reviseAddress(
+            @Parameter(
+                    description = "來源地址(限路地名寫錯)",
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = String.class),
+                            examples = @ExampleObject(value = "")
+                    )
+            ) @RequestParam String originalAddressStr) {
+            UsageUtils.writeUsageLog("/api/api-key/revise-address", originalAddressStr);
+            log.info("單筆查詢，參數為:{}", originalAddressStr);
+            SingleQueryDTO singleQueryDTO = new SingleQueryDTO();
+            singleQueryDTO.setOriginalAddress(originalAddressStr);
+            /**result **/
+            List<Map<String, String>> resultList = singleQueryService.findByDataRepository(singleQueryDTO);
+            return ResponseEntity.ok(resultList);
+    }
+
+
 
 
 

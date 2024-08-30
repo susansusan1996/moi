@@ -118,10 +118,10 @@ public class SingleQueryResouce {
                     put("origrinalAddress",singleQueryDTO.getOriginalAddress());
                 }};
 
-                //todo:改成1筆資料1張圖 url上 不加密seq,originalAddress,joinStep
+                //todo:改成1筆資料1張圖 url上 不加密seq originalAddress,joinStep
                 result.getData().forEach(data->{
                     param.put("taskId",String.valueOf(data.getSeq()));
-                    param.put("joinStep",String.valueOf(data.getSeq()));
+                    param.put("joinStep",String.valueOf(data.getJoinStep()));
                     qrcodeService.generateURLs(param);
                 });
 

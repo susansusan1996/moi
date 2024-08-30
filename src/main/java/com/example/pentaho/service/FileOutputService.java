@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.boot.autoconfigure.task.TaskExecutionProperties;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -33,9 +34,7 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.UUID;
+import java.util.*;
 
 
 @Service
@@ -61,11 +60,13 @@ public class FileOutputService {
     private JobService jobService;
 
     @Autowired
+    private RestTemplate restTemplate;
+
+    @Autowired
     private Sftp sftp;
 
     private final static Logger log = LoggerFactory.getLogger(JobService.class);
     private final String sperator = "&";
-
 
 
 
@@ -159,20 +160,19 @@ public class FileOutputService {
         log.info("jobParams:{}",jobParams);
         String sourceFilePath = "";
         String status = "SYS_FAILED";
-        /**有成功才去抓檔**/
+        /**pentaho傳過來的status = DONE 才去抓檔**/
         if("DONE".equals(jobParams.getStatus())) {
             String targetDir = directories.getSendFileDir() + jobParams.getDATA_SRC() + "/" + jobParams.getDATA_DATE() + "/";
             String fileName = jobParams.getFORM_NAME() + ".zip";
-            log.info("目標目錄:{}", targetDir);
-            log.info("目標檔名:{}", fileName);
-            /**SFTP抓檔落地**/
+            log.info("目標目錄:{},目標檔名:{}", targetDir,fileName);
 
+            /**SFTP抓檔落地**/
             sftp.connect();
             boolean hasFile = sftp.listFiles(targetDir, fileName);
-            log.info("已完成zip檔:{}", hasFile);
+            log.info("指定檔案是否有存在:{}", hasFile);
             if (hasFile) {
                 boolean hasDownload = sftp.downloadFile(directories.getLocalTempDir(), targetDir, fileName);
-                log.info("已下載zip檔:{}", hasDownload);
+                log.info("下載成功:{}", hasDownload);
                 if (hasDownload) {
                     status = "DONE";
                     sourceFilePath = directories.getLocalTempDir() + fileName;
@@ -180,12 +180,14 @@ public class FileOutputService {
             }
             sftp.disconnect();
         }
+
         jobParams.setStatus(status);
 
         BatchFormParams batchFormParams = new BatchFormParams(jobParams.getBATCH_ID(), jobParams.getBATCHFORM_ORIGINAL_FILE_ID(), String.valueOf(jobParams.getPROCESSED_COUNTS()), jobParams.getStatus(), null);
-        log.info("給聖森更新狀態的參數:{}",batchFormParams );
-        postBatchFormRequest("/batchForm/systemUpdate",batchFormParams,sourceFilePath);
-//      postBatchFormRequest(sourceFilePath,"/batchForm/systemUpdate",jobParams);
+        log.info("call /batchForm/systemUpdate 更新狀態的參數:{}",batchFormParams );
+
+        postBatchFormRequestByRestemplate("/batchForm/systemUpdate",batchFormParams,sourceFilePath);
+//      postBatchFormRequest("/batchForm/systemUpdate",batchFormParams,sourceFilePath);
     }
 
     /**
@@ -285,6 +287,55 @@ public class FileOutputService {
     }
 
 
+    /**
+     * /batchForm/systemUpdate
+     * @param action
+     * @param batchFormParams
+     * @param filePath
+     * @return
+     * @throws IOException
+     */
+    public Map postBatchFormRequestByRestemplate(String action, BatchFormParams batchFormParams, String filePath) throws IOException {
+        String targerUrl = apServerComponent.getTargetUrl() + action;
+        log.info("聖森API網址:{}",targerUrl);
+        log.info("落地檔案位置:{}",filePath);
+
+        File file = null;
+        FileSystemResource fileSystemResource =null;
+        String fileName ="";
+        if(!"".equals(filePath)){
+            file = new File(filePath);
+            if (file.exists()) {
+                fileName = String.valueOf(Path.of(filePath).getFileName());
+                log.info("fileName:{}",fileName);
+                fileSystemResource = new FileSystemResource(file);
+            }
+        }
+
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.MULTIPART_FORM_DATA);
+        httpHeaders.setBearerAuth("eyJhbGciOiJSUzI1NiJ9.eyJ1c2VySW5mbyI6Int9IiwianRpIjoiTlRreU9URXdaVE10TmpNeVpTMDBOV05sTFRoak5UZ3RaVEJqTjJRM1l6RXpNVGt5IiwiZXhwIjoxNzcyMDA2ODgyfQ.U9yq-pqIsIiKJTSsq3ye5f7-sSHOIMaIf1_-dHbdjcx9KAC-ozqBML2HnDBMfrYgD3RU1dncjGcoKnJOE2wrQuSPr8VctBZ6c9lKbQv9JrFK8rVN3yxmgjcveumS_-dxu1Fid_XjtrgKFaDtdBTGFBbkRXCUcFG2HrTzjkaO9iRcrY5ef5T39R2m15Hn0XbXFIGLpHi3o1e9CoOaPhSryCJBG1OnOQP3f9B4x1zYt6RuzpSFN2e0DeT7I680zU1mfrYMyfUt1eCKKwO_9b7dd4SBcwGZCosrVDP7iFaXOxBnYFLDEtzhLNkUS-dprKQRboYHr4rEHad7FI4sfa6TXA");
+
+
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("id",batchFormParams.getId());
+        parameters.put("originalFileId",batchFormParams.getOriginalFileId());
+        parameters.put("processedCounts",batchFormParams.getProcessedCounts());
+        parameters.put("status",batchFormParams.getStatus());
+        if(fileSystemResource != null){
+            parameters.put("file",fileSystemResource);
+        }
+
+        org.springframework.util.LinkedMultiValueMap<String, Object> body = new org.springframework.util.LinkedMultiValueMap<>();
+        body.setAll(parameters);
+
+        HttpEntity<org.springframework.util.LinkedMultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, httpHeaders);
+        log.info("請求實體:{}",requestEntity);
+        ResponseEntity<Map> response = restTemplate.exchange(targerUrl, HttpMethod.PUT, requestEntity, Map.class);
+        log.info("response :{}",response.getStatusCode());
+        log.info("body :{}",response.getBody());
+        return  response.getBody();
+    }
 
     public int postBatchFormRequest(String action, Object params, String filePath) throws IOException {
         String targerUrl = apServerComponent.getTargetUrl() + action;

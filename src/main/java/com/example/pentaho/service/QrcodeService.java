@@ -10,9 +10,11 @@ import com.example.pentaho.utils.RsaUtils;
 import com.example.pentaho.utils.StringUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.zxing.WriterException;
+import org.checkerframework.checker.units.qual.A;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -29,6 +31,9 @@ public class QrcodeService {
     private final static Logger log = LoggerFactory.getLogger(QrcodeService.class);
 
     private final int VALID_TIME = 5256000;
+
+    @Autowired
+    private Environment env;
 
 
     @Autowired
@@ -167,7 +172,20 @@ public class QrcodeService {
     public void generateURLs(Map<String,String> params){
         /**不加密**/
         //todo:http://localhost:8080/iisi/single-query-taskId?
-        StringBuilder queryString = new StringBuilder("http://localhost:8080/iisi/single-query-taskId?");
+        String[] activeProfiles = env.getActiveProfiles();
+        String baseUrl = "http://localhost:8080/iisi";
+        for (String activeProfile : activeProfiles) {
+            if("prod".equals(activeProfile)){
+                baseUrl="http://34.211.215.66:8080/iisi";
+            }
+
+            if("uat".equals(activeProfile)){
+                baseUrl="http://10.32.32.207:8080/iisi";
+            }
+
+        }
+
+        StringBuilder queryString = new StringBuilder(baseUrl+"/single-query-taskId?");
         AtomicInteger size = new AtomicInteger(params.size());
         params.keySet().forEach(key ->{
             if(size.get() == 0){

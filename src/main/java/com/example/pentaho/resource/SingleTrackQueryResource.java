@@ -18,6 +18,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 
 @RestController
 @RequestMapping("/api/single-track-query")
@@ -63,7 +65,7 @@ public class SingleTrackQueryResource {
                                         description = "使用者上傳的CSV檔",
                                         required = true
                                 )
-                                    @RequestParam("file") MultipartFile file) throws IOException {
+                                    @RequestParam("file") MultipartFile file) throws IOException, NoSuchAlgorithmException, KeyManagementException {
         logger.info("Received request");
         /**check**/
         if (file == null) {

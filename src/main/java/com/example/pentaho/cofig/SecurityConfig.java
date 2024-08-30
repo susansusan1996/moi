@@ -31,6 +31,9 @@ public class SecurityConfig {
                 http.authorizeRequests()
                         .requestMatchers("/api/**").permitAll()
                         .requestMatchers("/static/**").permitAll()
+//                        .requestMatchers("/swagger-ui/**").authenticated()
+//                        .and()
+//                        .httpBasic()  // 启用基本身份验证// 保护 Swagger UI
                         .and().cors(Customizer.withDefaults())
                         .csrf().disable().build();
     }

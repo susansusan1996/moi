@@ -2,10 +2,7 @@ package com.example.pentaho.repository.impl;
 
 import com.cht.commons.persistence.query.Query;
 import com.cht.commons.persistence.query.SqlExecutor;
-import com.example.pentaho.component.Address;
-import com.example.pentaho.component.IbdTbAddrCodeOfDataStandardDTO;
-import com.example.pentaho.component.IbdTbIhChangeDoorplateHis;
-import com.example.pentaho.component.OpenPageDTO;
+import com.example.pentaho.component.*;
 import com.example.pentaho.repository.IbdTbAddrCodeOfDataStandardRepository;
 import com.example.pentaho.utils.StringUtils;
 import org.slf4j.Logger;
@@ -100,7 +97,7 @@ public class IbdTbAddrCodeOfDataStandardRepositoryImpl implements IbdTbAddrCodeO
     public List<IbdTbAddrCodeOfDataStandardDTO> findBySeqsGetNumFlrPOS(List<Integer> seq) {
         Query query = Query.builder()
                 .append("WITH SUBQUERY AS ( \n")
-                .append("SELECT A.*,B.NUM_FLR_POS,B.ROOM_ID_SN \n")
+                .append("SELECT A.*,B.NUM_FLR_POS,B.ROOM_ID_SN,B.NUM_FLR_ID\n")
                 .append("FROM ADDR_ODS.IBD_TB_ADDR_CODE_OF_DATA_STANDARD A \n")
                 .append("INNER JOIN ( \n")
                 .append("SELECT * \n")
@@ -118,6 +115,45 @@ public class IbdTbAddrCodeOfDataStandardRepositoryImpl implements IbdTbAddrCodeO
         log.info("query:{}", query);
         log.info("params:{}", query.getParameters());
         return sqlExecutor.queryForList(query,IbdTbAddrCodeOfDataStandardDTO.class);
+    }
+
+    @Override
+    public List<DataStandardAndRespositoryDTO> findFromDataStandardAndRepository(List<Integer> seqs) {
+        Query query = Query.builder().append("" +
+                        "SELECT DISTINCT A.SEQ \n" +
+                        ",A.ADDRESS_ID\n" +
+                        ",A.FULL_ADDRESS\n" +
+                        ",A.VALIDITY\n" +
+                        ",A.COUNTY\n" +
+                        ",A.COUNTY_CD\n" +
+                        ",A.TOWN\n" +
+                        ",A.TOWN_CD\n" +
+                        ",A.POST_CODE\n" +
+                        ",A.POST_CODE_DT\n" +
+                        ",A.TC_ROAD\n" +
+                        ",A.ROAD_ID\n" +
+                        ",A.ROAD_ID_DT\n" +
+                        ",A.X\n" +
+                        ",A.Y\n" +
+                        ",A.WGS_X\n" +
+                        ",A.WGS_Y\n" +
+                        ",A.GEOHASH\n" +
+                        ",A.XY_YEAR\n" +
+                        ",A.ADR_VERSION\n" +
+                        ",A.ETLDT\n" +
+                        ",B.* \n" +
+                        "FROM addr_ods.IBD_TB_ADDR_CODE_OF_DATA_STANDARD A\n" +
+                        "inner join\n" +
+                        "( \n" +
+                        "SELECT *\n" +
+                        "FROM addr_ods.IBD_TB_ADDR_DATA_REPOSITORY_NEW\n" +
+                        "WHERE ADR_VERSION in (select max(ADR_VERSION) from addr_ods.IBD_TB_ADDR_DATA_REPOSITORY_NEW) \n" +
+                        ") B\n" +
+                        "on A.seq = B.seq\n" +
+                        "and A.ADR_VERSION = B.ADR_VERSION  \n")
+                .append("WHERE  1 = 1 \n")
+                .appendWhen(!seqs.isEmpty(), "and A.SEQ in (:seqs)", seqs).build();
+        return sqlExecutor.queryForList(query, DataStandardAndRespositoryDTO.class);
     }
 
     @Override

@@ -1,10 +1,13 @@
 package com.example.pentaho.utils;
 
 import com.example.pentaho.component.*;
+import com.example.pentaho.service.RedisService;
+import com.example.pentaho.service.RefreshTokenService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
@@ -13,6 +16,8 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 
@@ -24,12 +29,19 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
     private final KeyComponent keyComponent;
 
 
-    public AuthorizationHandlerInterceptor(KeyComponent keyComponent) {
+
+    private final RefreshTokenService refreshTokenService;
+
+
+    private final static List<String> openAPI = Arrays.asList("/iisi/api/api-key/revise-address","/iisi/api/api-key/query-track","/iisi/api/api-key/query-standard-address","/iisi/api/api-key/query-single");
+
+
+    public AuthorizationHandlerInterceptor(KeyComponent keyComponent, RefreshTokenService refreshTokenService) {
         this.keyComponent = keyComponent;
+        this.refreshTokenService = refreshTokenService;
     }
 
-
-      @Override
+    @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
           log.info("Token Check");
 
@@ -63,7 +75,7 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
      * @throws Exception
      */
     public boolean vertifyToken(HttpServletRequest request, String keyName) throws Exception {
-        log.info("keyName:{}",keyName);
+        log.info("使用的解密公鑰:{}",keyName);
 
         /**確認有沒有token**/
         String authHeader = request.getHeader("Authorization");
@@ -86,26 +98,36 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
         String RSATokenJwt = authHeader.substring(7, authHeader.length());
         if(Token.fromRSAJWTToken(RSATokenJwt, keyName)){
 
+            //todo:這支給pentaho用的
             if("/iisi/api/batchForm/finished".equals(request.getRequestURI())){
                 return true;
             }
 
+
+            //todo:應該不會這樣用，可以刪掉
             if("/iisi/api/singlequery/qrcode-data-token".equals(request.getRequestURI())){
                 OpenPageDTO.QrcodeDTO qrcodeDTO = Token.extractQrcodeDTOFromRSAJWTToken(RSATokenJwt, keyName);
-//
                 QrcodeContextUtils.setQrcodeData(qrcodeDTO);
                 log.info("Token Check OK");
                 return true;
             }
 
-                User user = Token.extractUserFromRSAJWTToken(RSATokenJwt,keyName);
-                log.info("user:{}",user);
-                //判斷使用者是不是拿refresh_token
-                if("refresh_token".equals(user.getTokenType())){
-                    log.info("使用者拿refresh_token打api,駁回");
-                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not allowed");
-                }
-                UserContextUtils.setUserHolder(user);
+
+            User user = Token.extractUserFromRSAJWTToken(RSATokenJwt,keyName);
+            log.info("user:{}",user);
+            //判斷使用者是不是拿refresh_token
+            if("refresh_token".equals(user.getTokenType())){
+                log.info("使用者拿refresh_token打api,駁回");
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not allowed");
+            }
+            //todo:OpenAPI 新增拿到userId之後,要去redis拿整個sett出來判斷IP位置
+           if(openAPI.contains(request.getRequestURI())){
+               if(!refreshTokenService.checkRemoteIp(user.getId(),request.getRemoteHost())){
+                   throw new ResponseStatusException(HttpStatus.FORBIDDEN, "IP位置錯誤");
+               }
+           }
+
+            UserContextUtils.setUserHolder(user);
                 log.info("Token Check OK");
                 return true;
             } //token 可以解密

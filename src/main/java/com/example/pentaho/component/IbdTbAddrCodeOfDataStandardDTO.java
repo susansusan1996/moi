@@ -28,9 +28,21 @@ public class IbdTbAddrCodeOfDataStandardDTO {
     private Date etldt;
     private String joinStep; //地址比對代碼
 
-    private String numFlrPos; //
+
+    private String numFlrId;
+
+    private String numFlrPos;
 
     private String roomIdSn;
+
+
+    public String getNumFlrId() {
+        return numFlrId;
+    }
+
+    public void setNumFlrId(String numFlrId) {
+        this.numFlrId = numFlrId;
+    }
 
     public String getNumFlrPos() {
         return numFlrPos;

@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -45,7 +46,7 @@ public class QrcodeResource {
                     examples = @ExampleObject(value = "{\"seq\":\"3498211\"}")
             )
     )
-    public ResponseEntity<byte[]> getQrcodeImg(Map<String,String> params) throws Exception {
+    public ResponseEntity<byte[]> getQrcodeImg(@RequestBody Map<String,String> params) throws Exception {
         if (Strings.isNullOrEmpty(params.get("seq"))){
             return ResponseEntity.internalServerError()
                     .body(null);

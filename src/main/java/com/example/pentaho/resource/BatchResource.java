@@ -37,6 +37,8 @@ import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -125,7 +127,8 @@ public class BatchResource {
         }
 )
     @PostMapping(value="/excuteETLJob",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Authorized(keyName = "SHENG")
+    //todo:記得打開
+//    @Authorized(keyName = "SHENG")
     public ResponseEntity<String> sftpUploadAndExecuteTrans(
         @Parameter(
                 description ="批次ID" ,
@@ -181,6 +184,10 @@ public class BatchResource {
                 } catch (IOException e) {
                     log.info("e:{}",e.toString());
                     throw new MoiException("異動批次查詢失敗");
+                } catch (NoSuchAlgorithmException e) {
+                    throw new RuntimeException(e);
+                } catch (KeyManagementException e) {
+                    throw new RuntimeException(e);
                 }
             });
             return new ResponseEntity<>("異動批次開始查詢", HttpStatus.OK);
@@ -204,12 +211,12 @@ public class BatchResource {
 
 
     @Async
-    public CompletableFuture<Void> queryBatchTrackAsync(String Id, String originalFileId, String formName, String fileContent) throws IOException {
+    public CompletableFuture<Void> queryBatchTrackAsync(String Id, String originalFileId, String formName, String fileContent) throws IOException, NoSuchAlgorithmException, KeyManagementException {
         queryBatchTrack(Id, originalFileId, formName, fileContent);
         return CompletableFuture.completedFuture(null);
     }
 
-    public void queryBatchTrack(String Id,String originalFileId,String formName,String fileContent) throws IOException {
+    public void queryBatchTrack(String Id,String originalFileId,String formName,String fileContent) throws IOException, NoSuchAlgorithmException, KeyManagementException {
         /*default:processedCount=0,status=SYS_FAILED*/
         SingleBatchQueryParams singleBatchQueryParams = new SingleBatchQueryParams(Id, originalFileId, "0", "SYS_FAILED", formName);
         singleQueryTrackService.queryBatchTrack(fileContent, singleBatchQueryParams);

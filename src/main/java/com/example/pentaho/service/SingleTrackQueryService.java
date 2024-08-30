@@ -11,10 +11,17 @@ import io.netty.util.internal.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.*;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.web.client.RestTemplate;
 
+import javax.net.ssl.*;
 import java.io.*;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
@@ -22,6 +29,11 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -48,6 +60,10 @@ public class SingleTrackQueryService {
 
     @Autowired
     private IbdTbIhChangeDoorplateHisRepository ibdTbIhChangeDoorplateHisRepository;
+
+
+    @Autowired
+    private RestTemplate restTemplate;
 
 
 
@@ -78,7 +94,7 @@ public class SingleTrackQueryService {
 
 
     @Async
-    public void queryBatchTrack(String fileContent, SingleBatchQueryParams singleBatchQueryParams) throws IOException {
+    public void queryBatchTrack(String fileContent, SingleBatchQueryParams singleBatchQueryParams) throws IOException, NoSuchAlgorithmException, KeyManagementException {
         log.info("singleBatchQueryParams:{}",singleBatchQueryParams.toString());
         try {
             log.info("start processing ,fileContent:{}",fileContent);
@@ -90,7 +106,8 @@ public class SingleTrackQueryService {
                 /**檔案沒有內容*/
                 log.info("Empty File");
                 singleBatchQueryParams.setStatus("REJECT");
-                postSingleBatchQueryRequest("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
+                postSingleBatchQueryRequestRestemplate("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
+//                postSingleBatchQueryRequest("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
                 return;
             }
 
@@ -100,7 +117,8 @@ public class SingleTrackQueryService {
                 /**去掉表頭檔案沒有內容*/
                 log.info("Empty File Content");
                 singleBatchQueryParams.setStatus("REJECT");
-                postSingleBatchQueryRequest("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
+                postSingleBatchQueryRequestRestemplate("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
+//                postSingleBatchQueryRequest("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
                 return;
             }
 
@@ -111,14 +129,16 @@ public class SingleTrackQueryService {
             if(addressIdList == null){
                 log.info("Reading Exception");
                 singleBatchQueryParams.setStatus("SYS_FAILED");
-                postSingleBatchQueryRequest("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
+                postSingleBatchQueryRequestRestemplate("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
+//                postSingleBatchQueryRequest("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
                 return;
             }
             /**Empty List**/
             if(addressIdList.isEmpty()){
                 log.info("Empty Address");
                 singleBatchQueryParams.setStatus("REJECT");
-                postSingleBatchQueryRequest("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
+                postSingleBatchQueryRequestRestemplate("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
+//                postSingleBatchQueryRequest("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
                 return;
             }
 
@@ -127,14 +147,16 @@ public class SingleTrackQueryService {
             if(IbdTbIhChangeDoorplateHisList==null){
                 log.info("Reading Exception");
                 singleBatchQueryParams.setStatus("SYS_FAILED");
-                postSingleBatchQueryRequest("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
+                postSingleBatchQueryRequestRestemplate("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
+//                postSingleBatchQueryRequest("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
                 return;
             }
 
             if(IbdTbIhChangeDoorplateHisList.isEmpty()){
                 log.info("no data was found");
                 singleBatchQueryParams.setStatus("DONE");
-                postSingleBatchQueryRequest("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
+                postSingleBatchQueryRequestRestemplate("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
+//                postSingleBatchQueryRequest("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
                 return;
             }
 
@@ -145,11 +167,13 @@ public class SingleTrackQueryService {
                 singleBatchQueryParams.setProcessedCounts(String.valueOf(newLines.length));
                 filePath = directories.getLocalTempDir()+singleBatchQueryParams.getFile()+".zip";
             }
-            postSingleBatchQueryRequest("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
+            postSingleBatchQueryRequestRestemplate("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
+//            postSingleBatchQueryRequest("/batchForm/systemUpdate",singleBatchQueryParams,filePath);
         }catch (Exception e){
             log.info("e:{}",e.toString());
             singleBatchQueryParams.setStatus("SYS_FAILED");
-            postSingleBatchQueryRequest("/batchForm/systemUpdate",singleBatchQueryParams,"");
+            postSingleBatchQueryRequestRestemplate("/batchForm/systemUpdate",singleBatchQueryParams,"");
+//            postSingleBatchQueryRequest("/batchForm/systemUpdate",singleBatchQueryParams,"");
         }
     }
 
@@ -270,6 +294,22 @@ public class SingleTrackQueryService {
             }
         }
 
+
+
+    private static class DefaultTrustManager implements X509TrustManager {
+
+        @Override
+        public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {}
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {}
+
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+            return null;
+        }
+    }
+
     /**
      * send Request
      * @param action
@@ -278,7 +318,7 @@ public class SingleTrackQueryService {
      * @return
      * @throws IOException
      */
-    public int postSingleBatchQueryRequest(String action, Object params, String filePath) throws IOException {
+    public int postSingleBatchQueryRequest(String action, Object params, String filePath) throws IOException, NoSuchAlgorithmException, KeyManagementException {
         String targerUrl = apServerComponent.getTargetUrl() + action;
         log.info("targetUrl:{}",targerUrl);
 
@@ -293,11 +333,29 @@ public class SingleTrackQueryService {
         }
 
         URL url = new URL(targerUrl);
-        HttpURLConnection con = (HttpURLConnection) url.openConnection();
-        con.setRequestMethod("PUT");
+        //todo:改成https
+//        HttpURLConnection con = (HttpURLConnection) url.openConnection();
 
+
+        // configure the SSLContext with a TrustManager
+        SSLContext ctx = SSLContext.getInstance("TLS");
+        ctx.init(new KeyManager[0], new TrustManager[] {new DefaultTrustManager()}, new SecureRandom());
+        SSLContext.setDefault(ctx);
+
+        HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
+        con.setRequestMethod("PUT");
         /**necessay**/
         con.setDoOutput(true);
+        con.setHostnameVerifier(new HostnameVerifier() {
+            @Override
+            public boolean verify(String arg0, SSLSession arg1) {
+                return true;
+            }
+        });
+
+//      RestTemplate restTemplate = testSSL(con);
+
+
         /**necessay**/
         String boundary = UUID.randomUUID().toString();
         con.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
@@ -334,6 +392,98 @@ public class SingleTrackQueryService {
         con.disconnect();
         return responseCode;
     }
+
+
+//    public RestTemplate testSSL(HttpsURLConnection httpsURLConnection) throws NoSuchAlgorithmException, KeyManagementException {
+//
+//        //信任任何憑證
+//        SSLContext sslContext = SSLContext.getInstance("TLS");
+//
+//        // Define trust managers to accept all certificates
+//        TrustManager[] trustManagers = new TrustManager[]{new X509TrustManager() {
+//            // Method to check client's trust - accepting all certificates
+//            public void checkClientTrusted(X509Certificate[] x509Certificates, String s) {
+//            }
+//
+//            // Method to check server's trust - accepting all certificates
+//            public void checkServerTrusted(X509Certificate[] x509Certificates, String s) {
+//            }
+//
+//            // Method to get accepted issuers - returning an empty array
+//            public X509Certificate[] getAcceptedIssuers() {
+//                return new X509Certificate[0];
+//            }
+//        }};
+//
+//        // Initialize SSL context with the defined trust managers
+//        sslContext.init(null, trustManagers, null);
+//
+//        // Disable SSL verification for RestTemplate
+//
+//        // Set the default SSL socket factory to use the custom SSL context
+//        HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
+//
+//        // Set the default hostname verifier to allow all hostnames
+//        HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
+//
+//
+//        RestTemplate restTemplate = new RestTemplateBuilder().requestFactory(SimpleClientHttpRequestFactory.class)
+//                .build();
+//
+//        // Return the configured RestTemplate
+//        return restTemplate;
+//    }
+
+
+
+
+    /**
+     * send Request
+     * @param action
+     * @param filePath
+     * @return
+     * @throws IOException
+     */
+    public Map postSingleBatchQueryRequestRestemplate(String action, SingleBatchQueryParams singleBatchQueryParams, String filePath) throws IOException, NoSuchAlgorithmException, KeyManagementException {
+        String targerUrl = apServerComponent.getTargetUrl() + action;
+        log.info("聖森網址:{}",targerUrl);
+
+        File file = null;
+        FileSystemResource fileSystemResource = null;
+        String fileName ="";
+        if(!"".equals(filePath)){
+            file = new File(filePath);
+            if (file.exists()) {
+                fileName = String.valueOf(Path.of(filePath).getFileName());
+                fileSystemResource = new FileSystemResource(file);
+                log.info("fileName:{}",fileName);
+            }
+        }
+
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setBearerAuth("eyJhbGciOiJSUzI1NiJ9.eyJ1c2VySW5mbyI6Int9IiwianRpIjoiTlRreU9URXdaVE10TmpNeVpTMDBOV05sTFRoak5UZ3RaVEJqTjJRM1l6RXpNVGt5IiwiZXhwIjoxNzcyMDA2ODgyfQ.U9yq-pqIsIiKJTSsq3ye5f7-sSHOIMaIf1_-dHbdjcx9KAC-ozqBML2HnDBMfrYgD3RU1dncjGcoKnJOE2wrQuSPr8VctBZ6c9lKbQv9JrFK8rVN3yxmgjcveumS_-dxu1Fid_XjtrgKFaDtdBTGFBbkRXCUcFG2HrTzjkaO9iRcrY5ef5T39R2m15Hn0XbXFIGLpHi3o1e9CoOaPhSryCJBG1OnOQP3f9B4x1zYt6RuzpSFN2e0DeT7I680zU1mfrYMyfUt1eCKKwO_9b7dd4SBcwGZCosrVDP7iFaXOxBnYFLDEtzhLNkUS-dprKQRboYHr4rEHad7FI4sfa6TXA");
+        httpHeaders.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("id",singleBatchQueryParams.getId());
+        parameters.put("originalFileId",singleBatchQueryParams.getOriginalFileId());
+        parameters.put("processedCounts",singleBatchQueryParams.getProcessedCounts());
+        parameters.put("status",singleBatchQueryParams.getStatus());
+        parameters.put("file",fileSystemResource);
+
+
+        org.springframework.util.LinkedMultiValueMap<String, Object> body = new org.springframework.util.LinkedMultiValueMap<>();
+        body.setAll(parameters);
+
+        HttpEntity<LinkedMultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, httpHeaders);
+        log.info("請求實體:{}",requestEntity);
+
+        ResponseEntity<Map> response = restTemplate.exchange(targerUrl, HttpMethod.PUT, requestEntity, Map.class);
+        log.info("responseCode:{}",response.getStatusCode());
+        log.info("body:{}",response.getBody());
+        return response.getBody();
+    }
+
 
     /**
      * getPostContent

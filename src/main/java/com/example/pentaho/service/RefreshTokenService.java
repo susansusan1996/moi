@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.stereotype.Service;
 
 import java.sql.Ref;
@@ -69,7 +70,6 @@ public class RefreshTokenService {
 
         //不管REJECT或AGREE都要儲存
         saveRefreshToken(refreshToken);
-
         return refreshToken;
     }
 
@@ -151,6 +151,7 @@ public class RefreshTokenService {
         valuesToSet.put("expiry_date", refreshToken.getExpiryDate());
         valuesToSet.put("refresh_token_expiry_date", refreshToken.getRefreshTokenExpiryDate());
         valuesToSet.put("review_result", refreshToken.getReviewResult());
+        valuesToSet.put("create_timestamp",Instant.now().toString());
         for (Map.Entry<String, String> entry : valuesToSet.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
@@ -158,12 +159,11 @@ public class RefreshTokenService {
                 //建立一個set,key為applicantId:token",並放入對應的value
                 stringRedisTemplate0.opsForValue().set(id + ":" + key, value);
             } else {
-                /*REJECT時會空**/
+                /*REJECT時會清空
+                  id:token,id:expiry_date,id:refresh_token_expiry_date**/
                 stringRedisTemplate0.delete(id + ":" + key);
             }
         }
-        //REJECT || AGREE　都要存建立時間
-        stringRedisTemplate0.opsForValue().set(id + ":create_timestamp", Instant.now().toString());
     }
 
 
@@ -188,9 +188,10 @@ public class RefreshTokenService {
     public RefreshToken findRefreshTokenByUserId(String id,String username) {
         RefreshToken refreshToken = new RefreshToken();
         if (StringUtils.isNotNullOrEmpty(id)) {
+            /**取得userId過去紀錄*/
             String reviewResult = stringRedisTemplate0.opsForValue().get(id + ":review_result");
             if ("AGREE".equals(reviewResult)) {
-                /**表示已申請成功*/
+                /**表示之前申請成功，整組拿出來*/
                 refreshToken.setId(id);
                 refreshToken.setToken(stringRedisTemplate0.opsForValue().get(id + ":token"));
                 refreshToken.setRefreshToken(stringRedisTemplate0.opsForValue().get(id + ":refresh_token"));
@@ -199,13 +200,13 @@ public class RefreshTokenService {
                 refreshToken.setReviewResult(stringRedisTemplate0.opsForValue().get(id + ":review_result"));
                 return refreshToken;
             }else if("REJECT".equals(reviewResult)){
-                /**表示過去被拒絕，這次重新申請*/
+                /**表示之前被拒絕，整組拿出來*/
                 refreshToken.setId(id);
                 refreshToken.setUsername(username);
                 refreshToken.setReviewResult(reviewResult);
                 return refreshToken;
             }else{
-                /*表示第一次申請**/
+                /*表示從未申請過**/
                 return null;
             }
         }
@@ -241,6 +242,37 @@ public class RefreshTokenService {
         /*參數不符規定，開頭就會擋掉了**/
         return null;
     }
+
+
+    /***
+     *
+     * @param userId
+     * @param remoteIp
+     * @return
+     * @throws ParseException
+     */
+    public Boolean checkRemoteIp(String userId,String remoteIp) throws ParseException {
+        log.info("檢查userId:{},檢查 remoteIp:{}",userId,remoteIp);
+        Map<String, String> userMap = new HashMap<String, String>();
+        Map<Object, Object> entries = stringRedisTemplate0.opsForHash().entries(userId+":IP");
+
+
+        for (Map.Entry<Object, Object> entry : entries.entrySet()) {
+            userMap.put(String.valueOf(entry.getKey()), String.valueOf(entry.getValue()));
+            log.info(entry.getKey() + ": " + entry.getValue());
+        }
+
+        if(userMap != null && !userMap.isEmpty()){
+           String boundIp = userMap.get(userMap + ":ip");
+           return boundIp.equals(remoteIp)? true : false;
+        }
+
+        //存IP
+        stringRedisTemplate0.opsForValue().set(userMap+":ip",remoteIp);
+        return true;
+    }
+
+
 
 
 }

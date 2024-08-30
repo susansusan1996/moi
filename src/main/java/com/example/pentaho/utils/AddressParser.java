@@ -258,7 +258,9 @@ return address;
      */
     public String findSpecialArea(Map<String, Set<String>> allKeys, Address address, String origninalAddress) {
         String newArea = "(" + String.join("|", allKeys.get("SPECIAL_AREA:")) + ")";
+        //(成功里|安樂李|..) => 臺南市佳里區建南里030鄰成功路２１３巷９１號之２四樓之1
         String newVillages = "(" + String.join("|", allKeys.get("VILLAGE_ALIAS:")) + ")";
+        log.info("newVillages:{}",newVillages);
         log.info("特殊地名SPECIAL_AREA:組成正則 :{}", newArea);
         //todo:不能等於VILLAIGES裡的東西 村里=> 中興里 會被再這裡被特殊地名:中興 切出來
         Pattern patternForVillage = Pattern.compile(newVillages);
@@ -367,9 +369,11 @@ return address;
         String newTown = String.format(TOWN, String.join("|", allKeys.get("TOWN_ALIAS:")));
         /**SPECIAL_AREA(特殊地名)加進VILLAGE正則是為了在里階段排除它們**/
         String newRoad = String.format(ROAD, String.join("|", allKeys.get("ROAD_ALIAS:")));
+        //第一個是不包含，第二個是包含
         String newVillage = String.format(VILLAGE, "(?!" + String.join("|", allKeys.get("SPECIAL_AREA:")) + ")", String.join("|", allKeys.get("VILLAGE_ALIAS:")));
+//        log.info("newVillage:{}",newVillage);
 //todo:測試中正則
-//        return newCounty + newTown + newVillage + NEIGHBOR + SPECIALLANE + newRoad + LANE + ALLEY + SUBALLEY + NUMFLR1 + NUMFLR2 + NUMFLR3 + NUMFLR4 + NUMFLR5 + CONTINUOUS_NUM  + BASEMENTSTR + REMARK + ADDRREMAINS;
+//          return newCounty + newTown + newRoad + newVillage + NEIGHBOR + SPECIALLANE + LANE + ALLEY + SUBALLEY + NUMFLR1 + NUMFLR2 + NUMFLR3 + NUMFLR4 + NUMFLR5 + CONTINUOUS_NUM  + BASEMENTSTR + REMARK + ADDRREMAINS;
         return newCounty + newTown + newVillage + NEIGHBOR + SPECIALLANE + newRoad + LANE + ALLEY + SUBALLEY + NUMFLR1 + NUMFLR2 + NUMFLR3 + NUMFLR4 + NUMFLR5 + CONTINUOUS_NUM + ROOM + BASEMENTSTR + REMARK + ADDRREMAINS;
     }
 
@@ -744,19 +748,22 @@ return address;
                 }
             }
 
-            /**確認完整地址有無'室'*/
+            /**確認完整地址有無 '室'*/
             pattern = Pattern.compile("(?<room>.*?室)");
             matcher = pattern.matcher(fullAddress);
-            log.info("roomMatcher.find():{}",matcher.find());
             if(!matcher.find()){
                 //地址無室，但來源地址寫室
+                log.info("完整地址沒有<室>,來源地址的<室>:{}",address.getRoom());
                 if(!StringUtils.isNullOrEmpty(address.getRoom())){
+                    log.info("完整地址沒有<室>,來源地址有 <室> 要件清單改 room = false");
                     segNumMap.put("ROOM",false);
                 }else{
+                    log.info("完整地址沒有<室>,來源地址沒有 <室> 要件清單改 room = true");
                     segNumMap.put("ROOM",true);
                 }
             }else{
                 //地址有室
+                log.info("完整地址有<室>,判斷SegmentExistNumber中最後一碼0(沒找到cd或沒填或放入mappingId不符合)或1(有找到)");
                 if(address.getSegmentExistNumber().endsWith("0")){
                     //表示組成的cd沒有對到mappingId
                     segNumMap.put("ROOM",false);
