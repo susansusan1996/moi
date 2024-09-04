@@ -70,9 +70,18 @@ spring:
 
 
 server:
+  # https -> 8000 , http -> 8080
+  #port: 443
   port: 8080
   servlet:
     context-path: /iisi
+  # 證書
+  #ssl:
+    #key-store: classpath:bootserverkeystore.jks
+    # 證書配別
+    #keyStoreType: JKS
+    #key-store-password: 123456
+    #enabled: true
 
 
 pentaho:

@@ -1,4 +1,4 @@
-#內政測試環境
+#內政測試環境 (這不是uat喔)
 spring:
   data:
     #    db0: 存refrsesh_token
