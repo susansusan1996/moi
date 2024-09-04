@@ -170,22 +170,10 @@ public class QrcodeService {
      * @param params
      */
     public void generateURLs(Map<String,String> params){
-        /**不加密**/
-        //todo:http://localhost:8080/iisi/single-query-taskId?
-        String[] activeProfiles = env.getActiveProfiles();
-        String baseUrl = "http://localhost:8080/iisi";
-        for (String activeProfile : activeProfiles) {
-            if("prod".equals(activeProfile)){
-                baseUrl="http://34.211.215.66:8080/iisi";
-            }
+        /****/
+        StringBuilder queryString = new StringBuilder(directory.getQrcodeUrl());
 
-            if("uat".equals(activeProfile)){
-                baseUrl="http://10.32.32.207:8080/iisi";
-            }
 
-        }
-
-        StringBuilder queryString = new StringBuilder(baseUrl+"/single-query-taskId?");
         AtomicInteger size = new AtomicInteger(params.size());
         params.keySet().forEach(key ->{
             if(size.get() == 0){
