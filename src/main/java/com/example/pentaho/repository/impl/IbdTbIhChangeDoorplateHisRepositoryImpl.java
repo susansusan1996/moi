@@ -92,6 +92,9 @@ public class IbdTbIhChangeDoorplateHisRepositoryImpl implements IbdTbIhChangeDoo
         }
     }
 
+    /**
+    * 歷史門牌 先去 ADDR_ODS.IBD_TB_IH_CHANGE_DOORPLATE_HIS 找出版本最大的 data(ADDRESS_ID , STATUS, HISTORY_SEQ , ADR_VERSION, UPDATE_CODE)
+    * */
     @Override
     public List<IbdTbIhChangeDoorplateHis> findByHistorySeq(List<String> seq) {
         List<Integer> seqWhenEmpty = new ArrayList<>();

@@ -35,6 +35,12 @@ public class IbdTbAddrCodeOfDataStandardRepositoryImpl implements IbdTbAddrCodeO
         return sqlExecutor.queryForList(query, IbdTbAddrCodeOfDataStandardDTO.class);
     }
 
+    /***
+     * for 歷史門牌
+     * @param IbdTbIhChangeDoorplateHisList
+     * @param address
+     * @return
+     */
     @Override
     public List<IbdTbAddrCodeOfDataStandardDTO> findByAddressId(List<IbdTbIhChangeDoorplateHis> IbdTbIhChangeDoorplateHisList, Address address) {
         List<IbdTbAddrCodeOfDataStandardDTO> resultList = new ArrayList<>();
@@ -51,6 +57,49 @@ public class IbdTbAddrCodeOfDataStandardRepositoryImpl implements IbdTbAddrCodeO
                         .append("SELECT ADDR_ODS.IBD_TB_ADDR_CODE_OF_DATA_STANDARD.*")
                         .append("FROM ADDR_ODS.IBD_TB_ADDR_CODE_OF_DATA_STANDARD WHERE ADDRESS_ID = :ADDRESS_ID ", his.getAddressId())
                         .append("AND ADR_VERSION IN (SELECT MAX( ADR_VERSION ) FROM ADDR_ODS.IBD_TB_ADDR_CODE_OF_DATA_STANDARD)")
+                        .build();
+                log.info("query:{}", query);
+                log.info("params:{}", query.getParameters());
+                if ("F".equals(his.getStatus()) && "3".equals(his.getUpdateCode())
+                ) {
+                    List<IbdTbAddrCodeOfDataStandardDTO> list =  sqlExecutor.queryForList(query, IbdTbAddrCodeOfDataStandardDTO.class);
+                    list.forEach(standard->standard.setJoinStep("JD721"));//增編多址比對(change status是F、UPDATE_CODE=3)
+                    resultList.addAll(list);
+                }else{
+                    resultList.addAll(sqlExecutor.queryForList(query, IbdTbAddrCodeOfDataStandardDTO.class));
+                }
+            }
+        });
+        return resultList;
+    }
+
+    @Override
+    public List<IbdTbAddrCodeOfDataStandardDTO> findByAddressIdGetNumFlrPOS(List<IbdTbIhChangeDoorplateHis> IbdTbIhChangeDoorplateHisList, Address address) {
+        List<IbdTbAddrCodeOfDataStandardDTO> resultList = new ArrayList<>();
+        IbdTbIhChangeDoorplateHisList.forEach(his -> {
+            IbdTbAddrCodeOfDataStandardDTO dto = new IbdTbAddrCodeOfDataStandardDTO();
+            //todo: 這裡是不是應該也要加入filter的資訊再做
+            if (his.getAddressId() == null && "X".equals(his.getStatus())) {
+                dto.setSeq(his.getHistorySeq());
+                dto.setAdrVersion(his.getAdrVersion());
+                dto.setFullAddress(address.getOriginalAddress());
+                dto.setJoinStep("JE621");//異動軌跡有異
+                resultList.add(dto);
+            } else if (StringUtils.isNotNullOrEmpty(his.getAddressId())) {
+                Query query = Query.builder()
+                        .append("SELECT A.* \n")
+                        .append(",B.NUM_FLR_POS \n")
+                        .append(",B.ROOM_ID_SN \n")
+                        .append(",B.NUM_FLR_ID \n")
+                        .append("FROM ADDR_ODS.IBD_TB_ADDR_CODE_OF_DATA_STANDARD A \n")
+                        .append("inner join ( \n")
+                        .append("SELECT * \n")
+                        .append("FROM addr_ods.IBD_TB_ADDR_DATA_REPOSITORY_NEW \n")
+                        .append("WHERE ADR_VERSION in (select max(ADR_VERSION) from addr_ods.IBD_TB_ADDR_DATA_REPOSITORY_NEW) \n")
+                        .append(") B \n")
+                        .append("on A.SEQ = B.SEQ \n")
+                        .append("WHERE A.ADDRESS_ID = :ADDRESS_ID \n",his.getAddressId())
+                        .append("AND A.ADR_VERSION IN (SELECT MAX( ADR_VERSION ) FROM ADDR_ODS.IBD_TB_ADDR_CODE_OF_DATA_STANDARD) \n")
                         .build();
                 log.info("query:{}", query);
                 log.info("params:{}", query.getParameters());
