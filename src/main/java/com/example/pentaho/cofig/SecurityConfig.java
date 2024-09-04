@@ -1,17 +1,13 @@
 package com.example.pentaho.cofig;
 
-import com.example.pentaho.utils.AuthorizationHandlerInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -31,12 +27,13 @@ public class SecurityConfig {
                 http.authorizeRequests()
                         .requestMatchers("/api/**").permitAll()
                         .requestMatchers("/static/**").permitAll()
-//                        .requestMatchers("/swagger-ui/**").authenticated()
-//                        .and()
-//                        .httpBasic()  // 启用基本身份验证// 保护 Swagger UI
                         .and().cors(Customizer.withDefaults())
                         .csrf().disable().build();
+
     }
+
+
+
 
 
     /***
@@ -46,14 +43,11 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
+        /**這邊可以加上的網域**/
         List<String> origins = new ArrayList<String>();
+//      corsConfiguration.setAllowedOrigins(origins);
         List<String> methods = new ArrayList<String>();
         List<String> headers = new ArrayList<String>();
-        /**AWS上有設定可以接收的port號；之後可以在這邊加上聖森的網域**/
-//        origins.add("http://localhost:8080"); //打aws的瀏覽器
-//        origins.add("http://localhost:8081"); //ETL
-//        origins.add("http://localhost:8090"); //打本機的瀏覽器
-//      corsConfiguration.setAllowedOrigins(origins);
         methods.add("GET");
         methods.add("POST");
         headers.add("Authorization");
@@ -61,6 +55,7 @@ public class SecurityConfig {
         corsConfiguration.setAllowedOrigins(Collections.singletonList("*"));
         corsConfiguration.setAllowedMethods(methods);
         corsConfiguration.setAllowedHeaders(headers);
+        /**允許cookie**/
 //        corsConfiguration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         /**哪些請求路徑適用此CORS設定**/

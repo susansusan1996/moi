@@ -15,7 +15,9 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 /**
- * 停用SSL驗證
+ * 使用 Restemplate api 時，會停用SSL驗證
+ * 新增別的Resttemplate，以name做區分，ref時用@Qualier指定
+ *
  */
 @Configuration
 public class RestTemplateConfig {

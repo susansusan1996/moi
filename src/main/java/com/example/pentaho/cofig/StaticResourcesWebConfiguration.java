@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 public class StaticResourcesWebConfiguration  implements WebMvcConfigurer {
 
 
-    /* classpath: = /src/main/resources/ */
+    /** classpath: = /src/main/resources/ */
     protected static final String[] RESOURCE_LOCATIONS = new String[] {
             "classpath:/static/",
             "classpath:/static/css/",

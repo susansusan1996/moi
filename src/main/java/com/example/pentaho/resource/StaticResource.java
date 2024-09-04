@@ -1,5 +1,8 @@
 package com.example.pentaho.resource;
 
+import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
@@ -7,17 +10,34 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class StaticResource {
 
 
+    private Logger log = LoggerFactory.getLogger(StaticResource.class);
+
+
     /***
-     *重定向
+     * /iisi/ 重定向
+     */
+    @GetMapping(value = "/")
+    public String forbiden() {
+        return "404";
+    }
+
+    /***
+     * /iisi/single-query 的重定向
      */
     @GetMapping(value = "/single-query")
-    public String forward() {
+    public String forward(HttpServletRequest httpServletRequest) {
+        log.info("uri:{}",httpServletRequest.getRequestURI());
+//        switch (){
+//
+//
+//        }
+
         return "forward:/index.html";
     }
 
 
     /***
-     *重定向
+     * /iisi/single-query-token 的重定向
      */
     @GetMapping(value = "/single-query-token")
     public String forwardToken() {
@@ -26,7 +46,7 @@ public class StaticResource {
 
 
     /***
-     *重定向
+     * /single-query-taskId 的 重定向
      */
     @GetMapping(value = "/single-query-taskId")
     public String forwardTaskId() {

@@ -108,24 +108,9 @@ public class RedisService {
         List<String> keys = address.getMappingId();
 
         /**用於判斷要件清單*/
-//        Map<String,Set<String>> hasNeighborList = new HashMap<>();
-//        Map<String,Set<String>> noNeighborList = new HashMap<>();
 
         Map<String,Set<String>> hasRoadAreaList = new HashMap<>();
         Map<String,Set<String>> noRoadAreaList = new HashMap<>();
-
-//        Map<String,Set<String>> hasLaneList = new HashMap<>();
-//        Map<String,Set<String>> noLaneList = new HashMap<>();
-
-//        Map<String,Set<String>> hasAlleyList = new HashMap<>();
-//        Map<String,Set<String>> noAlleyList = new HashMap<>();
-
-//        Map<String,Set<String>> hasNumFlrPosList = new HashMap<>();
-//        Map<String,Set<String>> noNumFlrPosList = new HashMap<>();
-
-//        Map<String,Set<String>> hasRoomList = new HashMap<>();
-//        Map<String,Set<String>> noRoomList = new HashMap<>();
-
 
         Map<String,Set<String>> resultList = new HashMap<>();
 
@@ -151,125 +136,28 @@ public class RedisService {
                     /**要全加**/
                     resultList.put(keys.get(index),elements);
 
-//                    if(!"000".equals(keys.get(index).substring(3,6))){
-//                        /**表示組合成 鄰 有成功比對到mappingId，留這組就好**/
-//                        hasNeighborList.put(keys.get(index),elements);
-////                        log.info("hasNeighborList:{}",hasNeighborList);
-//                    }else{
-//                        noNeighborList.put(keys.get(index),elements);
-////                        log.info("noNeighborList:{}",noNeighborList);
-//                    }
-
-
                     if(!"0000000".equals(keys.get(index).substring(6,13))){
                         /**表示redis search的 roadAreaSn 有成功比對到mappingId**/
                         hasRoadAreaList.put(keys.get(index),elements);
-////                        log.info("hasRoadAreaList:{}",hasRoadAreaList);
+//                        log.info("hasRoadAreaList:{}",hasRoadAreaList);
                     }else{
                         noRoadAreaList.put(keys.get(index),elements);
-////                        log.info("noRoadAreaList:{}",noRoadAreaList);
+//                      log.info("noRoadAreaList:{}",noRoadAreaList);
                     }
-
-                    //0000000000000000000001234
-//                    if(!"0000".equals(keys.get(index).substring(21,25))){
-//                         hasLaneList.put(keys.get(index),elements);
-//                    }else{
-//                         noLaneList.put(keys.get(index),elements);
-//                    }
-
-                    //00000000000000000000012341234567
-//                    if(!"0000000".equals(keys.get(index).substring(25,32))){
-//                        hasAlleyList.put(keys.get(index),elements);
-//                    }else{
-//                        noAlleyList.put(keys.get(index),elements);
-//                    }
-
-//                    if(!keys.get(index).endsWith("00000")){
-//                        /**表示組合成 室 有成功比對到mappingId，留這組就好**/
-//                        hasRoomList.put(keys.get(index),elements);
-////                        log.info("hasRoomList:{}",hasRoomList);
-//                    }else{
-//                        noRoomList.put(keys.get(index),elements);
-////                        log.info("noRoomList:{}",noRoomList);
-//                    }
-
-                    //num
-//                    if(!"00000".equals(keys.get(index).substring(46,51))){
-//                        /**表示組合成 num_flr_pos 有成功比對到mappingId，留這組就好**/
-//                        hasNumFlrPosList.put(keys.get(index),elements);
-//                        log.info("hasNumFlrPosList:{}",hasNumFlrPosList);
-//                    }else{
-//                        noNumFlrPosList.put(keys.get(index),elements);
-//                        log.info("noNumFlrPosList:{}",noNumFlrPosList);
-//                    }
                 }
             }
             index++;
         }
 
-        //NUM_FLR_POS.index = 7
-//        if(!hasNumFlrPosList.isEmpty()){
-//            log.info("程式組合的NUM_FLR_POS正確，NUM_FLR要件為1");
-//            address.setSegmentExistNumber(address.getSegmentExistNumber().substring(0,7)+"1");
-////            log.info("address.getSegmentExistNumber()",address.getSegmentExistNumber());
-//        }else{
-//            log.info("NUM_FLR_POS錯誤，是由00000代入才找到mappingId,NUM_FLR要件為0");
-//            address.setSegmentExistNumber(address.getSegmentExistNumber().substring(0,7)+"0");
-////            log.info("address.getSegmentExistNumber()",address.getSegmentExistNumber());
-//        }
-
-//        log.info("resultList:{}",resultList);
-
-//        if(!hasNeighborList.isEmpty()){
-//            /**有寫鄰+有對到 -> 有寫鄰+有對到*/
-////            log.info("程式產生的neighbor成功比對，要件清單1");
-//            address.setSegmentExistNumber(address.getSegmentExistNumber()+"1");
-////            resultList = hasNeighborList;
-//        }else{
-//            log.info("程式產生的neighbor比對失敗，要件清單0");
-//            address.setSegmentExistNumber(address.getSegmentExistNumber()+"0");
-////            resultList = noNeighborList;
-//        }
-
-
         if(!hasRoadAreaList.isEmpty()){
             log.info("有road");
-//            address.setSegmentExistNumber(address.getSegmentExistNumber().substring(0,3)+"1"+address.getSegmentExistNumber().substring(4,address.getSegmentExistNumber().length()));
+//           address.setSegmentExistNumber(address.getSegmentExistNumber().substring(0,3)+"1"+address.getSegmentExistNumber().substring(4,address.getSegmentExistNumber().length()));
             log.info("address.getSegmentExistNumber:{}",address.getSegmentExistNumber());
         }else{
             log.info("沒有road");
             address.setSegmentExistNumber(address.getSegmentExistNumber().substring(0,3)+"0"+address.getSegmentExistNumber().substring(4,address.getSegmentExistNumber().length()));
             log.info("address.getSegmentExistNumber:{}",address.getSegmentExistNumber());
         }
-//
-//        //"COUNTY","TOWN","VILLAGE","ROAD","AREA","LANE","ALLEY","NUM_FLR_1","NUM_FLR_2","NUM_FLR_3","NUM_FLR_4","NUM_FLR_5","NEIGHBOR","ROOM"
-//        if(!hasLaneList.isEmpty()){
-//            log.info("有lane");
-//            address.setSegmentExistNumber(address.getSegmentExistNumber().substring(0,5)+"1"+address.getSegmentExistNumber().substring(6,address.getSegmentExistNumber().length()));
-//        }else{
-//            log.info("沒有lane");
-//            address.setSegmentExistNumber(address.getSegmentExistNumber().substring(0,5)+"0"+address.getSegmentExistNumber().substring(6,address.getSegmentExistNumber().length()));
-//        }
-//
-//        if(!hasAlleyList.isEmpty()){
-//            log.info("有alley");
-//            address.setSegmentExistNumber(address.getSegmentExistNumber().substring(0,5)+"1"+address.getSegmentExistNumber().substring(6,address.getSegmentExistNumber().length()));
-//        }else{
-//            log.info("沒有alley");
-//            address.setSegmentExistNumber(address.getSegmentExistNumber().substring(0,6)+"1"+address.getSegmentExistNumber().substring(7,address.getSegmentExistNumber().length()));
-//        }
-//
-//
-//        if(!hasRoomList.isEmpty()){
-//            log.info("原始地址有寫room，代碼(非00000)成功找到");
-//            address.setSegmentExistNumber(address.getSegmentExistNumber()+"1");
-//            log.info("address.getSegmentExistNumber:{}",address.getSegmentExistNumber());
-//        }else{
-//            log.info("原始地址有寫room，代碼00000才成功找到，當作沒寫");
-//            address.setSegmentExistNumber(address.getSegmentExistNumber()+"0");
-//            log.info("address.getSegmentExistNumber()",address.getSegmentExistNumber());
-//        }
-
           return resultList;
     }
 

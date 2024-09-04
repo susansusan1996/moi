@@ -95,6 +95,8 @@ public class SingleQueryResouce {
         try {
             SingleQueryResultDTO result = singleQueryService.findJson(singleQueryDTO);
             log.info("result.getText():{}",result.getText());
+            log.info("resultList:{}",result.getData());
+            /**joinStep append 中文*/
             result.getData().forEach(data->{
                 try {
                     data.setJoinStep(resourceUtils.getJoinStepDes(data.getJoinStep()));
@@ -105,35 +107,34 @@ public class SingleQueryResouce {
 
             //todo:有查到
             if("查詢結果".equals(result.getText())){
-                //todo:產生Qrcode都要成async方法，先讓單筆查詢結果回去
-                //todo:改成1筆資料1張圖 url上 hardcore 資料
+                //todo:產生Qrcode都要成async方法，先讓單筆查詢結果回去 => 這樣就要變成我們打聖森給圖片
+                /**(1)靜態: 1資料 1張圖,資料都在url上 **/
 //                Map<String, String> urls = qrcodeService.generateURLBySeqs(result.getData(), singleQueryDTO.getOriginalAddress());
 //                qrcodeService.generateQrcodeByUrls(urls);
 
-                //todo:改成1筆資料1張圖 url上 加密seqs
+                /**(2)動態: 1筆資料 1張圖, url上加密seqs、joinStep,origrinalAddress，token放在url上，可能會有資安問題;**/
 //                Map<String, String> tokenUrls = qrcodeService.generateUrlsByToken(result.getData(), singleQueryDTO.getOriginalAddress());
 //                qrcodeService.generateQrcodeByUrls(tokenUrls);
 
-                HashMap<String, String> param = new HashMap<>(){{
-                    put("origrinalAddress",singleQueryDTO.getOriginalAddress());
-                }};
 
-                //todo:改成1筆資料1張圖 url上 不加密seq originalAddress,joinStep
-                result.getData().forEach(data->{
-                    param.put("taskId",String.valueOf(data.getSeq()));
-                    param.put("joinStep",String.valueOf(data.getJoinStep()));
-                    qrcodeService.generateURLs(param);
-                });
-
-                //todo:舊的 一次查詢只做一張(限制五筆)
+                /**(3)靜態 所有資料 1張圖 資料都在url上,會有網址過長的問題，所以限制5筆**/
 //                String url = generateURL(result.getData(),singleQueryDTO.getOriginalAddress());
 //                log.info("url:{}",url);
 //                String filename = UserContextUtils.getUserHolder().getId();
 //                String absolute = directory.getQrcodePath() +filename+".jpg";
 //                QRCodeUtils.generateQrcode(url,directory.getLogoPath(),absolute);
+
+                HashMap<String, String> param = new HashMap<>(){{
+                    put("origrinalAddress",singleQueryDTO.getOriginalAddress());
+                }};
+
+                /**(4)動態: 1筆資料 1張圖,url上不加密seq originalAddress,joinStep**/
+                result.getData().forEach(data->{
+                    param.put("taskId",String.valueOf(data.getSeq()));
+                    param.put("joinStep",String.valueOf(data.getJoinStep()));
+                    qrcodeService.generateURLs(param);
+                });
             }
-
-
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             log.info("e:{}",e.toString());
