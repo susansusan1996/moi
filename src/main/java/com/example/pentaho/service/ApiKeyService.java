@@ -127,7 +127,7 @@ public class ApiKeyService {
              * */
             if ((refreshTokenFromRedis == null && "fromApi".equals(type)) ||
                 (refreshTokenFromRedis != null && "fromApi".equals(type) && "REJECT".equals(refreshTokenFromRedis.getReviewResult()))||
-                (refreshTokenFromRedis != null && !"fromApi".equals(type))
+                (refreshTokenFromRedis == null && !"fromApi".equals(type))
             ) {
                 /**refreshToken 的 playload*/
                 user.setTokenType("refresh_token");

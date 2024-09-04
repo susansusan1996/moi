@@ -112,16 +112,18 @@ public class AuthorizationHandlerInterceptor implements HandlerInterceptor {
                 return true;
             }
 
-
+            /*可以解密才繼續往下做*/
             User user = Token.extractUserFromRSAJWTToken(RSATokenJwt,keyName);
             log.info("user:{}",user);
-            //判斷使用者是不是拿refresh_token
+            /*判斷使用者是不是拿refresh_token*/
             if("refresh_token".equals(user.getTokenType())){
                 log.info("使用者拿refresh_token打api,駁回");
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not allowed");
             }
-            //todo:OpenAPI 新增拿到userId之後,要去redis拿整個sett出來判斷IP位置
+
+            //todo:如果是 OpenAPI 的uri 要先去 redis拿整個set出來判斷IP位置
            if(openAPI.contains(request.getRequestURI())){
+               /**/
                if(!refreshTokenService.checkRemoteIp(user.getId(),request.getRemoteHost())){
                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "IP位置錯誤");
                }

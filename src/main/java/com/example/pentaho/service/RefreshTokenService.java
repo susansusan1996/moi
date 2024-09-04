@@ -245,30 +245,24 @@ public class RefreshTokenService {
 
 
     /***
-     *
+     * 解密金鑰後userId，找出redis中有沒有存過IP
      * @param userId
      * @param remoteIp
      * @return
      * @throws ParseException
      */
     public Boolean checkRemoteIp(String userId,String remoteIp) throws ParseException {
-        log.info("檢查userId:{},檢查 remoteIp:{}",userId,remoteIp);
+        log.info("檢查userId:{},檢查remoteIp:{}",userId,remoteIp);
         Map<String, String> userMap = new HashMap<String, String>();
-        Map<Object, Object> entries = stringRedisTemplate0.opsForHash().entries(userId+":IP");
+        String bindIp = stringRedisTemplate0.opsForValue().get(userId+":ip");
 
 
-        for (Map.Entry<Object, Object> entry : entries.entrySet()) {
-            userMap.put(String.valueOf(entry.getKey()), String.valueOf(entry.getValue()));
-            log.info(entry.getKey() + ": " + entry.getValue());
-        }
-
-        if(userMap != null && !userMap.isEmpty()){
-           String boundIp = userMap.get(userMap + ":ip");
-           return boundIp.equals(remoteIp)? true : false;
+        if(StringUtils.isNotNullOrEmpty(bindIp)){
+           return bindIp.equals(remoteIp)? true : false;
         }
 
         //存IP
-        stringRedisTemplate0.opsForValue().set(userMap+":ip",remoteIp);
+        stringRedisTemplate0.opsForValue().set(userId+":ip",remoteIp);
         return true;
     }
 
